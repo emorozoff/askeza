@@ -136,10 +136,14 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .form-label{font-size:13px;color:var(--text2);margin-bottom:6px;display:block;font-weight:500}
 .form-input{width:100%;background:var(--surface);border:none;border-radius:12px;padding:12px 14px;font-size:16px;color:var(--text);font-family:inherit;outline:none;transition:box-shadow 0.2s}
 .form-input:focus{box-shadow:0 0 0 2px var(--accent)}
-.preset-picker{display:flex;gap:8px;flex-wrap:wrap}
-.preset-btn{padding:8px 14px;border-radius:20px;background:var(--surface);border:2px solid transparent;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;transition:all 0.15s;line-height:1}
-.preset-btn:active{transform:scale(0.95)}
-.preset-btn.selected{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+.emoji-picker{display:flex;gap:6px;flex-wrap:wrap}
+.emoji-opt{width:44px;height:44px;border-radius:12px;background:var(--surface);border:2px solid transparent;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.emoji-opt:active{transform:scale(0.93)}
+.emoji-opt.selected{border-color:var(--accent);background:var(--accent-dim)}
+.color-picker{display:flex;gap:10px}
+.color-opt{width:32px;height:32px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:all 0.15s}
+.color-opt:active{transform:scale(0.9)}
+.color-opt.selected{border-color:#fff;transform:scale(1.1)}
 .btn-primary{width:100%;padding:14px;border:none;border-radius:12px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:8px;transition:transform 0.15s,opacity 0.15s}
 .btn-primary:active{transform:scale(0.98);opacity:0.85}
 .btn-secondary{width:100%;padding:12px;border:none;border-radius:12px;background:var(--surface);color:var(--text2);font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:8px;transition:transform 0.15s}
@@ -224,12 +228,16 @@ const QUOTES=[
 ];
 
 const HABIT_PRESETS=[
-  {name:'Курение',color:'#ff453a'},
-  {name:'Алкоголь',color:'#ff9f0a'},
-  {name:'Соцсети',color:'#bf5af2'},
-  {name:'Сахар',color:'#ff375f'},
-  {name:'Азартные игры',color:'#ffd60a'},
+  {name:'Курение',emoji:'🚬',color:'#ff453a'},
+  {name:'Алкоголь',emoji:'🍺',color:'#ff9f0a'},
+  {name:'Соцсети',emoji:'📱',color:'#bf5af2'},
+  {name:'Фастфуд',emoji:'🍔',color:'#ff6723'},
+  {name:'Сахар',emoji:'🍬',color:'#ff375f'},
+  {name:'Кофеин',emoji:'☕',color:'#ac8e68'},
+  {name:'Азартные игры',emoji:'🎰',color:'#ffd60a'},
+  {name:'Энергетики',emoji:'⚡',color:'#30d158'},
 ];
+const COLORS=['#2aabee','#ff453a','#30d158','#ff9f0a','#bf5af2','#ff375f','#ff6723','#64d2ff'];
 const BAR_COLORS=[['#ffd60a','#e6b800'],['#30d158','#28a745'],['#2aabee','#1a8cd8'],['#5e5ce6','#4b4acf'],['#bf5af2','#a347d1'],['#ff9f0a','#e8900a']];
 
 function loadData(){try{const d=JSON.parse(localStorage.getItem(STORAGE_KEY));return d&&d.habits?d:{habits:[]}}catch{return{habits:[]}}}
@@ -324,7 +332,8 @@ function render(){
 
     // Habit title
     html+=`<div class="habit-header">
-      <span style="font-size:18px;font-weight:700">${h.name}</span>
+      <span style="font-size:20px">${h.emoji}</span>
+      <span style="font-size:18px;font-weight:700;margin-left:8px">${h.name}</span>
     </div>`;
     html+=`<div class="habit-sub">свобода с ${fmtDate(h.quitDate)}</div>`;
 
@@ -421,6 +430,7 @@ function render(){
         const el=getElapsed(hab.quitDate);
         const isActive=hab.id===activeHabitId;
         return `<div class="side-habit ${isActive?'active':''}" onclick="selectHabit('${hab.id}')">
+          <div class="side-habit-emoji">${hab.emoji}</div>
           <div>
             <div class="side-habit-name">${hab.name}</div>
             <div class="side-habit-sub">${el.months>0?el.months+' мес. ':''}${el.days} дн. ${el.hours} ч.</div>
@@ -436,10 +446,11 @@ function render(){
     const isEdit=activeModal==='edit';
     html+=`<div class="modal-overlay active" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">
       <div class="modal-handle"></div><h2>${isEdit?'Редактировать':'Бросить привычку'}</h2>
-      ${!isEdit?`<div class="form-group"><div class="form-label">Быстрый выбор</div><div class="preset-picker">
-        ${HABIT_PRESETS.map(p=>`<button class="preset-btn ${formName===p.name?'selected':''}" onclick="selectPreset('${p.name}','${p.color}')">${p.name}</button>`).join('')}
+      ${!isEdit?`<div class="form-group"><div class="form-label">Быстрый выбор</div><div class="emoji-picker">
+        ${HABIT_PRESETS.map(p=>`<button class="emoji-opt" onclick="selectPreset('${p.name}','${p.emoji}','${p.color}')">${p.emoji}</button>`).join('')}
       </div></div>`:''}
       <div class="form-group"><div class="form-label">Название</div><input class="form-input" id="f-name" placeholder="Например: Курение" value="${formName}" oninput="formName=this.value"></div>
+      <div class="form-group"><div class="form-label">Цвет</div><div class="color-picker">${COLORS.map(c=>`<div class="color-opt ${formColor===c?'selected':''}" style="background:${c}" onclick="selectColor('${c}')"></div>`).join('')}</div></div>
       <div class="form-group"><div class="form-label">Дата (когда бросил/а)</div><input class="form-input" id="f-date" type="date" value="${formDate}" oninput="formDate=this.value"></div>
       <div class="form-group"><div class="form-label">Время</div><input class="form-input" id="f-time" type="time" value="${formTime}" oninput="formTime=this.value"></div>
       <button class="btn-primary" onclick="saveHabit()">${isEdit?'Сохранить':'Начать отсчёт!'}</button>
@@ -466,7 +477,7 @@ function render(){
         ${activeTokens.length>0?activeTokens.map(t=>`<div class="all-token-card">
           <div class="all-token-emoji" style="font-size:16px;font-weight:700;font-family:Georgia,serif;min-width:40px;text-align:center">${t.rank}</div>
           <div class="all-token-info">
-            <div class="all-token-habit">${t.habit}</div>
+            <div class="all-token-habit">${t.habitEmoji} ${t.habit}</div>
             <div class="all-token-detail">${t.label}</div>
           </div>
           <div class="all-token-badge active-badge">Активный</div>
@@ -477,7 +488,7 @@ function render(){
         ${oldTokens.map(t=>`<div class="all-token-card old">
           <div class="all-token-emoji" style="font-size:16px;font-weight:700;font-family:Georgia,serif;min-width:40px;text-align:center">${t.rank}</div>
           <div class="all-token-info">
-            <div class="all-token-habit">${t.habit}</div>
+            <div class="all-token-habit">${t.habitEmoji} ${t.habit}</div>
             <div class="all-token-detail">${t.label}${t.date?' · сброс '+t.date:''}</div>
           </div>
           <div class="all-token-badge old-badge">Старый</div>
@@ -508,11 +519,12 @@ function openAllTokens(){activeModal='allTokens';render()}
 
 function openAddModal(){
   activeModal='add';editingId=null;sideMenuOpen=false;
-  formName='';formEmoji='';formColor='#2aabee';
+  formName='';formEmoji='🚬';formColor='#ff453a';
   const n=new Date();formDate=n.toISOString().split('T')[0];formTime=pad(n.getHours())+':'+pad(n.getMinutes());
   render();
 }
-function selectPreset(n,c){formName=n;formColor=c;document.getElementById('f-name').value=n;render()}
+function selectPreset(n,e,c){formName=n;formEmoji=e;formColor=c;document.getElementById('f-name').value=n;render()}
+function selectColor(c){formColor=c;render()}
 function closeModal(e){if(e&&e.target!==e.currentTarget)return;activeModal=null;editingId=null;render()}
 
 function saveHabit(){
