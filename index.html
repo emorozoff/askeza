@@ -263,6 +263,18 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .celebration .btn-primary{width:auto;padding:12px 36px;margin-top:24px}
 
 .confetti-piece{position:fixed;width:8px;height:8px;z-index:501;pointer-events:none;border-radius:2px;animation:confettiFall 2.5s ease-out forwards}
+
+/* === SUPPRESS ANIMATIONS AFTER INIT (body.app-ready) === */
+body.app-ready .habit-header,
+body.app-ready .quote-simple,
+body.app-ready .risk-block,
+body.app-ready .tbar,
+body.app-ready .tbar-fill,
+body.app-ready .progress-card,
+body.app-ready .tokens-section,
+body.app-ready .milestone-section,
+body.app-ready .action-row,
+body.app-ready .topbar{animation:none!important}
 </style>
 </head>
 <body>
@@ -450,7 +462,7 @@ function render(){
 
   // Top bar
   html+=`<div class="topbar">
-    <h1>askeza <span style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:0.5px;vertical-align:middle">v0.5</span></h1>
+    <h1>askeza <span style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:0.5px;vertical-align:middle">v0.6</span></h1>
     <div class="topbar-right">
       ${h?`<button class="menu-btn" onclick="openHabitActions('${h.id}')" style="font-size:22px;letter-spacing:1px;padding-bottom:10px">···</button>`:''}
       <button class="menu-btn" onclick="toggleSideMenu()">☰</button>
@@ -560,18 +572,16 @@ function render(){
     </div>
   </div>`;
 
-  // Habit actions sheet
-  if(activeModal==='habitActions'){
-    html+=`<div class="sheet-overlay active" onclick="closeHabitActions()">
-      <div class="sheet" onclick="event.stopPropagation()">
-        <div class="sheet-handle"></div>
-        <button class="sheet-item" onclick="editHabit('${h?h.id:''}');closeHabitActions()"><span class="sheet-item-icon">✏️</span>Изменить</button>
-        <button class="sheet-item warn" onclick="resetStreak('${h?h.id:''}');closeHabitActions()"><span class="sheet-item-icon">🔄</span>Сброс отсчёта</button>
-        <button class="sheet-item danger" onclick="deleteHabit('${h?h.id:''}');closeHabitActions()"><span class="sheet-item-icon">🗑️</span>Удалить привычку</button>
-        <button class="sheet-cancel" onclick="closeHabitActions()">Отмена</button>
-      </div>
-    </div>`;
-  }
+  // Habit actions sheet (always in DOM, shown/hidden via CSS class)
+  html+=`<div class="sheet-overlay ${activeModal==='habitActions'?'active':''}" onclick="closeHabitActions()">
+    <div class="sheet" onclick="event.stopPropagation()">
+      <div class="sheet-handle"></div>
+      <button class="sheet-item" onclick="editHabit('${h?h.id:''}');closeHabitActions()"><span class="sheet-item-icon">✏️</span>Изменить</button>
+      <button class="sheet-item warn" onclick="resetStreak('${h?h.id:''}');closeHabitActions()"><span class="sheet-item-icon">🔄</span>Сброс отсчёта</button>
+      <button class="sheet-item danger" onclick="deleteHabit('${h?h.id:''}');closeHabitActions()"><span class="sheet-item-icon">🗑️</span>Удалить привычку</button>
+      <button class="sheet-cancel" onclick="closeHabitActions()">Отмена</button>
+    </div>
+  </div>`;
 
   // Add/Edit modal
   if(activeModal==='add'||activeModal==='edit'){
@@ -736,14 +746,14 @@ function render(){
 }
 
 // === ACTIONS ===
-function toggleSideMenu(){sideMenuOpen=!sideMenuOpen;render()}
-function closeSideMenu(){sideMenuOpen=false;render()}
-function selectHabit(id){activeHabitId=id;sideMenuOpen=false;render()}
-function openAllTokens(){activeModal='tokensPage';render()}
-function openTokensPage(){activeModal='tokensPage';render()}
-function closeTokensPage(){activeModal=null;render()}
-function openHabitActions(id){activeModal='habitActions';render()}
-function closeHabitActions(){activeModal=null;render()}
+function toggleSideMenu(){sideMenuOpen=!sideMenuOpen;document.querySelector('.side-overlay').classList.toggle('open',sideMenuOpen)}
+function closeSideMenu(){sideMenuOpen=false;document.querySelector('.side-overlay').classList.remove('open')}
+function selectHabit(id){activeHabitId=id;sideMenuOpen=false;document.body.classList.remove('app-ready');render();setTimeout(()=>document.body.classList.add('app-ready'),450)}
+function openAllTokens(){activeModal='tokensPage';document.getElementById('tokens-page').classList.add('open')}
+function openTokensPage(){activeModal='tokensPage';document.getElementById('tokens-page').classList.add('open')}
+function closeTokensPage(){activeModal=null;document.getElementById('tokens-page').classList.remove('open')}
+function openHabitActions(id){activeModal='habitActions';document.querySelector('.sheet-overlay').classList.add('active')}
+function closeHabitActions(){activeModal=null;document.querySelector('.sheet-overlay').classList.remove('active')}
 
 function openAddModal(){
   activeModal='add';editingId=null;sideMenuOpen=false;
@@ -751,7 +761,7 @@ function openAddModal(){
   const n=new Date();formDate=n.toISOString().split('T')[0];formTime=pad(n.getHours())+':'+pad(n.getMinutes());
   render();
 }
-function selectPreset(n,c){formName=n;formColor=c;document.getElementById('f-name').value=n;render()}
+function selectPreset(n,c){formName=n;formColor=c;document.getElementById('f-name').value=n;document.querySelectorAll('.preset-btn').forEach(b=>b.classList.toggle('selected',b.textContent.trim()===n))}
 function closeModal(e){if(e&&e.target!==e.currentTarget)return;activeModal=null;editingId=null;render()}
 
 function saveHabit(){
@@ -868,13 +878,12 @@ data.habits.forEach(h=>{
   checkedMilestones[h.id]=getEarnedBadges(getElapsed(h.quitDate).totalSeconds).length;
 });
 if(!activeHabitId&&data.habits.length>0)activeHabitId=data.habits[0].id;
-render();requestAnimationFrame(updateTimers);
+render();requestAnimationFrame(updateTimers);setTimeout(()=>document.body.classList.add('app-ready'),500);
 
 // === RISK CHART ===
 
 function openRiskChart(){
   activeModal='riskChart';
-  // Auto-select range that includes current position
   const h=data.habits.find(x=>x.id===activeHabitId);
   if(h){
     const days=getElapsed(h.quitDate).totalSeconds/86400;
@@ -883,8 +892,9 @@ function openRiskChart(){
     else if(days>90)chartRange=180;
     else if(days>30)chartRange=90;
     else chartRange=30;
+    document.querySelectorAll('.crb').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.days)===chartRange));
   }
-  render();
+  document.getElementById('chart-page').classList.add('open');
   setTimeout(()=>{
     drawRiskChart(null);
     setupChartInteraction();
@@ -896,7 +906,7 @@ function openRiskChart(){
 function closeRiskChart(){
   activeModal=null;
   if(chartLiveInterval){clearInterval(chartLiveInterval);chartLiveInterval=null;}
-  render();
+  document.getElementById('chart-page').classList.remove('open');
 }
 
 function setChartRange(days){
