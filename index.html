@@ -179,8 +179,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .crb{background:var(--surface);border:none;border-radius:20px;padding:6px 16px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s}
 .crb.active{background:var(--accent);color:#fff}
 .crb:active{transform:scale(0.95)}
-.chart-canvas-wrap{flex:1;padding:0 12px;min-height:0;position:relative;touch-action:none}
-.chart-canvas-wrap canvas{width:100%!important;display:block;cursor:crosshair}
+.chart-canvas-wrap{flex:1;padding:0 12px;min-height:0;position:relative;touch-action:none;display:flex;align-items:stretch}
+.chart-canvas-wrap canvas{width:100%!important;height:100%!important;display:block;cursor:crosshair}
 .chart-legend{display:flex;flex-wrap:wrap;gap:8px;padding:8px 20px 6px;justify-content:center}
 .chart-leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
 .chart-leg-dot{width:8px;height:8px;border-radius:50%}
@@ -562,12 +562,13 @@ function render(){
         </div>
         <div class="clr-phase" style="color:${chPhase.color}">${chPhase.label}</div>
       </div>
-      ${showMotive?`<div class="chart-motive">🎯 Самый сложный период уже позади</div>`:''}
+      ${showMotive?`<div class="chart-motive">Самый сложный период уже позади</div>`:''}
       <div class="chart-range">
         <button class="crb ${chartRange===30?'active':''}" data-days="30" onclick="setChartRange(30)">1 мес</button>
         <button class="crb ${chartRange===90?'active':''}" data-days="90" onclick="setChartRange(90)">3 мес</button>
         <button class="crb ${chartRange===180?'active':''}" data-days="180" onclick="setChartRange(180)">6 мес</button>
         <button class="crb ${chartRange===365?'active':''}" data-days="365" onclick="setChartRange(365)">1 год</button>
+        <button class="crb ${chartRange===1825?'active':''}" data-days="1825" onclick="setChartRange(1825)">5 лет</button>
       </div>
       <div class="chart-canvas-wrap"><canvas id="risk-chart-canvas"></canvas></div>
       <div class="chart-legend">
@@ -576,7 +577,7 @@ function render(){
         <div class="chart-leg-item"><div class="chart-leg-dot" style="background:#ffd60a"></div>Становится легче</div>
         <div class="chart-leg-item"><div class="chart-leg-dot" style="background:#30d158"></div>Минимальный риск</div>
       </div>
-      <div class="chart-info">Проведи пальцем по графику — увидишь % в любой момент времени</div>
+      <div class="chart-info">Основано на научных данных</div>
     </div>`;
   }
 
@@ -728,6 +729,16 @@ render();requestAnimationFrame(updateTimers);
 
 function openRiskChart(){
   activeModal='riskChart';
+  // Auto-select range that includes current position
+  const h=data.habits.find(x=>x.id===activeHabitId);
+  if(h){
+    const days=getElapsed(h.quitDate).totalSeconds/86400;
+    if(days>365)chartRange=1825;
+    else if(days>180)chartRange=365;
+    else if(days>90)chartRange=180;
+    else if(days>30)chartRange=90;
+    else chartRange=30;
+  }
   render();
   setTimeout(()=>{
     drawRiskChart(null);
@@ -795,8 +806,8 @@ function drawRiskChart(touchDay){
 
   const wrap=canvas.parentElement;
   const W=wrap.clientWidth;
-  const H=Math.min(230,wrap.clientHeight||230);
-  canvas.width=W*2;canvas.height=H*2;canvas.style.height=H+'px';
+  const H=wrap.clientHeight||300;
+  canvas.width=W*2;canvas.height=H*2;canvas.style.width=W+'px';canvas.style.height=H+'px';
   const ctx=canvas.getContext('2d');ctx.scale(2,2);
 
   const pad={top:14,right:16,bottom:32,left:42};
@@ -823,7 +834,8 @@ function drawRiskChart(touchDay){
   const xTicks=xMax<=30?[{d:1,l:'1д'},{d:7,l:'1н'},{d:14,l:'2н'},{d:30,l:'1м'}]
     :xMax<=90?[{d:7,l:'1н'},{d:30,l:'1м'},{d:60,l:'2м'},{d:90,l:'3м'}]
     :xMax<=180?[{d:30,l:'1м'},{d:60,l:'2м'},{d:90,l:'3м'},{d:180,l:'6м'}]
-    :[{d:1,l:'1д'},{d:7,l:'1н'},{d:30,l:'1м'},{d:90,l:'3м'},{d:180,l:'6м'},{d:365,l:'1г'}];
+    :xMax<=365?[{d:1,l:'1д'},{d:7,l:'1н'},{d:30,l:'1м'},{d:90,l:'3м'},{d:180,l:'6м'},{d:365,l:'1г'}]
+    :[{d:30,l:'1м'},{d:180,l:'6м'},{d:365,l:'1г'},{d:730,l:'2г'},{d:1095,l:'3г'},{d:1825,l:'5г'}];
   ctx.textAlign='center';
   xTicks.forEach(t=>{
     if(t.d>xMax)return;
