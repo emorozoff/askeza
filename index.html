@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="askeza">
+<meta name="theme-color" content="#1c1c1e">
+<link rel="manifest" href="data:application/json,%7B%22name%22%3A%22askeza%22%2C%22short_name%22%3A%22askeza%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%231c1c1e%22%2C%22theme_color%22%3A%22%231c1c1e%22%7D">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%231c1c1e' width='100' height='100' rx='20'/><text y='68' x='50' text-anchor='middle' font-size='55'>🔥</text></svg>">
+<title>askeza</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#1c1c1e;--surface:#2c2c2e;--surface2:#3a3a3c;
+  --text:#f2f2f7;--text2:#8e8e93;--text3:#636366;
+  --accent:#2aabee;--accent-dim:rgba(42,171,238,0.12);
+  --red:#ff453a;--green:#30d158;--gold:#ffd60a;
+  --safe-top:env(safe-area-inset-top,20px);--safe-bottom:env(safe-area-inset-bottom,20px);
+}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;overflow-x:hidden;padding-top:var(--safe-top);padding-bottom:calc(var(--safe-bottom)+20px)}
+
+/* === ANIMATIONS === */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes barGrow{from{width:0%}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+@keyframes celBounce{0%{transform:scale(0) rotate(-10deg)}60%{transform:scale(1.15) rotate(2deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+
+.animate-in{animation:fadeUp 0.35s ease-out both}
+.animate-in:nth-child(1){animation-delay:0.03s}
+.animate-in:nth-child(2){animation-delay:0.06s}
+.animate-in:nth-child(3){animation-delay:0.09s}
+.animate-in:nth-child(4){animation-delay:0.12s}
+.animate-in:nth-child(5){animation-delay:0.15s}
+
+/* === TOP BAR === */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 10px;animation:fadeIn 0.3s ease}
+.topbar h1{font-size:22px;font-weight:700;color:#fff;letter-spacing:1.5px}
+.topbar-right{display:flex;align-items:center;gap:6px}
+.menu-btn{background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:8px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background 0.2s,transform 0.15s}
+.menu-btn:active{background:var(--surface);transform:scale(0.92)}
+
+/* === SIDE MENU === */
+.side-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;opacity:0;pointer-events:none;transition:opacity 0.25s ease}
+.side-overlay.open{opacity:1;pointer-events:all}
+.side-menu{position:fixed;top:0;right:0;bottom:0;width:280px;background:#2c2c2e;z-index:401;transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.25,1,0.5,1);padding:20px;padding-top:100px;overflow-y:auto;display:flex;flex-direction:column}
+.side-overlay.open .side-menu{transform:translateX(0)}
+.side-menu-title{font-size:15px;font-weight:600;margin-bottom:16px;padding:0 4px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px}
+.side-habit{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;margin-bottom:4px;cursor:pointer;transition:background 0.15s,transform 0.15s}
+.side-habit:active{transform:scale(0.98);background:var(--surface2)}
+.side-habit.active{background:var(--accent-dim)}
+.side-habit-emoji{font-size:20px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border-radius:10px}
+.side-habit-name{font-size:14px;font-weight:600;color:var(--text)}
+.side-habit-sub{font-size:12px;color:var(--text2);margin-top:1px}
+.side-add{display:flex;align-items:center;gap:8px;padding:12px;border-radius:12px;cursor:pointer;color:var(--accent);font-size:14px;font-weight:600;margin-top:8px;justify-content:center;transition:background 0.15s}
+.side-add:active{background:var(--accent-dim)}
+
+/* === HABIT HEADER === */
+.habit-header{text-align:center;padding:8px 20px 4px;animation:fadeUp 0.3s ease-out}
+.habit-sub{text-align:center;font-size:13px;color:var(--text3);padding:0 20px 12px;font-weight:400}
+
+/* === QUOTE === */
+.quote-bar{margin:0 20px 16px;padding:10px 14px 10px 16px;background:var(--surface);border-radius:12px;font-size:13px;color:var(--text2);line-height:1.5;text-align:center;font-style:italic;animation:fadeUp 0.35s ease-out both;animation-delay:0.05s;display:flex;align-items:center;gap:8px}
+.quote-bar span{flex:1;transition:opacity 0.2s,transform 0.2s}
+.quote-refresh{background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:4px;flex-shrink:0;transition:transform 0.3s,color 0.2s;line-height:1}
+.quote-refresh:active{transform:rotate(180deg);color:var(--accent)}
+
+/* === RISK COUNTER === */
+.risk-block{margin:0 20px 16px;padding:16px;background:var(--surface);border-radius:14px;animation:fadeUp 0.35s ease-out both;animation-delay:0.08s}
+.risk-number{display:flex;align-items:baseline;justify-content:center;gap:1px;font-variant-numeric:tabular-nums}
+.risk-int{font-size:36px;font-weight:700;line-height:1}
+.risk-dot{font-size:28px;font-weight:700;line-height:1}
+.risk-dec{font-size:20px;font-weight:600;line-height:1;opacity:0.7}
+.risk-pct{font-size:18px;font-weight:600;margin-left:2px;opacity:0.5;line-height:1}
+.risk-phase{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;margin-top:10px}
+.risk-center{text-align:center}
+
+/* === TIMER BARS === */
+.timer-bars{display:flex;flex-direction:column;gap:6px;padding:0 20px;margin-bottom:16px}
+.tbar{position:relative;height:38px;background:var(--surface);border-radius:10px;overflow:visible;animation:fadeUp 0.35s ease-out both}
+.tbar:nth-child(1){animation-delay:0.06s}
+.tbar:nth-child(2){animation-delay:0.1s}
+.tbar:nth-child(3){animation-delay:0.14s}
+.tbar:nth-child(4){animation-delay:0.18s}
+.tbar:nth-child(5){animation-delay:0.22s}
+.tbar-fill{height:100%;border-radius:10px;transition:width 1s cubic-bezier(0.4,0,0.2,1);min-width:2px;animation:barGrow 0.8s ease-out both}
+.tbar-text{position:absolute;left:12px;top:0;height:100%;font-size:15px;font-weight:600;color:#fff;white-space:nowrap;display:flex;align-items:center;gap:5px;pointer-events:none}
+.tbar-text .tbar-num{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.tbar-text .tbar-label{font-size:12px;font-weight:500;opacity:0.75}
+
+/* === MILESTONE === */
+.milestone-section{padding:0 20px;margin-bottom:16px;animation:fadeUp 0.35s ease-out both;animation-delay:0.2s}
+.milestone-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.milestone-label{font-size:12px;color:var(--text2)}
+.milestone-target{font-size:12px;font-weight:600;color:var(--accent)}
+.progress-track{height:4px;background:var(--surface);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;border-radius:2px;transition:width 1s cubic-bezier(0.4,0,0.2,1);background:var(--accent)}
+
+/* === TOKENS === */
+.tokens-section{padding:0 20px;animation:fadeUp 0.35s ease-out both;animation-delay:0.25s}
+.tokens-title{font-size:13px;color:var(--text3);font-weight:500;margin-bottom:8px}
+.tokens-row{display:flex;gap:6px;flex-wrap:wrap;cursor:pointer}
+.token{font-size:12px;padding:6px 12px;border-radius:8px;font-weight:600;display:flex;align-items:center;gap:4px;transition:transform 0.15s}
+.token:active{transform:scale(0.95)}
+.token.earned{background:rgba(255,214,10,0.1);color:var(--gold);border:1px solid rgba(255,214,10,0.2)}
+.token.locked{background:var(--surface);color:var(--text3);border:none;opacity:0.6;cursor:default}
+
+/* === ACTION BUTTONS === */
+.action-row{display:flex;gap:16px;padding:12px 20px 8px;justify-content:center;animation:fadeUp 0.35s ease-out both;animation-delay:0.3s}
+.action-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;font-weight:500;font-family:inherit;transition:color 0.15s,transform 0.15s;padding:6px 0;display:flex;align-items:center;gap:5px}
+.action-btn:active{transform:scale(0.95)}
+.action-btn .action-icon{font-size:14px}
+.action-btn.danger{color:var(--red)}
+
+/* === EMPTY STATE === */
+.empty-state{text-align:center;padding:80px 40px;color:var(--text2);animation:fadeUp 0.4s ease-out}
+.empty-state .empty-icon{font-size:56px;margin-bottom:16px}
+.empty-state h2{font-size:18px;color:var(--text);margin-bottom:8px;font-weight:600}
+.empty-state p{font-size:14px;line-height:1.5;margin-bottom:24px}
+.empty-btn{display:inline-block;padding:12px 28px;border-radius:12px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:transform 0.15s,opacity 0.15s}
+.empty-btn:active{transform:scale(0.96);opacity:0.85}
+
+/* === MODAL === */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s}
+.modal-overlay.active{opacity:1;pointer-events:all}
+.modal{background:#2c2c2e;border-radius:16px;padding:24px 28px 40px;width:calc(100% - 40px);max-width:460px;max-height:80vh;overflow-y:auto;transform:translateY(110%);transition:transform 0.3s cubic-bezier(0.25,1,0.5,1);margin:0 auto 24px}
+.modal-overlay.active .modal{transform:translateY(0)}
+.modal h2{font-size:18px;font-weight:700;margin-bottom:20px;text-align:center}
+.modal-handle{width:36px;height:4px;background:var(--surface2);border-radius:2px;margin:0 auto 14px}
+.form-group{margin-bottom:14px}
+.form-label{font-size:13px;color:var(--text2);margin-bottom:6px;display:block;font-weight:500}
+.form-input{width:100%;background:var(--surface);border:none;border-radius:12px;padding:12px 14px;font-size:16px;color:var(--text);font-family:inherit;outline:none;transition:box-shadow 0.2s}
+.form-input:focus{box-shadow:0 0 0 2px var(--accent)}
+.preset-picker{display:flex;gap:8px;flex-wrap:wrap}
+.preset-btn{padding:8px 14px;border-radius:20px;background:var(--surface);border:2px solid transparent;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;transition:all 0.15s;line-height:1}
+.preset-btn:active{transform:scale(0.95)}
+.preset-btn.selected{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+.btn-primary{width:100%;padding:14px;border:none;border-radius:12px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:8px;transition:transform 0.15s,opacity 0.15s}
+.btn-primary:active{transform:scale(0.98);opacity:0.85}
+.btn-secondary{width:100%;padding:12px;border:none;border-radius:12px;background:var(--surface);color:var(--text2);font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:8px;transition:transform 0.15s}
+.btn-secondary:active{transform:scale(0.98)}
+
+/* === ALL TOKENS MODAL === */
+.all-tokens-section{margin-bottom:20px}
+.all-tokens-label{font-size:13px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:0.3px}
+.all-tokens-label.active-label{color:var(--gold)}
+.all-tokens-label.old-label{color:var(--text3)}
+.all-token-card{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:rgba(255,255,255,0.04);margin-bottom:6px;transition:transform 0.15s}
+.all-token-card:active{transform:scale(0.98)}
+.all-token-card.old{opacity:0.5}
+.all-token-emoji{font-size:22px}
+.all-token-info{flex:1}
+.all-token-habit{font-size:13px;font-weight:600}
+.all-token-detail{font-size:11px;color:var(--text2);margin-top:1px}
+.all-token-badge{font-size:11px;padding:3px 10px;border-radius:8px;font-weight:600}
+.all-token-badge.active-badge{background:rgba(255,214,10,0.1);color:var(--gold)}
+.all-token-badge.old-badge{background:var(--surface);color:var(--text3)}
+
+/* === CELEBRATION === */
+.celebration{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,0.8);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);z-index:500;opacity:0;pointer-events:none;transition:opacity 0.3s}
+.celebration.active{opacity:1;pointer-events:all}
+.celebration .cel-emoji{font-size:72px;animation:celBounce 0.5s ease}
+.celebration .cel-title{font-size:24px;font-weight:700;margin:16px 0 8px;text-align:center;padding:0 20px}
+.celebration .cel-sub{font-size:14px;color:var(--text2);text-align:center;max-width:280px;line-height:1.5}
+.celebration .btn-primary{width:auto;padding:12px 36px;margin-top:24px}
+
+.confetti-piece{position:fixed;width:8px;height:8px;z-index:501;pointer-events:none;border-radius:2px;animation:confettiFall 2.5s ease-out forwards}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const STORAGE_KEY='askeza_data';
+(function(){const o=localStorage.getItem('quittrack_data');if(o&&!localStorage.getItem(STORAGE_KEY))localStorage.setItem(STORAGE_KEY,o)})();
+
+const MILESTONES=[
+  {label:'Начало',      sec:60,       rank:'XX'},
+  {label:'1 час',       sec:3600,     rank:'XIX'},
+  {label:'3 часа',      sec:10800,    rank:'XVIII'},
+  {label:'6 часов',     sec:21600,    rank:'XVII'},
+  {label:'12 часов',    sec:43200,    rank:'XVI'},
+  {label:'1 день',      sec:86400,    rank:'XV'},
+  {label:'2 дня',       sec:172800,   rank:'XIV'},
+  {label:'3 дня',       sec:259200,   rank:'XIII'},
+  {label:'5 дней',      sec:432000,   rank:'XII'},
+  {label:'1 неделя',    sec:604800,   rank:'XI'},
+  {label:'10 дней',     sec:864000,   rank:'X'},
+  {label:'2 недели',    sec:1209600,  rank:'IX'},
+  {label:'3 недели',    sec:1814400,  rank:'VIII'},
+  {label:'1 месяц',     sec:2592000,  rank:'VII'},
+  {label:'6 недель',    sec:3628800,  rank:'VI'},
+  {label:'2 месяца',    sec:5184000,  rank:'V'},
+  {label:'3 месяца',    sec:7776000,  rank:'IV'},
+  {label:'4 месяца',    sec:10368000, rank:'III'},
+  {label:'6 месяцев',   sec:15552000, rank:'II'},
+  {label:'1 год',       sec:31536000, rank:'I'},
+];
+
+const QUOTES=[
+  "Ты уже дальше, чем вчера. Продолжай!",
+  "Каждая секунда без привычки — это победа над собой",
+  "Ты сильнее, чем думаешь. Доказательство — прямо перед тобой",
+  "Сила воли — это мышца. И ты качаешь её прямо сейчас",
+  "В будущем ты скажешь себе спасибо",
+  "Маленькие победы складываются в большие перемены",
+  "Привычка — это цепь. Каждый день ты разбиваешь ещё одно звено",
+  "Сегодня тяжело. Завтра станет легче. Послезавтра — ещё легче",
+  "Дискомфорт — это цена роста. И ты уже платишь",
+  "Каждый раз, когда ты говоришь «нет» привычке, ты говоришь «да» себе",
+  "Ты меняешь минуту дискомфорта на годы свободы",
+  "То, что тянет тебя назад — не сильнее тебя",
+  "Тяга временна. Гордость за себя — навсегда",
+  "Свобода начинается там, где заканчивается привычка",
+  "Не жди мотивации. Будь дисциплиной",
+  "Вчерашний ты начал. Сегодняшний — продолжает",
+  "Ты меняешься прямо сейчас. С каждой секундой",
+  "Слабость кричит. Сила действует молча",
+  "Сегодня ты сильнее, чем вчера. Завтра — сильнее, чем сегодня",
+];
+
+const HABIT_PRESETS=[
+  {name:'Курение',color:'#ff453a'},
+  {name:'Алкоголь',color:'#ff9f0a'},
+  {name:'Соцсети',color:'#bf5af2'},
+  {name:'Сахар',color:'#ff375f'},
+  {name:'Азартные игры',color:'#ffd60a'},
+];
+const BAR_COLORS=[['#ffd60a','#e6b800'],['#30d158','#28a745'],['#2aabee','#1a8cd8'],['#5e5ce6','#4b4acf'],['#bf5af2','#a347d1'],['#ff9f0a','#e8900a']];
+
+function loadData(){try{const d=JSON.parse(localStorage.getItem(STORAGE_KEY));return d&&d.habits?d:{habits:[]}}catch{return{habits:[]}}}
+function saveData(d){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(d))}catch{}}
+function getElapsed(qd){
+  const diff=Math.max(0,(Date.now()-new Date(qd).getTime())/1000);
+  const years=Math.floor(diff/31536000);const rem0=diff%31536000;
+  const months=Math.floor(rem0/2592000);const rem=rem0%2592000;
+  const days=Math.floor(rem/86400);const hours=Math.floor((rem%86400)/3600);
+  const minutes=Math.floor((rem%3600)/60);const seconds=Math.floor(rem%60);
+  return{totalSeconds:diff,years,months,days,hours,minutes,seconds};
+}
+function getCurrentMilestone(ts){let c=null,n=null;for(const m of MILESTONES){if(ts>=m.sec)c=m;else{n=m;break}}return{current:c,next:n}}
+function getMilestoneProgress(ts,nxt){if(!nxt)return 100;const i=MILESTONES.indexOf(nxt);const p=i>0?MILESTONES[i-1].sec:0;return Math.min(100,((ts-p)/(nxt.sec-p))*100)}
+function getEarnedBadges(ts){return MILESTONES.filter(m=>ts>=m.sec)}
+function getTopBadge(ts){const earned=getEarnedBadges(ts);return earned.length>0?earned[earned.length-1]:null}
+// From an array of old tokens, return only the one matching the highest milestone
+function getTopOldToken(oldTokens){
+  if(!oldTokens||oldTokens.length===0)return null;
+  let best=null,bestIdx=-1;
+  oldTokens.forEach(t=>{
+    const idx=MILESTONES.findIndex(m=>m.label===t.label);
+    if(idx>bestIdx){bestIdx=idx;best=t;}
+  });
+  return best;
+}
+
+// Risk calculations — Smoking (B=0.50, стремительное снижение)
+function riskFromSeconds(s){return 99/Math.sqrt(1+s/86400)+1}
+function speedFromSeconds(s){return -99/(2*86400*Math.pow(1+s/86400,1.5))}
+function getRiskDecimals(s){
+  const spd=Math.abs(speedFromSeconds(s));
+  const changePerTick=spd*0.1;
+  if(changePerTick<=0)return 8;
+  return Math.max(4,Math.ceil(-Math.log10(changePerTick))+1);
+}
+
+// Risk calculations — Alcohol (B=0.30, пологий старт, длинный хвост)
+// Источники: NIAAA 2023, Recovery Village, PMC Veterans study, J. Studies on Alcohol
+function alcRisk(s){return 88/Math.pow(1+s/86400,0.30)+4}
+function alcSpeed(s){return -88*0.30/(86400*Math.pow(1+s/86400,1.30))}
+function getAlcDecimals(s){
+  const spd=Math.abs(alcSpeed(s));
+  const changePerTick=spd*0.1;
+  if(changePerTick<=0)return 8;
+  return Math.max(4,Math.ceil(-Math.log10(changePerTick))+1);
+}
+
+function isAlcohol(name){return name&&/алкоголь/i.test(name)}
+function getRiskFns(name){
+  return isAlcohol(name)
+    ?{riskFn:alcRisk,decFn:getAlcDecimals}
+    :{riskFn:riskFromSeconds,decFn:getRiskDecimals};
+}
+
+function getRiskPhase(risk,alc){
+  if(alc){
+    if(risk>60)return{label:'Критическая зона',color:'#ff453a',bg:'rgba(255,69,58,0.12)'};
+    if(risk>35)return{label:'Опасный период',color:'#ff9f0a',bg:'rgba(255,159,10,0.12)'};
+    if(risk>15)return{label:'Становится легче',color:'#ffd60a',bg:'rgba(255,214,10,0.12)'};
+    return{label:'Безопасная зона',color:'#30d158',bg:'rgba(48,209,88,0.12)'};
+  }
+  if(risk>50)return{label:'Критическая зона',color:'#ff453a',bg:'rgba(255,69,58,0.12)'};
+  if(risk>20)return{label:'Опасный период',color:'#ff9f0a',bg:'rgba(255,159,10,0.12)'};
+  if(risk>8)return{label:'Становится легче',color:'#ffd60a',bg:'rgba(255,214,10,0.12)'};
+  return{label:'Минимальный шанс',color:'#30d158',bg:'rgba(48,209,88,0.12)'};
+}
+let currentQuoteIndex=Math.floor(Math.random()*QUOTES.length);
+function getQuote(){return QUOTES[currentQuoteIndex]}
+function refreshQuote(){
+  let next;
+  do{next=Math.floor(Math.random()*QUOTES.length)}while(next===currentQuoteIndex&&QUOTES.length>1);
+  currentQuoteIndex=next;
+  const el=document.querySelector('.quote-bar span');
+  if(el){el.style.opacity='0';el.style.transform='translateY(4px)';setTimeout(()=>{el.textContent=QUOTES[currentQuoteIndex];el.style.opacity='1';el.style.transform='translateY(0)'},200)}
+}
+function pad(n){return String(n).padStart(2,'0')}
+function fmtDate(d){return new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'})}
+
+function countAllTokens(){
+  let active=0,old=0;
+  data.habits.forEach(h=>{
+    if(getTopBadge(getElapsed(h.quitDate).totalSeconds))active++;
+    if(getTopOldToken(h.oldTokens))old++;
+  });
+  return{active,old,total:active+old};
+}
+
+let data=loadData();
+let activeHabitId=data.habits.length>0?data.habits[0].id:null;
+let sideMenuOpen=false;
+let activeModal=null;
+let editingId=null;
+let celebrationData=null;
+let checkedMilestones={};
+let formName='',formEmoji='',formColor='#2aabee',formDate='',formTime='';
+
+function render(){
+  const app=document.getElementById('app');
+  const h=data.habits.find(x=>x.id===activeHabitId);
+  const tokens=countAllTokens();
+  let html='';
+
+  // Top bar
+  html+=`<div class="topbar">
+    <h1>askeza <span style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:0.5px;vertical-align:middle">v0.1</span></h1>
+    <div class="topbar-right">
+      <button class="menu-btn" onclick="openAllTokens()" title="Жетоны">🏆 <span style="font-size:13px;font-weight:600;color:var(--gold)">${tokens.total}</span></button>
+      <button class="menu-btn" onclick="toggleSideMenu()">☰</button>
+    </div>
+  </div>`;
+
+  if(h){
+    const e=getElapsed(h.quitDate);
+    const{current,next}=getCurrentMilestone(e.totalSeconds);
+    const progress=getMilestoneProgress(e.totalSeconds,next);
+    const color=h.color||'#2aabee';
+
+    // Habit title
+    html+=`<div class="habit-header">
+      <span style="font-size:18px;font-weight:700">${h.name}</span>
+    </div>`;
+    html+=`<div class="habit-sub">свобода с ${fmtDate(h.quitDate)}</div>`;
+
+    // Quote
+    html+=`<div class="quote-bar"><span>${getQuote()}</span><button class="quote-refresh" onclick="refreshQuote()" title="Другая цитата">↻</button></div>`;
+
+    // Risk counter
+    const riskS=e.totalSeconds;
+    const _alc=isAlcohol(h.name);
+    const {riskFn,decFn}=getRiskFns(h.name);
+    const risk=riskFn(riskS);
+    const rDec=decFn(riskS);
+    const phase=getRiskPhase(risk,_alc);
+    const riskStr=risk.toFixed(rDec);
+    const dotIdx=riskStr.indexOf('.');
+    const rInt=riskStr.substring(0,dotIdx);
+    const rFrac=riskStr.substring(dotIdx+1);
+    html+=`<div class="risk-block" data-quit="${h.quitDate}" data-name="${h.name}">
+      <div class="risk-center">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:500">Шанс рецидива</div>
+        <div class="risk-number" id="risk-num">
+          <span class="risk-int">${rInt}</span><span class="risk-dot">.</span><span class="risk-dec">${rFrac}</span><span class="risk-pct">%</span>
+        </div>
+        <div><span class="risk-phase" style="color:${phase.color};background:${phase.bg}">${phase.label}</span></div>
+      </div>
+    </div>`;
+
+    // Timer bars
+    const barItems=[
+      {v:e.years,max:10,label:'лет',c:BAR_COLORS[0],key:'years'},
+      {v:e.months,max:12,label:'месяцев',c:BAR_COLORS[1],key:'months'},
+      {v:e.days,max:30,label:'дней',c:BAR_COLORS[2],key:'days'},
+      {v:e.hours,max:24,label:'часов',c:BAR_COLORS[3],key:'hours'},
+      {v:e.minutes,max:60,label:'минут',c:BAR_COLORS[4],key:'minutes'},
+      {v:e.seconds,max:60,label:'секунд',c:BAR_COLORS[5],key:'seconds'},
+    ];
+
+    html+=`<div class="timer-bars" data-quit="${h.quitDate}">`;
+    barItems.forEach(b=>{
+      const show=b.v>0;
+      const pct=show?Math.min(100,(b.v/b.max)*100):0;
+      html+=`<div class="tbar" data-bar-key="${b.key}" style="${show?'':'display:none'}"><div class="tbar-fill" style="width:${pct}%;background:linear-gradient(90deg,${b.c[0]},${b.c[1]})"><div class="tbar-text"><span class="tbar-num">${b.v}</span><span class="tbar-label">${b.label}</span></div></div></div>`;
+    });
+    html+=`</div>`;
+
+    // Milestone
+    html+=`<div class="milestone-section">
+      <div class="milestone-header">
+        <span class="milestone-label">${current?'Уровень '+current.rank+' · '+current.label:'🎯 Старт'}</span>
+        <span class="milestone-target">${next?'→ Уровень '+next.rank+' · '+next.label:'Уровень I достигнут!'}</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${progress}%;background:${color}"></div></div>
+    </div>`;
+
+    // Active token
+    const topBadge=getTopBadge(e.totalSeconds);
+    html+=`<div class="tokens-section" style="margin-top:14px">
+      <div class="tokens-title">Активный жетон</div>
+      ${topBadge?`<div class="tokens-row">
+        <span class="token earned">${topBadge.rank} · ${topBadge.label}</span>
+      </div>`:`<div class="tokens-row"><span class="token locked">🔒 Пока нет жетонов</span></div>`}
+    </div>`;
+
+    // Old tokens
+    const topOld=getTopOldToken(h.oldTokens||[]);
+    if(topOld){
+      html+=`<div class="tokens-section" style="margin-top:12px">
+        <div class="tokens-title">Лучший старый жетон</div>
+        <div class="tokens-row">
+          <span class="token" style="background:var(--surface);color:var(--text3)">${topOld.rank||topOld.emoji||'?'} · ${topOld.label}</span>
+        </div>
+      </div>`;
+    }
+
+    // Actions
+    html+=`<div class="action-row">
+      <button class="action-btn" onclick="editHabit('${h.id}')"><span class="action-icon">✏️</span>Изменить</button>
+      <button class="action-btn danger" onclick="resetStreak('${h.id}')"><span class="action-icon">🔄</span>Сброс</button>
+      <button class="action-btn danger" onclick="deleteHabit('${h.id}')"><span class="action-icon">🗑️</span>Удалить</button>
+    </div>`;
+
+  } else {
+    html+=`<div class="empty-state">
+      <div class="empty-icon">🔥</div>
+      <h2>Начни свой путь</h2>
+      <p>Добавь вредную привычку, которую хочешь бросить, и следи за прогрессом</p>
+      <button class="empty-btn" onclick="openAddModal()">Добавить привычку</button>
+    </div>`;
+  }
+
+  // Side menu
+  html+=`<div class="side-overlay ${sideMenuOpen?'open':''}" onclick="closeSideMenu()">
+    <div class="side-menu" onclick="event.stopPropagation()">
+      <div class="side-menu-title">Мои привычки</div>
+      ${data.habits.map(hab=>{
+        const el=getElapsed(hab.quitDate);
+        const isActive=hab.id===activeHabitId;
+        return `<div class="side-habit ${isActive?'active':''}" onclick="selectHabit('${hab.id}')">
+          <div>
+            <div class="side-habit-name">${hab.name}</div>
+            <div class="side-habit-sub">${el.months>0?el.months+' мес. ':''}${el.days} дн. ${el.hours} ч.</div>
+          </div>
+        </div>`;
+      }).join('')}
+      <div class="side-add" onclick="openAddModal()">+ Добавить привычку</div>
+    </div>
+  </div>`;
+
+  // Add/Edit modal
+  if(activeModal==='add'||activeModal==='edit'){
+    const isEdit=activeModal==='edit';
+    html+=`<div class="modal-overlay active" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div><h2>${isEdit?'Редактировать':'Бросить привычку'}</h2>
+      ${!isEdit?`<div class="form-group"><div class="form-label">Быстрый выбор</div><div class="preset-picker">
+        ${HABIT_PRESETS.map(p=>`<button class="preset-btn ${formName===p.name?'selected':''}" onclick="selectPreset('${p.name}','${p.color}')">${p.name}</button>`).join('')}
+      </div></div>`:''}
+      <div class="form-group"><div class="form-label">Название</div><input class="form-input" id="f-name" placeholder="Например: Курение" value="${formName}" oninput="formName=this.value"></div>
+      <div class="form-group"><div class="form-label">Дата (когда бросил/а)</div><input class="form-input" id="f-date" type="date" value="${formDate}" oninput="formDate=this.value"></div>
+      <div class="form-group"><div class="form-label">Время</div><input class="form-input" id="f-time" type="time" value="${formTime}" oninput="formTime=this.value"></div>
+      <button class="btn-primary" onclick="saveHabit()">${isEdit?'Сохранить':'Начать отсчёт!'}</button>
+      <button class="btn-secondary" onclick="closeModal()">Отмена</button>
+    </div></div>`;
+  }
+
+  // All tokens modal
+  if(activeModal==='allTokens'){
+    let activeTokens=[];
+    let oldTokens=[];
+    data.habits.forEach(hab=>{
+      const el=getElapsed(hab.quitDate);
+      const top=getTopBadge(el.totalSeconds);
+      if(top)activeTokens.push({rank:top.rank,label:top.label,habit:hab.name,color:hab.color});
+      const bestOld=getTopOldToken(hab.oldTokens||[]);
+      if(bestOld)oldTokens.push({rank:bestOld.rank||bestOld.emoji||'',label:bestOld.label,habit:hab.name,date:bestOld.date||''});
+    });
+
+    html+=`<div class="modal-overlay active" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div><h2>🏆 Все жетоны</h2>
+      <div class="all-tokens-section">
+        <div class="all-tokens-label active-label">🔥 Активные (${activeTokens.length})</div>
+        ${activeTokens.length>0?activeTokens.map(t=>`<div class="all-token-card">
+          <div class="all-token-emoji" style="font-size:16px;font-weight:700;font-family:Georgia,serif;min-width:40px;text-align:center">${t.rank}</div>
+          <div class="all-token-info">
+            <div class="all-token-habit">${t.habit}</div>
+            <div class="all-token-detail">${t.label}</div>
+          </div>
+          <div class="all-token-badge active-badge">Активный</div>
+        </div>`).join(''):`<div style="font-size:13px;color:var(--text3);padding:8px 0">Пока нет активных жетонов</div>`}
+      </div>
+      ${oldTokens.length>0?`<div class="all-tokens-section">
+        <div class="all-tokens-label old-label">📦 Старые (${oldTokens.length})</div>
+        ${oldTokens.map(t=>`<div class="all-token-card old">
+          <div class="all-token-emoji" style="font-size:16px;font-weight:700;font-family:Georgia,serif;min-width:40px;text-align:center">${t.rank}</div>
+          <div class="all-token-info">
+            <div class="all-token-habit">${t.habit}</div>
+            <div class="all-token-detail">${t.label}${t.date?' · сброс '+t.date:''}</div>
+          </div>
+          <div class="all-token-badge old-badge">Старый</div>
+        </div>`).join('')}
+      </div>`:''}
+      <button class="btn-secondary" onclick="closeModal()">Закрыть</button>
+    </div></div>`;
+  }
+
+  // Celebration
+  if(celebrationData){
+    html+=`<div class="celebration active" onclick="closeCelebration()">
+      <div class="cel-emoji" style="font-size:56px;font-family:Georgia,serif;font-weight:700">${celebrationData.rank}</div>
+      <div class="cel-title" style="color:${celebrationData.color}">${celebrationData.title}</div>
+      <div class="cel-sub">${celebrationData.subtitle}</div>
+      <button class="btn-primary" onclick="closeCelebration()">Продолжить 💪</button>
+    </div>`;
+  }
+
+  app.innerHTML=html;
+}
+
+// === ACTIONS ===
+function toggleSideMenu(){sideMenuOpen=!sideMenuOpen;render()}
+function closeSideMenu(){sideMenuOpen=false;render()}
+function selectHabit(id){activeHabitId=id;sideMenuOpen=false;render()}
+function openAllTokens(){activeModal='allTokens';render()}
+
+function openAddModal(){
+  activeModal='add';editingId=null;sideMenuOpen=false;
+  formName='';formEmoji='';formColor='#2aabee';
+  const n=new Date();formDate=n.toISOString().split('T')[0];formTime=pad(n.getHours())+':'+pad(n.getMinutes());
+  render();
+}
+function selectPreset(n,c){formName=n;formColor=c;document.getElementById('f-name').value=n;render()}
+function closeModal(e){if(e&&e.target!==e.currentTarget)return;activeModal=null;editingId=null;render()}
+
+function saveHabit(){
+  const name=formName.trim();if(!name)return;
+  const qd=new Date(formDate+'T'+(formTime||'00:00')).toISOString();
+  if(editingId){
+    const h=data.habits.find(x=>x.id===editingId);
+    if(h){h.name=name;h.color=formColor;h.quitDate=qd}
+  }else{
+    const newH={id:'h_'+Date.now(),name,emoji:formEmoji,color:formColor,quitDate:qd,bestStreak:0,oldTokens:[]};
+    data.habits.push(newH);
+    activeHabitId=newH.id;
+  }
+  saveData(data);activeModal=null;editingId=null;render();
+}
+
+function editHabit(id){
+  const h=data.habits.find(x=>x.id===id);if(!h)return;
+  activeModal='edit';editingId=id;formName=h.name;formEmoji=h.emoji;formColor=h.color;
+  const d=new Date(h.quitDate);formDate=d.toISOString().split('T')[0];formTime=pad(d.getHours())+':'+pad(d.getMinutes());
+  render();
+}
+
+function resetStreak(id){
+  if(!confirm('Сбросить отсчёт? Текущий жетон перейдёт в «старые».'))return;
+  const h=data.habits.find(x=>x.id===id);
+  if(h){
+    const el=getElapsed(h.quitDate);
+    h.bestStreak=Math.max(h.bestStreak||0,el.days);
+    if(!h.oldTokens)h.oldTokens=[];
+    const topM=getTopBadge(el.totalSeconds);
+    if(topM){
+      const resetDate=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'short'});
+      h.oldTokens.push({rank:topM.rank,label:topM.label,date:resetDate});
+    }
+    h.quitDate=new Date().toISOString();
+    checkedMilestones[h.id]=0;
+  }
+  saveData(data);render();
+}
+
+function deleteHabit(id){
+  if(!confirm('Удалить эту привычку?'))return;
+  data.habits=data.habits.filter(x=>x.id!==id);
+  if(activeHabitId===id)activeHabitId=data.habits.length>0?data.habits[0].id:null;
+  saveData(data);render();
+}
+
+function closeCelebration(){celebrationData=null;render()}
+
+function spawnConfetti(){
+  const cols=['#ffd60a','#ff453a','#30d158','#2aabee','#bf5af2','#ff9f0a'];
+  for(let i=0;i<50;i++){const el=document.createElement('div');el.className='confetti-piece';el.style.left=Math.random()*100+'vw';el.style.background=cols[Math.floor(Math.random()*cols.length)];el.style.animationDelay=Math.random()*0.8+'s';el.style.animationDuration=(1.5+Math.random()*1.5)+'s';el.style.width=(5+Math.random()*6)+'px';el.style.height=(5+Math.random()*6)+'px';document.body.appendChild(el);setTimeout(()=>el.remove(),3000)}
+}
+
+// === TIMER LOOP ===
+function updateTimers(){
+  document.querySelectorAll('.timer-bars').forEach(container=>{
+    const quit=container.dataset.quit;if(!quit)return;
+    const e=getElapsed(quit);
+    const barData=[
+      {v:e.years,max:10,key:'years'},
+      {v:e.months,max:12,key:'months'},
+      {v:e.days,max:30,key:'days'},
+      {v:e.hours,max:24,key:'hours'},
+      {v:e.minutes,max:60,key:'minutes'},
+      {v:e.seconds,max:60,key:'seconds'},
+    ];
+    barData.forEach(b=>{
+      const tbar=container.querySelector(`[data-bar-key="${b.key}"]`);
+      if(!tbar)return;
+      if(b.v>0){
+        tbar.style.display='';
+        const fill=tbar.querySelector('.tbar-fill');
+        if(fill)fill.style.width=Math.min(100,(b.v/b.max)*100)+'%';
+        const num=tbar.querySelector('.tbar-num');
+        if(num)num.textContent=b.v;
+      }else{
+        tbar.style.display='none';
+      }
+    });
+  });
+
+  // Check milestones
+  data.habits.forEach(h=>{
+    const e=getElapsed(h.quitDate);const key=h.id;
+    if(!checkedMilestones[key])checkedMilestones[key]=0;
+    const earned=getEarnedBadges(e.totalSeconds);
+    if(earned.length>checkedMilestones[key]){
+      const m=earned[earned.length-1];checkedMilestones[key]=earned.length;
+      const diff=e.totalSeconds-m.sec;
+      if(diff<3&&!celebrationData){
+        celebrationData={rank:m.rank,title:`Уровень ${m.rank}`,subtitle:`${h.name} · ${m.label}`,color:h.color};
+        spawnConfetti();render();
+      }
+    }
+  });
+
+  const h=data.habits.find(x=>x.id===activeHabitId);
+  if(h){
+    const e=getElapsed(h.quitDate);
+    const{next}=getCurrentMilestone(e.totalSeconds);
+    const p=getMilestoneProgress(e.totalSeconds,next);
+    const fill=document.querySelector('.progress-fill');
+    if(fill)fill.style.width=p+'%';
+  }
+
+  requestAnimationFrame(updateTimers);
+}
+
+// Init
+data.habits.forEach(h=>{
+  if(!h.oldTokens)h.oldTokens=[];
+  checkedMilestones[h.id]=getEarnedBadges(getElapsed(h.quitDate).totalSeconds).length;
+});
+if(!activeHabitId&&data.habits.length>0)activeHabitId=data.habits[0].id;
+render();requestAnimationFrame(updateTimers);
+
+// Risk counter — 10fps update
+setInterval(()=>{
+  const block=document.querySelector('.risk-block');
+  if(!block)return;
+  const quit=block.dataset.quit;if(!quit)return;
+  const name=block.dataset.name||'';
+  const s=(Date.now()-new Date(quit).getTime())/1000;
+  const alc=isAlcohol(name);
+  const {riskFn,decFn}=getRiskFns(name);
+  const risk=riskFn(s);
+  const dec=decFn(s);
+  const str=risk.toFixed(dec);
+  const di=str.indexOf('.');
+  const phase=getRiskPhase(risk,alc);
+  const el=document.getElementById('risk-num');
+  if(el){
+    el.querySelector('.risk-int').textContent=str.substring(0,di);
+    el.querySelector('.risk-dec').textContent=str.substring(di+1);
+    el.querySelector('.risk-int').style.color=phase.color;
+  }
+  const badge=block.querySelector('.risk-phase');
+  if(badge){badge.textContent=phase.label;badge.style.color=phase.color;badge.style.background=phase.bg}
+},100);
+</script>
+</body>
+</html>
