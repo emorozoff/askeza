@@ -164,16 +164,27 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 /* === RISK CHART PAGE === */
 .chart-page{position:fixed;inset:0;background:var(--bg);z-index:300;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.25,1,0.5,1);display:flex;flex-direction:column;padding-top:var(--safe-top)}
 .chart-page.open{transform:translateY(0)}
-.chart-topbar{display:flex;align-items:center;padding:14px 20px 10px;gap:12px}
+.chart-topbar{display:flex;align-items:center;padding:14px 20px 8px;gap:12px}
 .chart-back{background:none;border:none;color:var(--accent);font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;padding:4px 0;display:flex;align-items:center;gap:4px}
 .chart-title{font-size:17px;font-weight:700;color:var(--text)}
-.chart-subtitle{font-size:12px;color:var(--text3);text-align:center;margin-bottom:8px;padding:0 20px}
-.chart-canvas-wrap{flex:1;padding:0 16px 0;min-height:0}
-.chart-canvas-wrap canvas{width:100%!important;display:block}
-.chart-legend{display:flex;flex-wrap:wrap;gap:8px;padding:12px 20px 8px;justify-content:center}
+.chart-live{text-align:center;padding:4px 20px 6px}
+.chart-live-num{display:inline-flex;align-items:baseline;gap:1px;font-variant-numeric:tabular-nums}
+.clr-int{font-size:42px;font-weight:700;line-height:1}
+.clr-dot{font-size:32px;font-weight:700;line-height:1}
+.clr-dec{font-size:22px;font-weight:600;line-height:1;opacity:.75}
+.clr-pct{font-size:20px;font-weight:600;margin-left:2px;opacity:.45;line-height:1}
+.clr-phase{font-size:12px;font-weight:600;margin-top:4px}
+.chart-motive{margin:0 20px 8px;padding:10px 14px;background:rgba(48,209,88,0.1);border-radius:12px;font-size:13px;font-weight:600;color:#30d158;text-align:center;animation:fadeUp .3s ease-out}
+.chart-range{display:flex;gap:6px;padding:0 20px 8px;justify-content:center}
+.crb{background:var(--surface);border:none;border-radius:20px;padding:6px 16px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s}
+.crb.active{background:var(--accent);color:#fff}
+.crb:active{transform:scale(0.95)}
+.chart-canvas-wrap{flex:1;padding:0 12px;min-height:0;position:relative;touch-action:none}
+.chart-canvas-wrap canvas{width:100%!important;display:block;cursor:crosshair}
+.chart-legend{display:flex;flex-wrap:wrap;gap:8px;padding:8px 20px 6px;justify-content:center}
 .chart-leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
 .chart-leg-dot{width:8px;height:8px;border-radius:50%}
-.chart-info{padding:8px 20px 16px;font-size:12px;color:var(--text3);text-align:center;line-height:1.5}
+.chart-info{padding:4px 20px 12px;font-size:11px;color:var(--text3);text-align:center;line-height:1.5}
 
 /* === CELEBRATION === */
 .celebration{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,0.8);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);z-index:500;opacity:0;pointer-events:none;transition:opacity 0.3s}
@@ -304,12 +315,12 @@ function getRiskPhase(risk,alc){
     if(risk>60)return{label:'Критическая зона',color:'#ff453a',bg:'rgba(255,69,58,0.12)'};
     if(risk>35)return{label:'Опасный период',color:'#ff9f0a',bg:'rgba(255,159,10,0.12)'};
     if(risk>15)return{label:'Становится легче',color:'#ffd60a',bg:'rgba(255,214,10,0.12)'};
-    return{label:'Безопасная зона',color:'#30d158',bg:'rgba(48,209,88,0.12)'};
+    return{label:'Минимальный риск',color:'#30d158',bg:'rgba(48,209,88,0.12)'};
   }
   if(risk>50)return{label:'Критическая зона',color:'#ff453a',bg:'rgba(255,69,58,0.12)'};
   if(risk>20)return{label:'Опасный период',color:'#ff9f0a',bg:'rgba(255,159,10,0.12)'};
   if(risk>8)return{label:'Становится легче',color:'#ffd60a',bg:'rgba(255,214,10,0.12)'};
-  return{label:'Минимальный шанс',color:'#30d158',bg:'rgba(48,209,88,0.12)'};
+  return{label:'Минимальный риск',color:'#30d158',bg:'rgba(48,209,88,0.12)'};
 }
 let currentQuoteIndex=Math.floor(Math.random()*QUOTES.length);
 function getQuote(){return QUOTES[currentQuoteIndex]}
@@ -340,6 +351,8 @@ let editingId=null;
 let celebrationData=null;
 let checkedMilestones={};
 let formName='',formEmoji='',formColor='#2aabee',formDate='',formTime='';
+let chartRange=365;
+let chartLiveInterval=null;
 
 function render(){
   const app=document.getElementById('app');
@@ -531,21 +544,41 @@ function render(){
   }
 
   // Risk chart page
-  html+=`<div class="chart-page ${activeModal==='riskChart'?'open':''}" id="chart-page">
-    <div class="chart-topbar">
-      <button class="chart-back" onclick="closeRiskChart()">‹ Назад</button>
-      <div class="chart-title">Шанс рецидива</div>
-    </div>
-    <div class="chart-subtitle" id="chart-subtitle"></div>
-    <div class="chart-canvas-wrap"><canvas id="risk-chart-canvas"></canvas></div>
-    <div class="chart-legend">
-      <div class="chart-leg-item"><div class="chart-leg-dot" style="background:#ff453a"></div>Критическая зона</div>
-      <div class="chart-leg-item"><div class="chart-leg-dot" style="background:#ff9f0a"></div>Опасный период</div>
-      <div class="chart-leg-item"><div class="chart-leg-dot" style="background:#ffd60a"></div>Становится легче</div>
-      <div class="chart-leg-item"><div class="chart-leg-dot" style="background:#30d158"></div>Безопасная зона</div>
-    </div>
-    <div class="chart-info">Чем дольше ты держишься — тем ниже риск срыва.<br>График рассчитан по научным данным.</div>
-  </div>`;
+  {
+    const ch=data.habits.find(x=>x.id===activeHabitId);
+    const chAlc=ch?isAlcohol(ch.name):false;
+    const chRisk=ch?getRiskFns(ch.name).riskFn(getElapsed(ch.quitDate).totalSeconds):100;
+    const chPhase=ch?getRiskPhase(chRisk,chAlc):{color:'#fff',label:''};
+    const chStr=chRisk.toFixed(1);const chDot=chStr.indexOf('.');
+    const showMotive=ch&&chRisk<50;
+    html+=`<div class="chart-page ${activeModal==='riskChart'?'open':''}" id="chart-page">
+      <div class="chart-topbar">
+        <button class="chart-back" onclick="closeRiskChart()">‹ Назад</button>
+        <div class="chart-title">Шанс рецидива</div>
+      </div>
+      <div class="chart-live">
+        <div class="chart-live-num">
+          <span class="clr-int" style="color:${chPhase.color}">${chStr.substring(0,chDot)}</span><span class="clr-dot" style="color:${chPhase.color}">.</span><span class="clr-dec">${chStr.substring(chDot+1)}</span><span class="clr-pct">%</span>
+        </div>
+        <div class="clr-phase" style="color:${chPhase.color}">${chPhase.label}</div>
+      </div>
+      ${showMotive?`<div class="chart-motive">🎯 Самый сложный период уже позади</div>`:''}
+      <div class="chart-range">
+        <button class="crb ${chartRange===30?'active':''}" data-days="30" onclick="setChartRange(30)">1 мес</button>
+        <button class="crb ${chartRange===90?'active':''}" data-days="90" onclick="setChartRange(90)">3 мес</button>
+        <button class="crb ${chartRange===180?'active':''}" data-days="180" onclick="setChartRange(180)">6 мес</button>
+        <button class="crb ${chartRange===365?'active':''}" data-days="365" onclick="setChartRange(365)">1 год</button>
+      </div>
+      <div class="chart-canvas-wrap"><canvas id="risk-chart-canvas"></canvas></div>
+      <div class="chart-legend">
+        <div class="chart-leg-item"><div class="chart-leg-dot" style="background:#ff453a"></div>Критическая зона</div>
+        <div class="chart-leg-item"><div class="chart-leg-dot" style="background:#ff9f0a"></div>Опасный период</div>
+        <div class="chart-leg-item"><div class="chart-leg-dot" style="background:#ffd60a"></div>Становится легче</div>
+        <div class="chart-leg-item"><div class="chart-leg-dot" style="background:#30d158"></div>Минимальный риск</div>
+      </div>
+      <div class="chart-info">Проведи пальцем по графику — увидишь % в любой момент времени</div>
+    </div>`;
+  }
 
   // Celebration
   if(celebrationData){
@@ -692,136 +725,170 @@ if(!activeHabitId&&data.habits.length>0)activeHabitId=data.habits[0].id;
 render();requestAnimationFrame(updateTimers);
 
 // === RISK CHART ===
-function openRiskChart(){activeModal='riskChart';render();setTimeout(drawRiskChart,50)}
-function closeRiskChart(){activeModal=null;render()}
 
-function drawRiskChart(){
-  const canvas=document.getElementById('risk-chart-canvas');
-  if(!canvas)return;
-  const h=data.habits.find(x=>x.id===activeHabitId);
-  if(!h)return;
+function openRiskChart(){
+  activeModal='riskChart';
+  render();
+  setTimeout(()=>{
+    drawRiskChart(null);
+    setupChartInteraction();
+    if(chartLiveInterval)clearInterval(chartLiveInterval);
+    chartLiveInterval=setInterval(updateChartLive,100);
+  },50);
+}
 
+function closeRiskChart(){
+  activeModal=null;
+  if(chartLiveInterval){clearInterval(chartLiveInterval);chartLiveInterval=null;}
+  render();
+}
+
+function setChartRange(days){
+  chartRange=days;
+  document.querySelectorAll('.crb').forEach(b=>{b.classList.toggle('active',parseInt(b.dataset.days)===days)});
+  drawRiskChart(null);
+}
+
+function updateChartLive(){
+  const h=data.habits.find(x=>x.id===activeHabitId);if(!h)return;
+  const alc=isAlcohol(h.name);
+  const {riskFn,decFn}=getRiskFns(h.name);
+  const s=(Date.now()-new Date(h.quitDate).getTime())/1000;
+  const risk=riskFn(s);
+  const str=risk.toFixed(decFn(s));
+  const di=str.indexOf('.');
+  const phase=getRiskPhase(risk,alc);
+  const iEl=document.querySelector('.clr-int');
+  const dEl=document.querySelector('.clr-dot');
+  const fEl=document.querySelector('.clr-dec');
+  if(iEl){iEl.textContent=str.substring(0,di);iEl.style.color=phase.color}
+  if(dEl){dEl.style.color=phase.color}
+  if(fEl)fEl.textContent=str.substring(di+1);
+  const pEl=document.querySelector('.clr-phase');
+  if(pEl){pEl.textContent=phase.label;pEl.style.color=phase.color}
+}
+
+function setupChartInteraction(){
+  const canvas=document.getElementById('risk-chart-canvas');if(!canvas)return;
+  const pad={left:42,right:16};
+  function getDay(clientX){
+    const rect=canvas.getBoundingClientRect();
+    const cw=rect.width-pad.left-pad.right;
+    const x=clientX-rect.left-pad.left;
+    return Math.max(0,Math.min(chartRange,(x/cw)*chartRange));
+  }
+  canvas.addEventListener('touchstart',e=>{e.preventDefault();drawRiskChart(getDay(e.touches[0].clientX))},{passive:false});
+  canvas.addEventListener('touchmove',e=>{e.preventDefault();drawRiskChart(getDay(e.touches[0].clientX))},{passive:false});
+  canvas.addEventListener('touchend',()=>{setTimeout(()=>drawRiskChart(null),2000)});
+  canvas.addEventListener('mousemove',e=>drawRiskChart(getDay(e.clientX)));
+  canvas.addEventListener('mouseleave',()=>drawRiskChart(null));
+}
+
+function drawRiskChart(touchDay){
+  const canvas=document.getElementById('risk-chart-canvas');if(!canvas)return;
+  const h=data.habits.find(x=>x.id===activeHabitId);if(!h)return;
   const alc=isAlcohol(h.name);
   const {riskFn}=getRiskFns(h.name);
   const elapsed=getElapsed(h.quitDate);
   const currentDays=elapsed.totalSeconds/86400;
+  const xMax=chartRange;
 
-  // Canvas size
   const wrap=canvas.parentElement;
   const W=wrap.clientWidth;
-  const H=Math.min(wrap.clientHeight||260, 260);
-  canvas.width=W*2; canvas.height=H*2;
-  canvas.style.height=H+'px';
-  const ctx=canvas.getContext('2d');
-  ctx.scale(2,2);
+  const H=Math.min(230,wrap.clientHeight||230);
+  canvas.width=W*2;canvas.height=H*2;canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');ctx.scale(2,2);
 
-  const pad={top:16,right:16,bottom:44,left:42};
-  const cw=W-pad.left-pad.right;
-  const ch=H-pad.top-pad.bottom;
+  const pad={top:14,right:16,bottom:32,left:42};
+  const cw=W-pad.left-pad.right,ch=H-pad.top-pad.bottom;
+  function xPx(d){return pad.left+d/xMax*cw}
+  function yPx(r){return pad.top+ch-(Math.min(r,100)/100)*ch}
 
-  // X range: always 0..365 days
-  const xMax=365;
-  const yMax=100;
-
-  function xPx(days){return pad.left+days/xMax*cw}
-  function yPx(risk){return pad.top+ch-(risk/yMax)*ch}
-
-  // Phase zone backgrounds
-  const phases=alc
+  // Phase zones
+  const zones=alc
     ?[[60,100,'rgba(255,69,58,0.13)'],[35,60,'rgba(255,159,10,0.10)'],[15,35,'rgba(255,214,10,0.08)'],[0,15,'rgba(48,209,88,0.09)']]
     :[[50,100,'rgba(255,69,58,0.13)'],[20,50,'rgba(255,159,10,0.10)'],[8,20,'rgba(255,214,10,0.08)'],[0,8,'rgba(48,209,88,0.09)']];
-  phases.forEach(([lo,hi,col])=>{
-    ctx.fillStyle=col;
-    ctx.fillRect(pad.left, yPx(hi), cw, yPx(lo)-yPx(hi));
-  });
+  zones.forEach(([lo,hi,col])=>{ctx.fillStyle=col;ctx.fillRect(pad.left,yPx(hi),cw,yPx(lo)-yPx(hi))});
 
-  // Grid Y lines
-  ctx.strokeStyle='rgba(255,255,255,0.06)';
+  // Grid
   ctx.lineWidth=0.8;
   [0,25,50,75,100].forEach(y=>{
+    ctx.strokeStyle='rgba(255,255,255,0.06)';
     ctx.beginPath();ctx.moveTo(pad.left,yPx(y));ctx.lineTo(pad.left+cw,yPx(y));ctx.stroke();
+    ctx.fillStyle='rgba(142,142,147,0.8)';ctx.font='500 9px Inter,-apple-system,sans-serif';ctx.textAlign='right';
+    ctx.fillText(y+'%',pad.left-5,yPx(y)+3);
   });
 
-  // Y axis labels
-  ctx.fillStyle='rgba(142,142,147,0.8)';
-  ctx.font='500 9px Inter,-apple-system,sans-serif';
-  ctx.textAlign='right';
-  [0,25,50,75,100].forEach(y=>{
-    ctx.fillText(y+'%', pad.left-5, yPx(y)+3);
-  });
-
-  // X axis labels
-  const xTicks=[{d:1,l:'1д'},{d:7,l:'1н'},{d:30,l:'1м'},{d:90,l:'3м'},{d:180,l:'6м'},{d:365,l:'1г'}];
-  ctx.fillStyle='rgba(142,142,147,0.8)';
+  // X ticks — adaptive
+  const xTicks=xMax<=30?[{d:1,l:'1д'},{d:7,l:'1н'},{d:14,l:'2н'},{d:30,l:'1м'}]
+    :xMax<=90?[{d:7,l:'1н'},{d:30,l:'1м'},{d:60,l:'2м'},{d:90,l:'3м'}]
+    :xMax<=180?[{d:30,l:'1м'},{d:60,l:'2м'},{d:90,l:'3м'},{d:180,l:'6м'}]
+    :[{d:1,l:'1д'},{d:7,l:'1н'},{d:30,l:'1м'},{d:90,l:'3м'},{d:180,l:'6м'},{d:365,l:'1г'}];
   ctx.textAlign='center';
   xTicks.forEach(t=>{
+    if(t.d>xMax)return;
     const x=xPx(t.d);
-    ctx.fillText(t.l, x, H-pad.bottom+14);
-    ctx.strokeStyle='rgba(255,255,255,0.06)';
-    ctx.lineWidth=0.8;
+    ctx.fillStyle='rgba(142,142,147,0.8)';ctx.fillText(t.l,x,H-pad.bottom+12);
+    ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.8;
     ctx.beginPath();ctx.moveTo(x,pad.top);ctx.lineTo(x,pad.top+ch);ctx.stroke();
   });
 
-  // Risk curve — gradient stroke
+  // Curve
   const grad=ctx.createLinearGradient(pad.left,0,pad.left+cw,0);
-  grad.addColorStop(0,'#ff453a');
-  grad.addColorStop(0.12,'#ff9f0a');
-  grad.addColorStop(0.3,'#ffd60a');
-  grad.addColorStop(1,'#30d158');
-  ctx.strokeStyle=grad;
-  ctx.lineWidth=2.5;
-  ctx.lineJoin='round';
-  ctx.beginPath();
-  const steps=300;
-  for(let i=0;i<=steps;i++){
-    const d=i/steps*xMax;
-    const r=riskFn(d*86400);
-    const x=xPx(d), y=yPx(r);
-    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-  }
+  grad.addColorStop(0,'#ff453a');grad.addColorStop(0.15,'#ff9f0a');grad.addColorStop(0.35,'#ffd60a');grad.addColorStop(1,'#30d158');
+  ctx.strokeStyle=grad;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.beginPath();
+  for(let i=0;i<=300;i++){const d=i/300*xMax;const r=riskFn(d*86400);i===0?ctx.moveTo(xPx(d),yPx(r)):ctx.lineTo(xPx(d),yPx(r))}
   ctx.stroke();
 
-  // Current position
+  // Current position marker
   if(currentDays<=xMax){
-    const cx2=xPx(currentDays);
-    const cy2=yPx(riskFn(elapsed.totalSeconds));
+    const cx2=xPx(currentDays),cy2=yPx(riskFn(elapsed.totalSeconds));
     const phase=getRiskPhase(riskFn(elapsed.totalSeconds),alc);
-
-    // Vertical dashed line
-    ctx.strokeStyle='rgba(255,255,255,0.25)';
-    ctx.lineWidth=1;
-    ctx.setLineDash([4,3]);
-    ctx.beginPath();ctx.moveTo(cx2,pad.top);ctx.lineTo(cx2,pad.top+ch);ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Glow
-    const grd=ctx.createRadialGradient(cx2,cy2,0,cx2,cy2,14);
-    grd.addColorStop(0,'rgba(255,255,255,0.25)');
-    grd.addColorStop(1,'rgba(255,255,255,0)');
-    ctx.fillStyle=grd;
-    ctx.beginPath();ctx.arc(cx2,cy2,14,0,Math.PI*2);ctx.fill();
-
-    // Dot
-    ctx.fillStyle=phase.color;
-    ctx.beginPath();ctx.arc(cx2,cy2,5,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='#fff';
-    ctx.lineWidth=1.5;
-    ctx.stroke();
-
-    // Label "Ты здесь"
-    ctx.fillStyle='rgba(255,255,255,0.85)';
-    ctx.font='bold 10px Inter,-apple-system,sans-serif';
-    ctx.textAlign=currentDays>300?'right':'left';
-    ctx.fillText('Ты здесь', cx2+(currentDays>300?-8:8), cy2-9);
+    ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(cx2,pad.top);ctx.lineTo(cx2,pad.top+ch);ctx.stroke();ctx.setLineDash([]);
+    const grd=ctx.createRadialGradient(cx2,cy2,0,cx2,cy2,12);
+    grd.addColorStop(0,'rgba(255,255,255,0.22)');grd.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=grd;ctx.beginPath();ctx.arc(cx2,cy2,12,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=phase.color;ctx.beginPath();ctx.arc(cx2,cy2,5,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+    if(touchDay===null){
+      ctx.fillStyle='rgba(255,255,255,0.85)';ctx.font='bold 10px Inter,-apple-system,sans-serif';
+      ctx.textAlign=currentDays>xMax*0.8?'right':'left';
+      ctx.fillText('Ты здесь',cx2+(currentDays>xMax*0.8?-8:8),cy2-9);
+    }
   }
 
-  // Subtitle
-  const sub=document.getElementById('chart-subtitle');
-  if(sub){
-    const r=riskFn(elapsed.totalSeconds);
-    const phase=getRiskPhase(r,alc);
-    sub.textContent=`${h.name} · сейчас ${r.toFixed(1)}% · ${phase.label}`;
-    sub.style.color=phase.color;
+  // Touch crosshair
+  if(touchDay!==null){
+    const tx=xPx(touchDay),tr=riskFn(touchDay*86400),ty=yPx(tr);
+    const tPhase=getRiskPhase(tr,alc);
+    // Lines
+    ctx.strokeStyle='rgba(255,255,255,0.45)';ctx.lineWidth=1;ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(tx,pad.top);ctx.lineTo(tx,pad.top+ch);ctx.stroke();
+    ctx.strokeStyle='rgba(255,255,255,0.12)';
+    ctx.beginPath();ctx.moveTo(pad.left,ty);ctx.lineTo(pad.left+cw,ty);ctx.stroke();
+    // Glow dot
+    const dg=ctx.createRadialGradient(tx,ty,0,tx,ty,14);
+    dg.addColorStop(0,'rgba(255,255,255,0.28)');dg.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=dg;ctx.beginPath();ctx.arc(tx,ty,14,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=tPhase.color;ctx.beginPath();ctx.arc(tx,ty,5.5,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+    // Tooltip
+    const rStr=tr.toFixed(1)+'%';
+    const dLabel=touchDay<1?Math.round(touchDay*24)+' ч'
+      :touchDay<7?Math.round(touchDay)+' дн'
+      :touchDay<30?Math.round(touchDay/7)+' нед'
+      :touchDay<365?(touchDay/30).toFixed(1)+' мес'
+      :(touchDay/365).toFixed(1)+' г';
+    const boxW=82,boxH=38;
+    let bx=tx+10;if(bx+boxW>W-pad.right)bx=tx-boxW-10;
+    const by=Math.max(pad.top,Math.min(ty-boxH/2,pad.top+ch-boxH));
+    ctx.fillStyle='rgba(44,44,46,0.96)';
+    ctx.beginPath();ctx.roundRect(bx,by,boxW,boxH,8);ctx.fill();
+    ctx.fillStyle=tPhase.color;ctx.font='bold 15px Inter,-apple-system,sans-serif';ctx.textAlign='center';
+    ctx.fillText(rStr,bx+boxW/2,by+15);
+    ctx.fillStyle='rgba(142,142,147,0.9)';ctx.font='500 10px Inter,-apple-system,sans-serif';
+    ctx.fillText(dLabel,bx+boxW/2,by+30);
   }
 }
 
