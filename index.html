@@ -48,17 +48,21 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 /* === SIDE MENU === */
 .side-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;opacity:0;pointer-events:none;transition:opacity 0.25s ease}
 .side-overlay.open{opacity:1;pointer-events:all}
-.side-menu{position:fixed;top:0;right:0;bottom:0;width:280px;background:#2c2c2e;z-index:401;transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.25,1,0.5,1);padding:20px;padding-top:100px;overflow-y:auto;display:flex;flex-direction:column}
-.side-overlay.open .side-menu{transform:translateX(0)}
-.side-menu-title{font-size:15px;font-weight:600;margin-bottom:16px;padding:0 4px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px}
-.side-habit{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;margin-bottom:4px;cursor:pointer;transition:background 0.15s,transform 0.15s}
-.side-habit:active{transform:scale(0.98);background:var(--surface2)}
-.side-habit.active{background:var(--accent-dim)}
-.side-habit-emoji{font-size:20px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border-radius:10px}
-.side-habit-name{font-size:14px;font-weight:600;color:var(--text)}
-.side-habit-sub{font-size:12px;color:var(--text2);margin-top:1px}
-.side-add{display:flex;align-items:center;gap:8px;padding:12px;border-radius:12px;cursor:pointer;color:var(--accent);font-size:14px;font-weight:600;margin-top:8px;justify-content:center;transition:background 0.15s}
-.side-add:active{background:var(--accent-dim)}
+.side-menu{position:fixed;bottom:0;left:0;right:0;background:var(--bg);z-index:401;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.25,1,0.5,1);border-radius:20px 20px 0 0;max-height:85vh;display:flex;flex-direction:column;padding-bottom:var(--safe-bottom)}
+.side-overlay.open .side-menu{transform:translateY(0)}
+.side-menu-handle{width:36px;height:4px;background:rgba(255,255,255,0.18);border-radius:2px;margin:12px auto 0}
+.side-menu-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px}
+.side-menu-title{font-size:20px;font-weight:700;color:var(--text)}
+.side-menu-close{background:rgba(255,255,255,0.1);border:none;color:var(--text2);width:30px;height:30px;border-radius:50%;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;flex-shrink:0}
+.side-habits-list{overflow-y:auto;flex:1;padding:4px 16px 0}
+.side-habit{display:flex;align-items:center;gap:0;padding:0;border-radius:14px;margin-bottom:8px;cursor:pointer;transition:transform 0.15s,opacity 0.15s;background:var(--surface);overflow:hidden}
+.side-habit:active{transform:scale(0.98);opacity:0.8}
+.side-habit-strip{width:4px;align-self:stretch;flex-shrink:0}
+.side-habit-content{padding:14px 16px;flex:1}
+.side-habit-name{font-size:16px;font-weight:600;color:var(--text)}
+.side-habit-sub{font-size:13px;color:var(--text2);margin-top:2px}
+.side-add-btn{margin:12px 16px;padding:16px;background:var(--accent);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:transform 0.15s,opacity 0.15s;width:calc(100% - 32px)}
+.side-add-btn:active{transform:scale(0.98);opacity:0.85}
 
 /* === HABIT HEADER === */
 .habit-header{text-align:center;padding:10px 20px 4px;animation:fadeUp 0.3s ease-out}
@@ -457,6 +461,14 @@ function getRiskPhase(risk,alc){
   if(risk>8)return{label:'Становится легче',color:'#ffd60a',bg:'rgba(255,214,10,0.12)'};
   return{label:'Минимальный риск',color:'#30d158',bg:'rgba(48,209,88,0.12)'};
 }
+function formatMenuTime(el){
+  if(el.totalSeconds<120)return'только что начал';
+  if(el.years>0)return el.years+' '+(el.years===1?'год':el.years<5?'года':'лет')+(el.months>0?' '+el.months+' мес.':'');
+  if(el.months>0)return el.months+' мес.'+(el.days>0?' '+el.days+' дн.':'');
+  if(el.days>0)return el.days+' '+(el.days===1?'день':el.days<5?'дня':'дней');
+  if(el.hours>0)return el.hours+' ч.';
+  return Math.floor(el.totalSeconds/60)+' мин.';
+}
 function getChartMotive(risk){
   if(risk>=80)return'Первые шаги — самые тяжёлые. Именно сейчас ты сильнее всего';
   if(risk>=50)return'Тело перестраивается. Тяга временна — свобода навсегда';
@@ -509,7 +521,7 @@ function render(){
 
   // Top bar
   html+=`<div class="topbar">
-    <h1>askeza <span style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:0.5px;vertical-align:middle">v0.91</span></h1>
+    <h1>askeza <span style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:0.5px;vertical-align:middle">v0.92</span></h1>
     <div class="topbar-right">
       ${h?`<button class="menu-btn" onclick="openHabitActions('${h.id}')" style="font-size:22px;letter-spacing:1px;padding-bottom:10px">···</button>`:''}
       <button class="menu-btn" onclick="toggleSideMenu()">☰</button>
@@ -604,18 +616,27 @@ function render(){
   // Side menu
   html+=`<div class="side-overlay ${sideMenuOpen?'open':''}" onclick="closeSideMenu()">
     <div class="side-menu" onclick="event.stopPropagation()">
-      <div class="side-menu-title">Мои привычки</div>
-      ${data.habits.map(hab=>{
-        const el=getElapsed(hab.quitDate);
-        const isActive=hab.id===activeHabitId;
-        return `<div class="side-habit ${isActive?'active':''}" onclick="selectHabit('${hab.id}')">
-          <div>
-            <div class="side-habit-name">${hab.name}</div>
-            <div class="side-habit-sub">${el.months>0?el.months+' мес. ':''}${el.days} дн. ${el.hours} ч.</div>
-          </div>
-        </div>`;
-      }).join('')}
-      <div class="side-add" onclick="openAddPage()">+ Добавить привычку</div>
+      <div class="side-menu-handle"></div>
+      <div class="side-menu-header">
+        <div class="side-menu-title">Мои привычки</div>
+        <button class="side-menu-close" onclick="closeSideMenu()">✕</button>
+      </div>
+      <div class="side-habits-list">
+        ${data.habits.map(hab=>{
+          const el=getElapsed(hab.quitDate);
+          const isActive=hab.id===activeHabitId;
+          const col=hab.color||'#2aabee';
+          return `<div class="side-habit" onclick="selectHabit('${hab.id}')"
+            style="${isActive?'background:'+hexToRgba(col,0.15)+';box-shadow:inset 0 0 0 1.5px '+hexToRgba(col,0.35)+';':''}">
+            <div class="side-habit-strip" style="background:${col}"></div>
+            <div class="side-habit-content">
+              <div class="side-habit-name">${hab.name}</div>
+              <div class="side-habit-sub">${formatMenuTime(el)}</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <button class="side-add-btn" onclick="closeSideMenu();openAddPage()">+ Добавить привычку</button>
     </div>
   </div>`;
 
