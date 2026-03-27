@@ -323,7 +323,14 @@ const HABIT_PRESETS=[
   {name:'Сахар',color:'#ff375f'},
   {name:'Азартные игры',color:'#ffd60a'},
 ];
-const BAR_COLORS=[['#ffd60a','#e6b800'],['#30d158','#28a745'],['#2aabee','#1a8cd8'],['#5e5ce6','#4b4acf'],['#bf5af2','#a347d1'],['#ff9f0a','#e8900a']];
+const BAR_COLORS=[
+  ['#ff453a','#d12219'],  // years   — красный        (самый насыщенный)
+  ['#ff9f0a','#cc7200'],  // months  — оранжевый
+  ['#32ade6','#1888c0'],  // days    — голубой (cyan)
+  ['#5e5ce6','#3a38c0'],  // hours   — синий
+  ['#bf5af2','#9830cc'],  // minutes — фиолетовый
+  ['#9a9a9f','#6e6e73'],  // seconds — серый          (почти нейтральный)
+];
 
 function loadData(){try{const d=JSON.parse(localStorage.getItem(STORAGE_KEY));return d&&d.habits?d:{habits:[]}}catch{return{habits:[]}}}
 function saveData(d){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(d))}catch{}}
@@ -488,11 +495,11 @@ function render(){
     // Timer bars
     const barItems=[
       {v:e.years,  max:10, label:'лет',    c:BAR_COLORS[0], key:'years',   op:1.00},
-      {v:e.months, max:12, label:'месяцев',c:BAR_COLORS[1], key:'months',  op:1.00},
-      {v:e.days,   max:30, label:'дней',   c:BAR_COLORS[2], key:'days',    op:0.90},
-      {v:e.hours,  max:24, label:'часов',  c:BAR_COLORS[3], key:'hours',   op:0.60},
-      {v:e.minutes,max:60, label:'минут',  c:BAR_COLORS[4], key:'minutes', op:0.45},
-      {v:e.seconds,max:60, label:'секунд', c:BAR_COLORS[5], key:'seconds', op:0.32},
+      {v:e.months, max:12, label:'месяцев',c:BAR_COLORS[1], key:'months',  op:0.92},
+      {v:e.days,   max:30, label:'дней',   c:BAR_COLORS[2], key:'days',    op:0.82},
+      {v:e.hours,  max:24, label:'часов',  c:BAR_COLORS[3], key:'hours',   op:0.65},
+      {v:e.minutes,max:60, label:'минут',  c:BAR_COLORS[4], key:'minutes', op:0.50},
+      {v:e.seconds,max:60, label:'секунд', c:BAR_COLORS[5], key:'seconds', op:0.35},
     ];
 
     html+=`<div class="timer-bars" data-quit="${h.quitDate}">`;
