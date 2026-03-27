@@ -119,9 +119,9 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .tbar:nth-child(4){animation-delay:0.18s}
 .tbar:nth-child(5){animation-delay:0.22s}
 .tbar-fill{height:100%;border-radius:10px;transition:width 1s cubic-bezier(0.4,0,0.2,1);min-width:2px;animation:barGrow 0.8s ease-out both}
-.tbar-text{position:absolute;left:12px;top:0;height:100%;font-size:15px;font-weight:600;color:#fff;white-space:nowrap;display:flex;align-items:center;gap:5px;pointer-events:none}
-.tbar-text .tbar-num{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
-.tbar-text .tbar-label{font-size:12px;font-weight:500;opacity:0.75}
+.tbar-text{position:absolute;left:12px;top:0;height:100%;font-size:15px;font-weight:600;color:#fff;white-space:nowrap;display:flex;align-items:center;gap:5px;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,0.4)}
+.tbar-text .tbar-num{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;color:#fff}
+.tbar-text .tbar-label{font-size:12px;font-weight:500;color:#fff}
 
 /* === MILESTONE === */
 .milestone-section{padding:0 20px;margin-bottom:16px;animation:fadeUp 0.35s ease-out both;animation-delay:0.2s}
@@ -275,7 +275,7 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .add-presets{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:8px 20px 16px}
 .add-preset-card{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 12px 18px;background:var(--surface);border-radius:18px;cursor:pointer;transition:transform 0.15s,background 0.2s,box-shadow 0.2s;border:2px solid transparent;gap:8px;user-select:none}
 .add-preset-card:active{transform:scale(0.96)}
-.add-preset-card.sel{border-color:currentColor;box-shadow:0 0 0 1px currentColor}
+.add-preset-card.sel{border-color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.08)!important;box-shadow:none}
 .add-preset-emoji{font-size:34px;line-height:1}
 .add-preset-name{font-size:14px;font-weight:600;color:var(--text2)}
 .add-preset-card.sel .add-preset-name{font-weight:700}
@@ -491,6 +491,7 @@ let formName='',formEmoji='',formColor='#2aabee',formDate='',formTime='';
 let chartRange=365;
 let chartLiveInterval=null;
 let addPageSelectedPreset=null; // preset index 0-2 or 'custom'
+let pickerState={};
 
 function render(){
   const app=document.getElementById('app');
@@ -500,7 +501,7 @@ function render(){
 
   // Top bar
   html+=`<div class="topbar">
-    <h1>askeza <span style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:0.5px;vertical-align:middle">v0.7</span></h1>
+    <h1>askeza <span style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:0.5px;vertical-align:middle">v0.81</span></h1>
     <div class="topbar-right">
       ${h?`<button class="menu-btn" onclick="openHabitActions('${h.id}')" style="font-size:22px;letter-spacing:1px;padding-bottom:10px">···</button>`:''}
       <button class="menu-btn" onclick="toggleSideMenu()">☰</button>
@@ -556,7 +557,7 @@ function render(){
     barItems.forEach(b=>{
       const show=b.v>0;
       const pct=show?Math.min(100,(b.v/b.max)*100):0;
-      html+=`<div class="tbar" data-bar-key="${b.key}" style="${show?'':'display:none'};opacity:${b.op}"><div class="tbar-fill" style="width:${pct}%;background:linear-gradient(90deg,${b.c[0]},${b.c[1]})"><div class="tbar-text"><span class="tbar-num">${b.v}</span><span class="tbar-label">${b.label}</span></div></div></div>`;
+      html+=`<div class="tbar" data-bar-key="${b.key}" style="${show?'':'display:none'}"><div class="tbar-fill" style="opacity:${b.op};width:${pct}%;background:linear-gradient(90deg,${b.c[0]},${b.c[1]})"></div><div class="tbar-text"><span class="tbar-num">${b.v}</span><span class="tbar-label">${b.label}</span></div></div>`;
     });
     html+=`</div>`;
 
@@ -636,7 +637,7 @@ function render(){
   // Add habit page (full-screen slide-up, always in DOM)
   {
     const selP=addPageSelectedPreset!==null&&addPageSelectedPreset!=='custom'?HABIT_PRESETS[addPageSelectedPreset]:null;
-    const ctaColor=selP?selP.color:(addPageSelectedPreset==='custom'?'#2aabee':'#636366');
+    const ctaColor=addPageSelectedPreset!==null?'#34C759':'#636366';
     html+=`<div class="add-page ${activeModal==='addPage'?'open':''}" id="add-page">
       <div class="add-topbar">
         <button class="add-cancel" onclick="closeAddPage()">Отмена</button>
@@ -645,12 +646,12 @@ function render(){
       <div class="add-presets">
         ${HABIT_PRESETS.map((p,i)=>{
           const isSel=addPageSelectedPreset===i;
-          return`<div class="add-preset-card ${isSel?'sel':''}" style="color:${p.color}${isSel?';background:'+hexToRgba(p.color,0.12):''}" onclick="addSelectPreset(${i})">
+          return`<div class="add-preset-card ${isSel?'sel':''}" onclick="addSelectPreset(${i})">
             <div class="add-preset-emoji">${p.emoji}</div>
             <div class="add-preset-name">${p.name}</div>
           </div>`;
         }).join('')}
-        <div class="add-preset-card ${addPageSelectedPreset==='custom'?'sel':''}" style="color:#2aabee${addPageSelectedPreset==='custom'?';background:rgba(42,171,238,0.12)':''}" onclick="addSelectPreset('custom')">
+        <div class="add-preset-card ${addPageSelectedPreset==='custom'?'sel':''}" onclick="addSelectPreset('custom')">
           <div class="add-preset-emoji">✏️</div>
           <div class="add-preset-name">Своя</div>
         </div>
@@ -658,14 +659,21 @@ function render(){
       ${addPageSelectedPreset==='custom'?`<div class="add-custom-wrap"><input class="add-custom-input" id="add-name-input" placeholder="Название привычки" value="${formName}" oninput="formName=this.value" autocomplete="off" autocorrect="off"></div>`:''}
       <div class="picker-section">
         <div class="picker-section-label">Когда бросил(а)</div>
+        <div class="picker-row" style="margin-bottom:10px">
+          <div class="picker-hl"></div>
+          <div class="picker-fade"></div>
+          <div class="picker-col" id="picker-day" style="flex:0.7"></div>
+          <div class="picker-divider"></div>
+          <div class="picker-col" id="picker-month" style="flex:1.2"></div>
+          <div class="picker-divider"></div>
+          <div class="picker-col" id="picker-year" style="flex:1"></div>
+        </div>
         <div class="picker-row">
           <div class="picker-hl"></div>
           <div class="picker-fade"></div>
-          <div class="picker-col" id="picker-date" style="flex:1.6"></div>
-          <div class="picker-divider"></div>
-          <div class="picker-col" id="picker-hour" style="flex:0.8"></div>
+          <div class="picker-col" id="picker-hour"></div>
           <div class="picker-sep">:</div>
-          <div class="picker-col" id="picker-min" style="flex:0.8"></div>
+          <div class="picker-col" id="picker-min"></div>
         </div>
       </div>
       <button class="add-cta" id="add-cta-btn" style="background:${ctaColor}" onclick="saveNewHabit()" ${addPageSelectedPreset===null?'disabled':''}>Начать отсчёт 🔥</button>
@@ -849,11 +857,9 @@ function addSelectPreset(idx){
   const cards=document.querySelectorAll('.add-preset-card');
   cards.forEach((card,i)=>{
     const isCustom=i===HABIT_PRESETS.length;
-    const p=isCustom?null:HABIT_PRESETS[i];
-    const color=isCustom?'#2aabee':p.color;
     const isSel=(isCustom&&idx==='custom')||(!isCustom&&idx===i);
     card.classList.toggle('sel',isSel);
-    card.style.background=isSel?hexToRgba(color,0.12):'';
+    card.style.background='';
   });
   // Show/hide custom input
   let cw=document.querySelector('.add-custom-wrap');
@@ -875,9 +881,7 @@ function addSelectPreset(idx){
 }
 function updateAddCta(){
   const btn=document.getElementById('add-cta-btn');if(!btn)return;
-  const selP=addPageSelectedPreset!==null&&addPageSelectedPreset!=='custom'?HABIT_PRESETS[addPageSelectedPreset]:null;
-  const color=selP?selP.color:(addPageSelectedPreset==='custom'?'#2aabee':'#636366');
-  btn.style.background=color;
+  btn.style.background=addPageSelectedPreset!==null?'#34C759':'#636366';
   const ready=addPageSelectedPreset!==null&&(addPageSelectedPreset!=='custom'||formName.trim().length>0);
   btn.disabled=!ready;
 }
@@ -892,27 +896,37 @@ function saveNewHabit(){
   document.body.classList.remove('app-ready');render();
   setTimeout(()=>document.body.classList.add('app-ready'),450);
 }
+function updateFormDate(){
+  const d=new Date(pickerState.year,pickerState.month,pickerState.day+1,pickerState.hour,pickerState.min);
+  formDate=[d.getFullYear(),pad(d.getMonth()+1),pad(d.getDate())].join('-');
+  formTime=pad(d.getHours())+':'+pad(d.getMinutes());
+}
 function initAddPickers(){
   const ITEM_H=44,SPACER=88;
-  // Date items: today back 90 days
-  const dateItems=[];
-  const today=new Date();
-  for(let i=0;i<=90;i++){
-    const d=new Date(today);d.setDate(d.getDate()-i);
-    const value=d.toISOString().split('T')[0];
-    const label=i===0?'Сегодня':i===1?'Вчера':d.toLocaleDateString('ru-RU',{day:'numeric',month:'short'});
-    dateItems.push({label,value});
+  const now=new Date();
+  const curYear=now.getFullYear();
+  pickerState={year:curYear,month:now.getMonth(),day:now.getDate()-1,hour:now.getHours(),min:now.getMinutes()};
+  const yearItems=[];for(let y=curYear;y>=2010;y--)yearItems.push(String(y));
+  const monthNames=['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+  function getDays(y,m){const c=new Date(y,m+1,0).getDate();return Array.from({length:c},(_,i)=>String(i+1));}
+  function refreshDayDrum(){
+    const days=getDays(pickerState.year,pickerState.month);
+    const idx=Math.min(pickerState.day,days.length-1);pickerState.day=idx;
+    setupDrum('picker-day',days,idx,SPACER,ITEM_H,i=>{pickerState.day=i;updateFormDate();});
   }
   const hourItems=Array.from({length:24},(_,i)=>pad(i));
   const minItems=Array.from({length:60},(_,i)=>pad(i));
-  const now=new Date();
-  const curH=now.getHours(),curM=now.getMinutes();
-  setupDrum('picker-date',dateItems.map(d=>d.label),0,SPACER,ITEM_H,i=>{formDate=dateItems[i].value});
-  setupDrum('picker-hour',hourItems,curH,SPACER,ITEM_H,i=>{const p=formTime.split(':');formTime=hourItems[i]+':'+(p[1]||'00')});
-  setupDrum('picker-min',minItems,curM,SPACER,ITEM_H,i=>{const p=formTime.split(':');formTime=(p[0]||'00')+':'+minItems[i]});
+  setupDrum('picker-year',yearItems,0,SPACER,ITEM_H,i=>{pickerState.year=curYear-i;refreshDayDrum();updateFormDate();});
+  setupDrum('picker-month',monthNames,now.getMonth(),SPACER,ITEM_H,i=>{pickerState.month=i;refreshDayDrum();updateFormDate();});
+  setupDrum('picker-day',getDays(curYear,now.getMonth()),now.getDate()-1,SPACER,ITEM_H,i=>{pickerState.day=i;updateFormDate();});
+  setupDrum('picker-hour',hourItems,now.getHours(),SPACER,ITEM_H,i=>{pickerState.hour=i;updateFormDate();});
+  setupDrum('picker-min',minItems,now.getMinutes(),SPACER,ITEM_H,i=>{pickerState.min=i;updateFormDate();});
+  updateFormDate();
 }
 function setupDrum(id,items,defaultIdx,spacer,itemH,onChange){
-  const el=document.getElementById(id);if(!el)return;
+  const old=document.getElementById(id);if(!old)return;
+  const el=old.cloneNode(false);
+  old.parentNode.replaceChild(el,old);
   el.innerHTML=`<div style="height:${spacer}px;flex-shrink:0"></div>`+
     items.map(l=>`<div class="picker-item">${l}</div>`).join('')+
     `<div style="height:${spacer}px;flex-shrink:0"></div>`;
