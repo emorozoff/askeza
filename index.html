@@ -61,14 +61,44 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .side-add:active{background:var(--accent-dim)}
 
 /* === HABIT HEADER === */
-.habit-header{text-align:center;padding:8px 20px 4px;animation:fadeUp 0.3s ease-out}
-.habit-sub{text-align:center;font-size:13px;color:var(--text3);padding:0 20px 12px;font-weight:400}
+.habit-header{text-align:center;padding:10px 20px 4px;animation:fadeUp 0.3s ease-out}
+.habit-name-big{font-size:26px;font-weight:700;color:#fff;letter-spacing:-0.3px}
+.habit-sub{text-align:center;font-size:13px;color:var(--text3);padding:0 20px 10px;font-weight:400}
 
 /* === QUOTE === */
-.quote-bar{margin:0 20px 16px;padding:10px 14px 10px 16px;background:var(--surface);border-radius:12px;font-size:13px;color:var(--text2);line-height:1.5;text-align:center;font-style:italic;animation:fadeUp 0.35s ease-out both;animation-delay:0.05s;display:flex;align-items:center;gap:8px}
-.quote-bar span{flex:1;transition:opacity 0.2s,transform 0.2s}
-.quote-refresh{background:none;border:none;cursor:pointer;color:var(--text3);font-size:16px;padding:4px;flex-shrink:0;transition:transform 0.3s,color 0.2s;line-height:1}
-.quote-refresh:active{transform:rotate(180deg);color:var(--accent)}
+.quote-simple{margin:0 32px 14px;text-align:center;font-size:12px;color:var(--text3);line-height:1.6;font-style:italic;cursor:pointer;animation:fadeUp 0.35s ease-out both;animation-delay:0.05s;user-select:none}
+.quote-simple span{transition:opacity 0.2s,transform 0.2s;display:inline-block}
+.quote-simple:active{opacity:0.6}
+
+/* === PROGRESS CARD (milestone + token merged) === */
+.progress-card{margin:0 20px 16px;padding:16px;background:var(--surface);border-radius:16px;cursor:pointer;transition:transform 0.15s,opacity 0.15s;animation:fadeUp 0.35s ease-out both;animation-delay:0.25s}
+.progress-card:active{transform:scale(0.98);opacity:0.85}
+.pc-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.pc-rank{font-size:28px;font-weight:800;font-family:Georgia,serif;width:44px;text-align:center;line-height:1;flex-shrink:0}
+.pc-info{flex:1;min-width:0}
+.pc-current{font-size:14px;font-weight:600;color:var(--text)}
+.pc-next-label{font-size:12px;color:var(--text3);margin-top:2px}
+.pc-arrow{font-size:20px;color:var(--text3);opacity:0.6}
+.pc-bar-track{height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.pc-bar-fill{height:100%;border-radius:2px;transition:width 0.8s ease}
+.pc-footer{display:flex;justify-content:space-between}
+.pc-pct{font-size:12px;color:var(--text2);font-weight:600}
+.pc-time{font-size:12px;color:var(--text3)}
+
+/* === ACTIONS SHEET === */
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:450;opacity:0;pointer-events:none;transition:opacity 0.25s}
+.sheet-overlay.active{opacity:1;pointer-events:all}
+.sheet{position:fixed;bottom:0;left:0;right:0;background:#2c2c2e;border-radius:18px 18px 0 0;padding:0 16px calc(var(--safe-bottom,16px) + 12px);z-index:451;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.25,1,0.5,1)}
+.sheet-overlay.active .sheet{transform:translateY(0)}
+.sheet-handle{width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:10px auto 14px}
+.sheet-item{display:flex;align-items:center;gap:14px;width:100%;padding:14px 4px;border:none;background:none;font-family:inherit;font-size:16px;color:var(--text);cursor:pointer;text-align:left;border-bottom:1px solid rgba(255,255,255,0.06);transition:opacity 0.15s}
+.sheet-item:last-of-type{border-bottom:none}
+.sheet-item:active{opacity:0.5}
+.sheet-item.danger{color:var(--red)}
+.sheet-item.warn{color:#ff9f0a}
+.sheet-item-icon{font-size:20px;width:28px;text-align:center}
+.sheet-cancel{display:block;width:100%;padding:14px;background:var(--surface);border:none;border-radius:14px;font-size:16px;font-weight:600;color:var(--text2);cursor:pointer;font-family:inherit;margin-top:10px}
+.sheet-cancel:active{opacity:0.6}
 
 /* === RISK COUNTER === */
 .risk-block{margin:0 20px 16px;padding:16px;background:var(--surface);border-radius:14px;animation:fadeUp 0.35s ease-out both;animation-delay:0.08s}
@@ -379,7 +409,7 @@ function refreshQuote(){
   let next;
   do{next=Math.floor(Math.random()*QUOTES.length)}while(next===currentQuoteIndex&&QUOTES.length>1);
   currentQuoteIndex=next;
-  const el=document.querySelector('.quote-bar span');
+  const el=document.querySelector('.quote-simple span');
   if(el){el.style.opacity='0';el.style.transform='translateY(4px)';setTimeout(()=>{el.textContent=QUOTES[currentQuoteIndex];el.style.opacity='1';el.style.transform='translateY(0)'},200)}
 }
 function pad(n){return String(n).padStart(2,'0')}
@@ -413,9 +443,9 @@ function render(){
 
   // Top bar
   html+=`<div class="topbar">
-    <h1>askeza <span style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:0.5px;vertical-align:middle">v0.3</span></h1>
+    <h1>askeza <span style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:0.5px;vertical-align:middle">v0.4</span></h1>
     <div class="topbar-right">
-      <button class="menu-btn" onclick="openAllTokens()" title="Жетоны">🏆 <span style="font-size:13px;font-weight:600;color:var(--gold)">${tokens.total}</span></button>
+      ${h?`<button class="menu-btn" onclick="openHabitActions('${h.id}')" style="font-size:22px;letter-spacing:1px;padding-bottom:10px">···</button>`:''}
       <button class="menu-btn" onclick="toggleSideMenu()">☰</button>
     </div>
   </div>`;
@@ -427,13 +457,11 @@ function render(){
     const color=h.color||'#2aabee';
 
     // Habit title
-    html+=`<div class="habit-header">
-      <span style="font-size:18px;font-weight:700">${h.name}</span>
-    </div>`;
+    html+=`<div class="habit-header"><span class="habit-name-big">${h.name}</span></div>`;
     html+=`<div class="habit-sub">свобода с ${fmtDate(h.quitDate)}</div>`;
 
     // Quote
-    html+=`<div class="quote-bar"><span>${getQuote()}</span><button class="quote-refresh" onclick="refreshQuote()" title="Другая цитата">↻</button></div>`;
+    html+=`<div class="quote-simple" onclick="refreshQuote()"><span>${getQuote()}</span></div>`;
 
     // Risk counter
     const riskS=e.totalSeconds;
@@ -471,51 +499,31 @@ function render(){
     barItems.forEach(b=>{
       const show=b.v>0;
       const pct=show?Math.min(100,(b.v/b.max)*100):0;
-      html+=`<div class="tbar" data-bar-key="${b.key}" style="${show?'':'display:none'}"><div class="tbar-fill" style="width:${pct}%;background:linear-gradient(90deg,${b.c[0]},${b.c[1]})"><div class="tbar-text"><span class="tbar-num">${b.v}</span><span class="tbar-label">${b.label}</span></div></div></div>`;
+      html+=`<div class="tbar" data-bar-key="${b.key}" style="${show?'':'display:none'}"><div class="tbar-fill" style="width:${pct}%;background:${color}"><div class="tbar-text"><span class="tbar-num">${b.v}</span><span class="tbar-label">${b.label}</span></div></div></div>`;
     });
     html+=`</div>`;
 
-    // Milestone
-    html+=`<div class="milestone-section">
-      <div class="milestone-header">
-        <span class="milestone-label">${current?'Уровень '+current.rank+' · '+current.label:'🎯 Старт'}</span>
-        <span class="milestone-target">${next?'→ Уровень '+next.rank+' · '+next.label:'Уровень I достигнут!'}</span>
-      </div>
-      <div class="progress-track"><div class="progress-fill" style="width:${progress}%;background:${color}"></div></div>
-    </div>`;
-
-    // Active token
+    // Progress card (milestone + token merged)
     const topBadge=getTopBadge(e.totalSeconds);
-    const topIdx=topBadge?MILESTONES.indexOf(topBadge):- 1;
+    const topIdx=topBadge?MILESTONES.indexOf(topBadge):-1;
     const topTier=topIdx>=0?getTokenTier(topIdx):null;
-    const nextForHint=MILESTONES.find(m=>e.totalSeconds<m.sec);
-    const timeToNext=nextForHint?Math.max(0,nextForHint.sec-e.totalSeconds):0;
-    html+=`<div class="tokens-section" style="margin-top:14px" onclick="openTokensPage()">
-      <div class="tokens-title">Активный жетон ›</div>
-      ${topBadge?`<div class="tokens-row">
-        <span class="token earned" style="color:${topTier.color};background:${topTier.bg};border-color:${topTier.glow}">${topBadge.rank} · ${topBadge.label}</span>
-      </div>
-      ${nextForHint?`<div class="token-next-hint">До ${nextForHint.rank} · ${nextForHint.label}: <span>${formatTimeLeft(timeToNext)}</span></div>`:'<div class="token-next-hint" style="color:var(--gold)">Все жетоны получены!</div>'}
-      `:`<div class="tokens-row"><span class="token locked">🔒 Пока нет жетонов</span></div>
-      ${nextForHint?`<div class="token-next-hint">Первый жетон через: <span>${formatTimeLeft(timeToNext)}</span></div>`:''}`}
-    </div>`;
-
-    // Old tokens
-    const topOld=getTopOldToken(h.oldTokens||[]);
-    if(topOld){
-      html+=`<div class="tokens-section" style="margin-top:12px">
-        <div class="tokens-title">Лучший старый жетон</div>
-        <div class="tokens-row">
-          <span class="token" style="background:var(--surface);color:var(--text3)">${topOld.rank||topOld.emoji||'?'} · ${topOld.label}</span>
+    const nextIdx2=next?MILESTONES.indexOf(next):MILESTONES.length;
+    const nextTier2=getTokenTier(Math.min(nextIdx2,MILESTONES.length-1));
+    const timeToNext=next?Math.max(0,next.sec-e.totalSeconds):0;
+    html+=`<div class="progress-card" onclick="openTokensPage()">
+      <div class="pc-top">
+        <div class="pc-rank" style="color:${topTier?topTier.color:'var(--text3)'}">${topBadge?topBadge.rank:'—'}</div>
+        <div class="pc-info">
+          <div class="pc-current">${topBadge?topBadge.label+' · '+topTier.name:'Начало пути'}</div>
+          <div class="pc-next-label">${next?'→ '+next.rank+' · '+next.label:'Все уровни пройдены!'}</div>
         </div>
-      </div>`;
-    }
-
-    // Actions
-    html+=`<div class="action-row">
-      <button class="action-btn" onclick="editHabit('${h.id}')"><span class="action-icon">✏️</span>Изменить</button>
-      <button class="action-btn danger" onclick="resetStreak('${h.id}')"><span class="action-icon">🔄</span>Сброс</button>
-      <button class="action-btn danger" onclick="deleteHabit('${h.id}')"><span class="action-icon">🗑️</span>Удалить</button>
+        <div class="pc-arrow">›</div>
+      </div>
+      <div class="pc-bar-track"><div class="pc-bar-fill" style="width:${progress}%;background:${nextTier2.color}"></div></div>
+      <div class="pc-footer">
+        <span class="pc-pct">${Math.floor(progress)}%</span>
+        ${next?`<span class="pc-time">Осталось: ${formatTimeLeft(timeToNext)}</span>`:''}
+      </div>
     </div>`;
 
   } else {
@@ -544,6 +552,19 @@ function render(){
       <div class="side-add" onclick="openAddModal()">+ Добавить привычку</div>
     </div>
   </div>`;
+
+  // Habit actions sheet
+  if(activeModal==='habitActions'){
+    html+=`<div class="sheet-overlay active" onclick="closeHabitActions()">
+      <div class="sheet" onclick="event.stopPropagation()">
+        <div class="sheet-handle"></div>
+        <button class="sheet-item" onclick="editHabit('${h?h.id:''}');closeHabitActions()"><span class="sheet-item-icon">✏️</span>Изменить</button>
+        <button class="sheet-item warn" onclick="resetStreak('${h?h.id:''}');closeHabitActions()"><span class="sheet-item-icon">🔄</span>Сброс отсчёта</button>
+        <button class="sheet-item danger" onclick="deleteHabit('${h?h.id:''}');closeHabitActions()"><span class="sheet-item-icon">🗑️</span>Удалить привычку</button>
+        <button class="sheet-cancel" onclick="closeHabitActions()">Отмена</button>
+      </div>
+    </div>`;
+  }
 
   // Add/Edit modal
   if(activeModal==='add'||activeModal==='edit'){
@@ -714,6 +735,8 @@ function selectHabit(id){activeHabitId=id;sideMenuOpen=false;render()}
 function openAllTokens(){activeModal='tokensPage';render()}
 function openTokensPage(){activeModal='tokensPage';render()}
 function closeTokensPage(){activeModal=null;render()}
+function openHabitActions(id){activeModal='habitActions';render()}
+function closeHabitActions(){activeModal=null;render()}
 
 function openAddModal(){
   activeModal='add';editingId=null;sideMenuOpen=false;
