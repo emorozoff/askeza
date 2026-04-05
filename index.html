@@ -254,16 +254,13 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:
 .clr-dec{font-size:26px;font-weight:600;line-height:1;opacity:.8}
 .clr-pct{font-size:22px;font-weight:600;margin-left:3px;opacity:.5;line-height:1;color:var(--text)}
 .clr-motive{font-size:13px;color:var(--text2);margin-top:5px;line-height:1.4}
-.chart-range{display:flex;gap:6px;padding:10px 20px calc(var(--safe-bottom) + 10px);justify-content:center;border-top:1px solid rgba(255,255,255,0.06)}
-.crb{background:var(--surface);border:none;border-radius:20px;padding:6px 16px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s}
-.crb.active{background:var(--accent);color:#fff}
+.chart-range{display:flex;gap:6px;padding:6px 16px 10px;justify-content:center}
+.crb{background:rgba(255,255,255,0.08);border:none;border-radius:20px;padding:5px 14px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s}
+.crb.active{background:rgba(255,255,255,0.18);color:#fff}
 .crb:active{transform:scale(0.95)}
-.chart-canvas-wrap{flex:1;padding:0 12px;min-height:0;position:relative;touch-action:none;display:flex;align-items:stretch}
+.chart-canvas-wrap{flex:1;padding:0 8px;min-height:0;position:relative;touch-action:none;display:flex;align-items:stretch}
 .chart-canvas-wrap canvas{width:100%!important;height:100%!important;display:block;cursor:crosshair}
-.chart-legend{display:flex;flex-wrap:wrap;gap:8px;padding:8px 20px 6px;justify-content:center}
-.chart-leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
-.chart-leg-dot{width:8px;height:8px;border-radius:50%}
-.chart-info{padding:4px 20px 12px;font-size:11px;color:var(--text3);text-align:center;line-height:1.5}
+.chart-info{padding:2px 20px 10px;font-size:11px;color:var(--text3);text-align:center}
 
 /* === CELEBRATION === */
 .celebration{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,0.8);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);z-index:600;opacity:0;pointer-events:none;transition:opacity 0.3s}
@@ -541,6 +538,11 @@ let checkedMilestones={};
 let formName='',formEmoji='',formColor='#2aabee',formDate='',formTime='';
 let chartRange=365;
 let chartLiveInterval=null;
+let chartAnimRAF=null;
+let chartPulseRAF=null;
+let chartAnimStart=null;
+let chartActiveTouchDay=null;
+const CHART_ANIM_MS=900;
 let addPageSelectedPreset=null; // preset index 0-2 or 'custom'
 let pickerState={};
 
@@ -552,7 +554,7 @@ function render(){
 
   // Top bar
   html+=`<div class="topbar">
-    <h1>askeza <span style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:0.5px;vertical-align:middle">v1.0</span></h1>
+    <h1>askeza <span style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:0.5px;vertical-align:middle">v1.1</span></h1>
     <div class="topbar-right">
       ${h?`<button class="menu-btn" onclick="openHabitActions('${h.id}')" style="font-size:22px;letter-spacing:1px;padding-bottom:10px">···</button>`:''}
       <button class="menu-btn" onclick="toggleSideMenu()">☰</button>
@@ -797,21 +799,6 @@ function render(){
         </div>
         <div class="clr-motive">${ch?getChartMotive(chRisk,ch.name):''}</div>
       </div>
-      <div class="chart-canvas-wrap"><canvas id="risk-chart-canvas"></canvas></div>
-      <div class="chart-legend">
-        ${ch&&isSmoking(ch.name)?`
-          <div class="chart-leg-item"><div class="chart-leg-dot" style="background:#ff453a"></div>Тяга нарастает</div>
-          <div class="chart-leg-item"><div class="chart-leg-dot" style="background:#ff9f0a"></div>Тяга убывает</div>
-          <div class="chart-leg-item"><div class="chart-leg-dot" style="background:#ffd60a"></div>Становится легче</div>
-          <div class="chart-leg-item"><div class="chart-leg-dot" style="background:#30d158"></div>Минимальная тяга</div>
-        `:`
-          <div class="chart-leg-item"><div class="chart-leg-dot" style="background:#ff453a"></div>Критическая зона</div>
-          <div class="chart-leg-item"><div class="chart-leg-dot" style="background:#ff9f0a"></div>Опасный период</div>
-          <div class="chart-leg-item"><div class="chart-leg-dot" style="background:#ffd60a"></div>Становится легче</div>
-          <div class="chart-leg-item"><div class="chart-leg-dot" style="background:#30d158"></div>Минимальный риск</div>
-        `}
-      </div>
-      ${(isSmoking(ch&&ch.name)||isAlcohol(ch&&ch.name)||isWeed(ch&&ch.name))?'<div class="chart-info">Основано на научных данных</div>':''}
       <div class="chart-range">
         <button class="crb ${chartRange===30?'active':''}" data-days="30" onclick="setChartRange(30)">1 мес</button>
         <button class="crb ${chartRange===90?'active':''}" data-days="90" onclick="setChartRange(90)">3 мес</button>
@@ -819,6 +806,8 @@ function render(){
         <button class="crb ${chartRange===365?'active':''}" data-days="365" onclick="setChartRange(365)">1 год</button>
         <button class="crb ${chartRange===1825?'active':''}" data-days="1825" onclick="setChartRange(1825)">5 лет</button>
       </div>
+      <div class="chart-canvas-wrap"><canvas id="risk-chart-canvas"></canvas></div>
+      ${(isSmoking(ch&&ch.name)||isAlcohol(ch&&ch.name)||isWeed(ch&&ch.name))?'<div class="chart-info">Основано на научных данных</div>':''}
     </div>`;
   }
 
@@ -1190,10 +1179,11 @@ function openRiskChart(){
     else chartRange=30;
     document.querySelectorAll('.crb').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.days)===chartRange));
   }
+  chartActiveTouchDay=null;
   document.getElementById('chart-page').classList.add('open');
   setTimeout(()=>{
-    drawRiskChart(null);
     setupChartInteraction();
+    startChartAnimation();
     if(chartLiveInterval)clearInterval(chartLiveInterval);
     chartLiveInterval=setInterval(updateChartLive,100);
   },50);
@@ -1201,14 +1191,44 @@ function openRiskChart(){
 
 function closeRiskChart(){
   activeModal=null;
+  stopChartAnimation();
   if(chartLiveInterval){clearInterval(chartLiveInterval);chartLiveInterval=null;}
   document.getElementById('chart-page').classList.remove('open');
 }
 
 function setChartRange(days){
   chartRange=days;
-  document.querySelectorAll('.crb').forEach(b=>{b.classList.toggle('active',parseInt(b.dataset.days)===days)});
-  drawRiskChart(null);
+  document.querySelectorAll('.crb').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.days)===days));
+  chartActiveTouchDay=null;
+  startChartAnimation();
+}
+
+function startChartAnimation(){
+  stopChartAnimation();
+  chartAnimStart=null;
+  function step(ts){
+    if(!chartAnimStart)chartAnimStart=ts;
+    const t=Math.min((ts-chartAnimStart)/CHART_ANIM_MS,1);
+    const eased=1-Math.pow(1-t,3);
+    drawRiskChart(chartActiveTouchDay,eased,ts);
+    if(t<1){chartAnimRAF=requestAnimationFrame(step);}
+    else{chartAnimRAF=null;startPulseLoop();}
+  }
+  chartAnimRAF=requestAnimationFrame(step);
+}
+
+function startPulseLoop(){
+  if(chartPulseRAF)cancelAnimationFrame(chartPulseRAF);
+  function step(ts){
+    drawRiskChart(chartActiveTouchDay,1,ts);
+    chartPulseRAF=requestAnimationFrame(step);
+  }
+  chartPulseRAF=requestAnimationFrame(step);
+}
+
+function stopChartAnimation(){
+  if(chartAnimRAF){cancelAnimationFrame(chartAnimRAF);chartAnimRAF=null;}
+  if(chartPulseRAF){cancelAnimationFrame(chartPulseRAF);chartPulseRAF=null;}
 }
 
 function updateChartLive(){
@@ -1233,128 +1253,152 @@ function updateChartLive(){
 
 function setupChartInteraction(){
   const canvas=document.getElementById('risk-chart-canvas');if(!canvas)return;
-  const pad={left:42,right:16};
+  canvas.removeEventListener('touchstart',canvas._ts);canvas.removeEventListener('touchmove',canvas._tm);
+  canvas.removeEventListener('touchend',canvas._te);canvas.removeEventListener('mousemove',canvas._mm);
+  canvas.removeEventListener('mouseleave',canvas._ml);
+  const PL=28,PR=16;
   function getDay(clientX){
-    const rect=canvas.getBoundingClientRect();
-    const cw=rect.width-pad.left-pad.right;
-    const x=clientX-rect.left-pad.left;
-    return Math.max(0,Math.min(chartRange,(x/cw)*chartRange));
+    const r=canvas.getBoundingClientRect();
+    return Math.max(0,Math.min(chartRange,((clientX-r.left-PL)/(r.width-PL-PR))*chartRange));
   }
-  canvas.addEventListener('touchstart',e=>{e.preventDefault();drawRiskChart(getDay(e.touches[0].clientX))},{passive:false});
-  canvas.addEventListener('touchmove',e=>{e.preventDefault();drawRiskChart(getDay(e.touches[0].clientX))},{passive:false});
-  canvas.addEventListener('touchend',()=>{setTimeout(()=>drawRiskChart(null),2000)});
-  canvas.addEventListener('mousemove',e=>drawRiskChart(getDay(e.clientX)));
-  canvas.addEventListener('mouseleave',()=>drawRiskChart(null));
+  canvas._ts=e=>{e.preventDefault();chartActiveTouchDay=getDay(e.touches[0].clientX)};
+  canvas._tm=e=>{e.preventDefault();chartActiveTouchDay=getDay(e.touches[0].clientX)};
+  canvas._te=()=>{setTimeout(()=>{chartActiveTouchDay=null},1800)};
+  canvas._mm=e=>{chartActiveTouchDay=getDay(e.clientX)};
+  canvas._ml=()=>{chartActiveTouchDay=null};
+  canvas.addEventListener('touchstart',canvas._ts,{passive:false});
+  canvas.addEventListener('touchmove',canvas._tm,{passive:false});
+  canvas.addEventListener('touchend',canvas._te);
+  canvas.addEventListener('mousemove',canvas._mm);
+  canvas.addEventListener('mouseleave',canvas._ml);
 }
 
-function drawRiskChart(touchDay){
+function drawRiskChart(touchDay,progress,ts){
   const canvas=document.getElementById('risk-chart-canvas');if(!canvas)return;
   const h=data.habits.find(x=>x.id===activeHabitId);if(!h)return;
   const {riskFn}=getRiskFns(h.name);
   const elapsed=getElapsed(h.quitDate);
   const currentDays=elapsed.totalSeconds/86400;
   const xMax=chartRange;
+  progress=progress??1; ts=ts??0;
 
   const wrap=canvas.parentElement;
-  const W=wrap.clientWidth;
-  const H=wrap.clientHeight||300;
+  const W=wrap.clientWidth||300;
+  const H=wrap.clientHeight||260;
   canvas.width=W*2;canvas.height=H*2;canvas.style.width=W+'px';canvas.style.height=H+'px';
   const ctx=canvas.getContext('2d');ctx.scale(2,2);
+  ctx.clearRect(0,0,W,H);
 
-  const pad={top:14,right:16,bottom:32,left:42};
+  const pad={top:16,right:PR=16,bottom:26,left:PL=28};
   const cw=W-pad.left-pad.right,ch=H-pad.top-pad.bottom;
   const yMax=isSmoking(h.name)?110:100;
-  function xPx(d){return pad.left+d/xMax*cw}
+  function xPx(d){return pad.left+(d/xMax)*cw}
   function yPx(r){return pad.top+ch-(Math.min(r,yMax)/yMax)*ch}
 
-  // Phase zones
-  const zones=isSmoking(h.name)
-    ?[[90,yMax,'rgba(255,69,58,0.28)'],[50,90,'rgba(255,159,10,0.22)'],[20,50,'rgba(255,214,10,0.16)'],[0,20,'rgba(48,209,88,0.18)']]
-    :isAlcohol(h.name)
-      ?[[60,100,'rgba(255,69,58,0.28)'],[35,60,'rgba(255,159,10,0.22)'],[15,35,'rgba(255,214,10,0.16)'],[0,15,'rgba(48,209,88,0.18)']]
-      :[[50,100,'rgba(255,69,58,0.28)'],[20,50,'rgba(255,159,10,0.22)'],[8,20,'rgba(255,214,10,0.16)'],[0,8,'rgba(48,209,88,0.18)']];
-  zones.forEach(([lo,hi,col])=>{ctx.fillStyle=col;ctx.fillRect(pad.left,yPx(hi),cw,yPx(lo)-yPx(hi))});
+  // Build curve points up to progress
+  const STEPS=400;
+  const maxStep=Math.floor(STEPS*progress);
+  const pts=[];
+  for(let i=0;i<=maxStep;i++){
+    const d=(i/STEPS)*xMax;
+    pts.push([xPx(d),yPx(riskFn(d*86400))]);
+  }
+  if(pts.length<2)return;
+  const last=pts[pts.length-1];
+  const bottom=yPx(0);
 
-  // Grid
-  ctx.lineWidth=0.8;
-  [0,25,50,75,100].forEach(y=>{
-    ctx.strokeStyle='rgba(255,255,255,0.06)';
-    ctx.beginPath();ctx.moveTo(pad.left,yPx(y));ctx.lineTo(pad.left+cw,yPx(y));ctx.stroke();
-    ctx.fillStyle='rgba(142,142,147,0.8)';ctx.font='500 9px Inter,-apple-system,sans-serif';ctx.textAlign='right';
-    ctx.fillText(y+'%',pad.left-5,yPx(y)+3);
-  });
+  // Gradient fill under curve
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0],pts[0][1]);
+  for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);
+  ctx.lineTo(last[0],bottom);
+  ctx.lineTo(pts[0][0],bottom);
+  ctx.closePath();
+  const fillGrd=ctx.createLinearGradient(0,pad.top,0,pad.top+ch);
+  fillGrd.addColorStop(0,'rgba(255,69,58,0.28)');
+  fillGrd.addColorStop(0.45,'rgba(255,159,10,0.12)');
+  fillGrd.addColorStop(1,'rgba(48,209,88,0.02)');
+  ctx.fillStyle=fillGrd;ctx.fill();
 
-  // X ticks — adaptive
-  const xTicks=xMax<=30?[{d:1,l:'1д'},{d:7,l:'1н'},{d:14,l:'2н'},{d:30,l:'1м'}]
-    :xMax<=90?[{d:7,l:'1н'},{d:30,l:'1м'},{d:60,l:'2м'},{d:90,l:'3м'}]
-    :xMax<=180?[{d:30,l:'1м'},{d:60,l:'2м'},{d:90,l:'3м'},{d:180,l:'6м'}]
-    :xMax<=365?[{d:1,l:'1д'},{d:7,l:'1н'},{d:30,l:'1м'},{d:90,l:'3м'},{d:180,l:'6м'},{d:365,l:'1г'}]
-    :[{d:30,l:'1м'},{d:180,l:'6м'},{d:365,l:'1г'},{d:730,l:'2г'},{d:1095,l:'3г'},{d:1825,l:'5г'}];
-  ctx.textAlign='center';
-  xTicks.forEach(t=>{
-    if(t.d>xMax)return;
-    const x=xPx(t.d);
-    ctx.fillStyle='rgba(142,142,147,0.8)';ctx.fillText(t.l,x,H-pad.bottom+12);
-    ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.8;
-    ctx.beginPath();ctx.moveTo(x,pad.top);ctx.lineTo(x,pad.top+ch);ctx.stroke();
-  });
+  // Curve line with horizontal gradient
+  const lineGrd=ctx.createLinearGradient(pad.left,0,pad.left+cw*progress,0);
+  lineGrd.addColorStop(0,'#ff453a');
+  lineGrd.addColorStop(0.22,'#ff9f0a');
+  lineGrd.addColorStop(0.5,'#ffd60a');
+  lineGrd.addColorStop(1,'#30d158');
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0],pts[0][1]);
+  for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);
+  ctx.strokeStyle=lineGrd;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke();
 
-  // Curve
-  const grad=ctx.createLinearGradient(pad.left,0,pad.left+cw,0);
-  grad.addColorStop(0,'#ff453a');grad.addColorStop(0.15,'#ff9f0a');grad.addColorStop(0.35,'#ffd60a');grad.addColorStop(1,'#30d158');
-  ctx.strokeStyle=grad;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.beginPath();
-  for(let i=0;i<=300;i++){const d=i/300*xMax;const r=riskFn(d*86400);i===0?ctx.moveTo(xPx(d),yPx(r)):ctx.lineTo(xPx(d),yPx(r))}
-  ctx.stroke();
+  // Minimal Y labels (0, 50, 100)
+  ctx.font='500 9px Inter,-apple-system,sans-serif';ctx.textAlign='right';
+  ctx.fillStyle='rgba(142,142,147,0.55)';
+  [0,50,100].forEach(y=>{if(y<=yMax)ctx.fillText(y+'%',pad.left-5,yPx(y)+3)});
 
-  // Current position marker
-  if(currentDays<=xMax){
-    const cx2=xPx(currentDays),cy2=yPx(riskFn(elapsed.totalSeconds));
+  // Minimal X labels
+  const xTicks=xMax<=30?[{d:7,l:'1н'},{d:30,l:'1м'}]
+    :xMax<=90?[{d:30,l:'1м'},{d:90,l:'3м'}]
+    :xMax<=180?[{d:30,l:'1м'},{d:90,l:'3м'},{d:180,l:'6м'}]
+    :xMax<=365?[{d:30,l:'1м'},{d:90,l:'3м'},{d:365,l:'1г'}]
+    :[{d:365,l:'1г'},{d:730,l:'2г'},{d:1825,l:'5г'}];
+  ctx.textAlign='center';ctx.fillStyle='rgba(142,142,147,0.55)';
+  xTicks.forEach(t=>{if(t.d<=xMax)ctx.fillText(t.l,xPx(t.d),H-pad.bottom+12)});
+
+  // Ты здесь — pulsing dot (only after animation done)
+  if(progress>=1&&currentDays<=xMax){
+    const cx=xPx(currentDays),cy=yPx(riskFn(elapsed.totalSeconds));
     const phase=getPhaseForHabit(riskFn(elapsed.totalSeconds),h.name);
-    ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=1;ctx.setLineDash([3,3]);
-    ctx.beginPath();ctx.moveTo(cx2,pad.top);ctx.lineTo(cx2,pad.top+ch);ctx.stroke();ctx.setLineDash([]);
-    const grd=ctx.createRadialGradient(cx2,cy2,0,cx2,cy2,12);
-    grd.addColorStop(0,'rgba(255,255,255,0.22)');grd.addColorStop(1,'rgba(255,255,255,0)');
-    ctx.fillStyle=grd;ctx.beginPath();ctx.arc(cx2,cy2,12,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle=phase.color;ctx.beginPath();ctx.arc(cx2,cy2,5,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+    const pulse=(Math.sin(ts/650)+1)/2;
+    const outerR=9+pulse*7;
+    const outerGrd=ctx.createRadialGradient(cx,cy,0,cx,cy,outerR);
+    outerGrd.addColorStop(0,`rgba(255,255,255,${0.12+pulse*0.10})`);
+    outerGrd.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=outerGrd;ctx.beginPath();ctx.arc(cx,cy,outerR,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=phase.color;ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.9)';ctx.lineWidth=1.5;ctx.stroke();
     if(touchDay===null){
-      ctx.fillStyle='rgba(255,255,255,0.85)';ctx.font='bold 10px Inter,-apple-system,sans-serif';
-      ctx.textAlign=currentDays>xMax*0.8?'right':'left';
-      ctx.fillText('Ты здесь',cx2+(currentDays>xMax*0.8?-8:8),cy2-9);
+      ctx.fillStyle='rgba(255,255,255,0.65)';
+      ctx.font='600 10px Inter,-apple-system,sans-serif';
+      const right=currentDays>xMax*0.72;
+      ctx.textAlign=right?'right':'left';
+      ctx.fillText('Ты здесь',cx+(right?-12:12),cy-10);
     }
   }
 
-  // Touch crosshair
+  // Touch tooltip
   if(touchDay!==null){
     const tx=xPx(touchDay),tr=riskFn(touchDay*86400),ty=yPx(tr);
     const tPhase=getPhaseForHabit(tr,h.name);
-    // Lines
-    ctx.strokeStyle='rgba(255,255,255,0.45)';ctx.lineWidth=1;ctx.setLineDash([]);
+    // Dashed vertical line
+    ctx.strokeStyle='rgba(255,255,255,0.28)';ctx.lineWidth=1;ctx.setLineDash([3,4]);
     ctx.beginPath();ctx.moveTo(tx,pad.top);ctx.lineTo(tx,pad.top+ch);ctx.stroke();
-    ctx.strokeStyle='rgba(255,255,255,0.12)';
-    ctx.beginPath();ctx.moveTo(pad.left,ty);ctx.lineTo(pad.left+cw,ty);ctx.stroke();
-    // Glow dot
-    const dg=ctx.createRadialGradient(tx,ty,0,tx,ty,14);
-    dg.addColorStop(0,'rgba(255,255,255,0.28)');dg.addColorStop(1,'rgba(255,255,255,0)');
-    ctx.fillStyle=dg;ctx.beginPath();ctx.arc(tx,ty,14,0,Math.PI*2);ctx.fill();
+    ctx.setLineDash([]);
+    // Glow halo
+    const dg=ctx.createRadialGradient(tx,ty,0,tx,ty,16);
+    dg.addColorStop(0,'rgba(255,255,255,0.18)');dg.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=dg;ctx.beginPath();ctx.arc(tx,ty,16,0,Math.PI*2);ctx.fill();
+    // Dot
     ctx.fillStyle=tPhase.color;ctx.beginPath();ctx.arc(tx,ty,5.5,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
-    // Tooltip
+    ctx.strokeStyle='rgba(255,255,255,0.9)';ctx.lineWidth=1.5;ctx.stroke();
+    // Tooltip box
     const rStr=tr.toFixed(1)+'%';
     const dLabel=touchDay<1?Math.round(touchDay*24)+' ч'
       :touchDay<7?Math.round(touchDay)+' дн'
       :touchDay<30?Math.round(touchDay/7)+' нед'
       :touchDay<365?(touchDay/30).toFixed(1)+' мес'
       :(touchDay/365).toFixed(1)+' г';
-    const boxW=82,boxH=38;
-    let bx=tx+10;if(bx+boxW>W-pad.right)bx=tx-boxW-10;
-    const by=Math.max(pad.top,Math.min(ty-boxH/2,pad.top+ch-boxH));
-    ctx.fillStyle='rgba(44,44,46,0.96)';
-    ctx.beginPath();ctx.roundRect(bx,by,boxW,boxH,8);ctx.fill();
-    ctx.fillStyle=tPhase.color;ctx.font='bold 15px Inter,-apple-system,sans-serif';ctx.textAlign='center';
-    ctx.fillText(rStr,bx+boxW/2,by+15);
-    ctx.fillStyle='rgba(142,142,147,0.9)';ctx.font='500 10px Inter,-apple-system,sans-serif';
-    ctx.fillText(dLabel,bx+boxW/2,by+30);
+    const bW=90,bH=50;
+    let bx=tx+16;if(bx+bW>W-pad.right-4)bx=tx-bW-16;
+    const by=Math.max(pad.top+4,Math.min(ty-bH/2,pad.top+ch-bH-4));
+    ctx.fillStyle='rgba(26,26,28,0.97)';
+    ctx.beginPath();ctx.roundRect(bx,by,bW,bH,12);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=0.75;
+    ctx.beginPath();ctx.roundRect(bx,by,bW,bH,12);ctx.stroke();
+    ctx.fillStyle=tPhase.color;ctx.font='700 17px Inter,-apple-system,sans-serif';
+    ctx.textAlign='center';ctx.fillText(rStr,bx+bW/2,by+21);
+    ctx.fillStyle='rgba(142,142,147,0.85)';ctx.font='500 11px Inter,-apple-system,sans-serif';
+    ctx.fillText(dLabel,bx+bW/2,by+38);
   }
 }
 
