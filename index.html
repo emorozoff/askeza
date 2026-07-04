@@ -535,6 +535,9 @@ function formatTimeLeft(secs){
 function isAlcohol(name){return name&&/алкоголь/i.test(name)}
 function isWeed(name){return name&&/марихуан|конопл/i.test(name)}
 function isSmoking(name){return name&&/курен/i.test(name)}
+// «Отслеживаемая» привычка = один из пресетов с научными данными (курение/алкоголь/марихуана).
+// Своя (добавленная вручную) привычка — без графика зависимости, уровней и жетонов.
+function isTracked(name){return isSmoking(name)||isAlcohol(name)||isWeed(name)}
 function getRiskFns(name){
   if(isAlcohol(name))return{riskFn:alcRisk,decFn:getAlcDecimals};
   if(isWeed(name))return{riskFn:weedRisk,decFn:getWeedDecimals};
@@ -562,7 +565,8 @@ function formatMenuTime(el){
   if(el.hours>0)return el.hours+' ч.';
   return Math.floor(el.totalSeconds/60)+' мин.';
 }
-function getSmokingPhase(v){
+// Зоны тяги/зависимости (0-100) — общие для курения, алкоголя и марихуаны
+function getCravingPhase(v){
   if(v>90)return{label:'Тяга нарастает',color:'#ff453a',bg:'rgba(255,69,58,0.12)'};
   if(v>75)return{label:'Пик синдрома отмены',color:'#ff6930',bg:'rgba(255,105,48,0.12)'};
   if(v>50)return{label:'Тяга убывает',color:'#ff9f0a',bg:'rgba(255,159,10,0.12)'};
@@ -571,10 +575,10 @@ function getSmokingPhase(v){
   return{label:'Минимальная тяга',color:'#30d158',bg:'rgba(48,209,88,0.12)'};
 }
 function getPhaseForHabit(value,name){
-  if(isSmoking(name))return getSmokingPhase(value);
-  return getRiskPhase(value,isAlcohol(name));
+  if(isTracked(name))return getCravingPhase(value);
+  return getRiskPhase(value,false);
 }
-function getMetricLabel(name){return isSmoking(name)?'Зависимость':'Шанс рецидива'}
+function getMetricLabel(name){return 'Зависимость'}
 function getChartMotive(risk,name){
   if(isSmoking(name)){
     if(risk>=90)return'Первые часы самые тяжёлые — это нормально';
@@ -604,10 +608,12 @@ function refreshQuote(){
 function pad(n){return String(n).padStart(2,'0')}
 function hexToRgba(hex,a){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return`rgba(${r},${g},${b},${a})`}
 function fmtDate(d){return new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'})}
+function fmtDateTime(d){const dt=new Date(d);return dt.toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'})+', '+pad(dt.getHours())+':'+pad(dt.getMinutes())}
 
 function countAllTokens(){
   let active=0,old=0;
   data.habits.forEach(h=>{
+    if(!isTracked(h.name))return;
     if(getTopBadge(getElapsed(h.quitDate).totalSeconds))active++;
     if(getTopOldToken(h.oldTokens))old++;
   });
@@ -655,12 +661,13 @@ function render(){
 
     // Habit title
     html+=`<div class="habit-header"><span class="habit-name-big">${h.name}</span></div>`;
-    html+=`<div class="habit-sub">свобода с ${fmtDate(h.quitDate)}</div>`;
+    html+=`<div class="habit-sub">свободен с ${fmtDateTime(h.quitDate)}</div>`;
 
     // Quote
     html+=`<div class="quote-simple" onclick="refreshQuote()"><span>${getQuote()}</span></div>`;
 
-    // Risk counter
+    // Risk counter — только для отслеживаемых привычек (курение/алкоголь/марихуана)
+    if(isTracked(h.name)){
     const riskS=e.totalSeconds;
     const {riskFn,decFn}=getRiskFns(h.name);
     const risk=riskFn(riskS);
@@ -680,6 +687,7 @@ function render(){
         <div style="font-size:10px;color:var(--text3);margin-top:8px;letter-spacing:0.3px">График динамики ›</div>
       </div>
     </div>`;
+    }
 
     // Timer bars
     const barItems=[
@@ -871,7 +879,7 @@ function render(){
         <button class="chart-back" onclick="closeRiskChart()">←</button>
       </div>
       <div class="chart-live">
-        <span class="clr-label">${ch?getMetricLabel(ch.name):'Шанс рецидива'}</span>
+        <span class="clr-label">${ch?getMetricLabel(ch.name):'Зависимость'}</span>
         <div class="chart-live-num">
           <span class="clr-int" style="color:${chPhase.color}">${chStr.substring(0,chDot)}</span><span class="clr-dot" style="color:${chPhase.color}">.</span><span class="clr-dec">${chStr.substring(chDot+1)}</span><span class="clr-pct"> %</span>
         </div>
@@ -1151,10 +1159,12 @@ function resetStreak(id){
     const el=getElapsed(h.quitDate);
     h.bestStreak=Math.max(h.bestStreak||0,el.days);
     if(!h.oldTokens)h.oldTokens=[];
-    const topM=getTopBadge(el.totalSeconds);
-    if(topM){
-      const resetDate=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'short'});
-      h.oldTokens.push({rank:topM.rank,label:topM.label,date:resetDate});
+    if(isTracked(h.name)){
+      const topM=getTopBadge(el.totalSeconds);
+      if(topM){
+        const resetDate=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'short'});
+        h.oldTokens.push({rank:topM.rank,label:topM.label,date:resetDate});
+      }
     }
     h.quitDate=new Date().toISOString();
     checkedMilestones[h.id]=0;
@@ -1206,6 +1216,7 @@ function updateTimers(){
 
   // Check milestones
   data.habits.forEach(h=>{
+    if(!isTracked(h.name))return; // свои привычки не зарабатывают жетоны/уровни
     const e=getElapsed(h.quitDate);const key=h.id;
     if(!checkedMilestones[key])checkedMilestones[key]=0;
     const earned=getEarnedBadges(e.totalSeconds);
@@ -1259,6 +1270,8 @@ function toggleChartInfo(){
 // === RISK CHART ===
 
 function openRiskChart(){
+  const hGuard=data.habits.find(x=>x.id===activeHabitId);
+  if(!hGuard||!isTracked(hGuard.name))return; // нет графика у своих привычек
   activeModal='riskChart';
   const h=data.habits.find(x=>x.id===activeHabitId);
   if(h){
@@ -1384,7 +1397,7 @@ function drawRiskChart(touchDay,progress,ts){
 
   const pad={top:16,right:16,bottom:26,left:28};
   const cw=W-pad.left-pad.right,ch=H-pad.top-pad.bottom;
-  const yMax=isSmoking(h.name)?110:100;
+  const yMax=isTracked(h.name)?110:100;
   function xPx(d){return pad.left+(d/xMax)*cw}
   function yPx(r){return pad.top+ch-(Math.min(r,yMax)/yMax)*ch}
 
