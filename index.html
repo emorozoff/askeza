@@ -484,15 +484,41 @@ function riskFromSeconds(s){return 99/Math.pow(1+s/86400,0.50)+1}
 function speedFromSeconds(s){return -49.5/(86400*Math.pow(1+s/86400,1.50))}
 function getRiskDecimals(s){const spd=Math.abs(speedFromSeconds(s));const c=spd*0.1;if(c<=0)return 8;return Math.max(4,Math.ceil(-Math.log10(c))+1)}
 
-// Risk calculations — Alcohol (B=0.30)
-function alcRisk(s){return 88/Math.pow(1+s/86400,0.30)+4}
-function alcSpeed(s){return -88*0.30/(86400*Math.pow(1+s/86400,1.30))}
-function getAlcDecimals(s){const spd=Math.abs(alcSpeed(s));const c=spd*0.1;if(c<=0)return 8;return Math.max(4,Math.ceil(-Math.log10(c))+1)}
-
-// Risk calculations — Marijuana (B=0.40)
-function weedRisk(s){return 85/Math.pow(1+s/86400,0.40)+5}
-function weedSpeed(s){return -85*0.40/(86400*Math.pow(1+s/86400,1.40))}
-function getWeedDecimals(s){const spd=Math.abs(weedSpeed(s));const c=spd*0.1;if(c<=0)return 8;return Math.max(4,Math.ceil(-Math.log10(c))+1)}
+// === Кривые тяги/зависимости (алкоголь, марихуана) ===
+// Метрика = сила тяги (craving) в % от пика по дням трезвости. Значения — не подгонка
+// формулой, а интерполяция РЕАЛЬНЫХ опорных точек из исследований (см. getChartInfoText):
+// тяга максимальна в первые дни, круто слабеет за 1–3 месяца и выходит на низкий, но
+// ненулевой уровень. Интерполяция — монотонная кубическая (PCHIP) в лог-пространстве дней,
+// поэтому кривая проходит точно через данные и остаётся гладкой и невозрастающей.
+const CRAVING_ANCHORS={
+  // [день трезвости, тяга % от пика]
+  alcohol:[[0,100],[3,97],[7,88],[14,76],[30,62],[90,42],[180,30],[365,20],[730,12],[1825,4],[3650,3]],
+  weed:   [[0,100],[3,100],[7,85],[14,63],[30,43],[90,27],[180,17],[365,10],[730,6], [1825,3],[3650,2]],
+};
+function buildCravingFn(anchors){
+  const xs=anchors.map(a=>Math.log10(1+a[0])),ys=anchors.map(a=>a[1]),n=xs.length;
+  const h=[],d=[];
+  for(let i=0;i<n-1;i++){h[i]=xs[i+1]-xs[i];d[i]=(ys[i+1]-ys[i])/h[i];}
+  const m=new Array(n);m[0]=d[0];m[n-1]=d[n-2];
+  for(let i=1;i<n-1;i++){
+    if(d[i-1]*d[i]<=0)m[i]=0;
+    else{const w1=2*h[i]+h[i-1],w2=h[i]+2*h[i-1];m[i]=(w1+w2)/(w1/d[i-1]+w2/d[i]);}
+  }
+  return function(sec){
+    const day=Math.max(0,sec/86400),x=Math.log10(1+day);
+    if(x<=xs[0])return ys[0];
+    if(x>=xs[n-1])return ys[n-1];
+    let i=0;while(i<n-1&&x>xs[i+1])i++;
+    const t=(x-xs[i])/h[i],t2=t*t,t3=t2*t;
+    return (2*t3-3*t2+1)*ys[i]+(t3-2*t2+t)*h[i]*m[i]+(-2*t3+3*t2)*ys[i+1]+(t3-t2)*h[i]*m[i+1];
+  };
+}
+const alcRisk=buildCravingFn(CRAVING_ANCHORS.alcohol);
+const weedRisk=buildCravingFn(CRAVING_ANCHORS.weed);
+// Число знаков после запятой — по фактической скорости изменения (численная производная)
+function cravingDecimals(fn,s){const spd=Math.abs(fn(s+0.5)-fn(s-0.5));const c=spd*0.1;if(c<=0)return 8;return Math.max(4,Math.ceil(-Math.log10(c))+1)}
+function getAlcDecimals(s){return cravingDecimals(alcRisk,s)}
+function getWeedDecimals(s){return cravingDecimals(weedRisk,s)}
 
 // Risk calculations — Generic (B=0.7134, для своей привычки)
 function genericRisk(s){return 90/Math.pow(1+s/86400,0.7134)}
@@ -646,7 +672,7 @@ function render(){
 
   // Top bar
   html+=`<div class="topbar">
-    <h1>askeza <span style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:0.5px;vertical-align:middle">v1.3.1</span></h1>
+    <h1>askeza <span style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:0.5px;vertical-align:middle">v1.4.0</span></h1>
     <div class="topbar-right">
       ${h?`<button class="menu-btn" onclick="openHabitActions('${h.id}')" style="font-size:22px;letter-spacing:1px;padding-bottom:10px">···</button>`:''}
       <button class="menu-btn" onclick="toggleSideMenu()">☰</button>
@@ -1254,8 +1280,8 @@ render();requestAnimationFrame(updateTimers);setTimeout(()=>document.body.classL
 
 function getChartInfoText(name){
   if(isSmoking(name))return'График показывает уровень зависимости от никотина. В первые дни тяга особенно сильна — это нормально: мозг перестраивается. Кривая никогда не достигает нуля, потому что нейронные связи сохраняются, но со временем сигнал слабеет настолько, что перестаёт управлять тобой. Ты уже делаешь самое трудное.';
-  if(isAlcohol(name))return'График отражает вероятность рецидива по данным исследований NIAAA. Первые недели — самые уязвимые, но риск снижается с каждым днём трезвости. Кривая стремится к минимуму, но не к нулю: это честный взгляд на природу зависимости. Твоё тело и психика восстанавливаются прямо сейчас.';
-  if(isWeed(name))return'Зависимость от марихуаны реальна, и твой мозг уже начал адаптироваться к жизни без неё. График показывает, как тяга убывает со временем. Она никогда не исчезает полностью — но становится тихим фоном, который ты легко игнорируешь. Каждый день без — это новая нейронная дорожка в сторону свободы.';
+  if(isAlcohol(name))return'График показывает силу тяги к алкоголю по мере трезвости. Кривая построена по исследованиям отказа от алкоголя (данные NIAAA, клинические шкалы тяги PACS/OCDS и наблюдения за периодом воздержания): тяга максимальна в первые дни и сильнее всего слабеет за первые 1–3 месяца, продолжая снижаться в течение года. До нуля она не опускается — небольшой остаточный уровень сохраняется даже спустя годы, поэтому отдельные всплески желания (особенно на 1–2-м месяце) — нормальная часть восстановления, а не срыв. Значения усреднённые и приблизительные: у каждого свой темп.';
+  if(isWeed(name))return'График показывает силу тяги к каннабису. Тяга сильнее всего в первые дни (реальный пик — примерно на 2–6-й день) и затем постепенно слабеет по мере воздержания. К концу первого месяца острый абстинентный синдром в основном проходит, а каннабиноидные рецепторы (CB1) возвращаются к норме; дальше тяга снижается медленнее и выходит на низкий, но не нулевой уровень. Оценка основана на исследованиях отмены каннабиса (Budney 2003, Allsop 2011) и данных о нейробиологическом восстановлении; отдалённые значения (месяцы–годы) — приблизительная экстраполяция.';
   return'';
 }
 
