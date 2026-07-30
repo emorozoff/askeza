@@ -116,7 +116,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 .ring-of{font-size:12.5px;font-weight:600;color:var(--text3);margin-top:3px}
 .hero-left{font-size:13px;color:var(--text2);margin-top:12px;font-weight:550;letter-spacing:.1px}
 .hero-left b{color:var(--text);font-weight:700}
-.vow-cta{margin-top:14px;padding:11px 26px;border:1px solid var(--line2);background:rgba(255,255,255,.045);
+.vow-cta{margin-top:14px;padding:11px 26px;white-space:nowrap;border:1px solid var(--line2);background:rgba(255,255,255,.045);
   border-radius:22px;font-size:14.5px;font-weight:650;color:var(--text);cursor:pointer;
   transition:transform .15s,background .2s;display:flex;align-items:center;gap:7px}
 .vow-cta:active{transform:scale(.96);background:rgba(255,255,255,.09)}
@@ -156,6 +156,38 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 .obar-txt{position:absolute;inset:0;z-index:2;display:flex;align-items:center;gap:6px;padding-left:13px;pointer-events:none}
 .obar-n{font-size:18px;font-weight:750;color:#fff;letter-spacing:-.3px}
 .obar-l{font-size:11.5px;font-weight:550;color:rgba(255,255,255,.82)}
+
+/* режим: отметка дня, календарь, статистика */
+.checkin{margin:0 16px 10px;padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-radius:20px}
+.ci-btn{width:100%;padding:15px;border:none;border-radius:15px;font-size:16.5px;font-weight:700;cursor:pointer;
+  color:#fff;transition:transform .15s,opacity .2s;display:flex;align-items:center;justify-content:center;gap:9px}
+.ci-btn:active{transform:scale(.978);opacity:.88}
+.ci-done{display:flex;align-items:center;gap:12px}
+.ci-ico{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:17px;flex-shrink:0}
+.ci-t{font-size:15.5px;font-weight:700}
+.ci-s{font-size:12.5px;color:var(--text3);margin-top:2px}
+.ci-edit{margin-left:auto;font-size:12.5px;color:var(--accent);font-weight:600;padding:8px;cursor:pointer}
+.ask{margin:0 16px 10px;padding:14px 16px;background:rgba(255,159,10,.09);border:1px solid rgba(255,159,10,.3);border-radius:18px}
+.ask-t{font-size:14.5px;font-weight:650;margin-bottom:3px}
+.ask-s{font-size:12.5px;color:var(--text3);margin-bottom:11px}
+.ask-b{display:flex;gap:8px}
+.ask-b button{flex:1;padding:12px;border:none;border-radius:13px;font-size:14.5px;font-weight:700;cursor:pointer;transition:transform .15s}
+.ask-b button:active{transform:scale(.95)}
+.ask-yes{background:rgba(48,209,88,.18);color:#4ade80}
+.ask-no{background:rgba(255,69,58,.16);color:#ff6a60}
+.cal-h,.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;padding:0 16px}
+.cal-h{padding-bottom:6px}
+.cal-h span{text-align:center;font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.3px}
+.cal{margin-bottom:12px}
+.cal-d{aspect-ratio:1;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  font-size:11.5px;font-weight:650;color:var(--text3);background:rgba(255,255,255,.045);
+  transition:transform .2s var(--spring)}
+.cal-d.ok{background:#30d158;color:#052e12;font-weight:750}
+.cal-d.miss{background:rgba(255,69,58,.2);color:#ff6a60}
+.cal-d.out{opacity:.2}
+.cal-d.today{box-shadow:0 0 0 2px var(--accent)}
+.dstat{display:flex;gap:8px;padding:0 16px 10px}
 
 /* фаза */
 .phase-rank{font-size:25px;font-weight:800;font-family:'Times New Roman',Georgia,serif;min-width:40px;text-align:center;line-height:1;flex-shrink:0}
@@ -377,6 +409,9 @@ button,input,textarea,select{font-family:inherit;color:inherit}
   font-size:44px;font-weight:800;font-family:'Times New Roman',Georgia,serif;margin-bottom:22px;
   animation:flipIn .75s var(--ease) both;position:relative}
 .cel-badge::after{content:'';position:absolute;inset:-9px;border-radius:50%;border:1.5px solid currentColor;opacity:.3}
+.cel-badge::before{content:'';position:absolute;inset:-9px;border-radius:50%;border:1.5px solid currentColor;
+  animation:bloom 2.6s var(--ease) .5s infinite}
+@keyframes bloom{0%{transform:scale(1);opacity:.55}70%{opacity:0}100%{transform:scale(2.5);opacity:0}}
 .cel-kicker{font-size:11.5px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;margin-bottom:9px;
   animation:fadeUp .5s var(--ease) .28s both}
 .cel-title{font-size:29px;font-weight:800;text-align:center;letter-spacing:-.6px;line-height:1.15;
@@ -385,8 +420,6 @@ button,input,textarea,select{font-family:inherit;color:inherit}
   animation:fadeUp .5s var(--ease) .44s both}
 .cel-acts{margin-top:30px;width:100%;max-width:310px;display:flex;flex-direction:column;gap:9px;
   animation:fadeUp .5s var(--ease) .54s both}
-#confetti{position:fixed;inset:0;z-index:401;pointer-events:none;opacity:0;transition:opacity .5s}
-#confetti.on{opacity:1}
 
 /* ---------------- тост ---------------- */
 #toast{position:fixed;left:50%;bottom:calc(var(--safe-bottom) + 26px);transform:translate(-50%,20px);z-index:500;
@@ -413,11 +446,11 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 <div class="page" id="p-history"></div>
 <div class="page" id="p-add"></div>
 <div class="page" id="p-vow"></div>
+<div class="page" id="p-day"></div>
 <div class="page" id="p-data"></div>
 
 <div id="sos"></div>
 <div id="cel"></div>
-<canvas id="confetti"></canvas>
 <div id="toast"></div>
 
 <script>
@@ -427,7 +460,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
    Приложение для отказа от привычек. Один файл, без зависимостей.
    ============================================================ */
 
-const VERSION='2.0';
+const VERSION='2.1';
 const KEY='askeza2_data';
 const KEY_BACKUP='askeza2_backup';
 const KEY_V1='askeza_data';       // старое приложение — только чтение, никогда не пишем
@@ -501,8 +534,29 @@ const KINDS={
   smoking:{title:'Курение',   emoji:'🚭',color:'#ff453a'},
   alcohol:{title:'Алкоголь',  emoji:'🍷',color:'#ff9f0a'},
   weed:   {title:'Марихуана', emoji:'🌿',color:'#4cd964'},
+  scroll: {title:'Скроллинг', emoji:'📱',color:'#5e9eff'},
+  porn:   {title:'Порно',     emoji:'🔞',color:'#c46bd8'},
+  sleep:  {title:'Режим сна', emoji:'🌙',color:'#7c8cff',mode:'daily'},
   custom: {title:'Своя',      emoji:'✏️',color:'#2aabee'},
 };
+/* Два архетипа привычки:
+   abstain — непрерывный отсчёт с момента отказа, обрывается срывом;
+   daily   — серия дней, каждый день нужно закрыть отметкой.
+   Аскезы, вехи, история и срывы общие, различается только продвижение серии. */
+const isDaily=h=>!!(h&&KINDS[h.kind]&&KINDS[h.kind].mode==='daily');
+const DAILY_MS=[
+  {key:'d1',days:1,label:'Первое утро'},
+  {key:'d3',days:3,label:'3 дня подряд'},
+  {key:'w1',days:7,label:'Неделя'},
+  {key:'w2',days:14,label:'2 недели'},
+  {key:'w3',days:21,label:'3 недели'},
+  {key:'mo1',days:30,label:'Месяц'},
+  {key:'d45',days:45,label:'45 дней'},
+  {key:'mo2',days:60,label:'2 месяца'},
+  {key:'mo3',days:90,label:'3 месяца'},
+  {key:'mo6',days:180,label:'Полгода'},
+  {key:'y1',days:365,label:'Год'},
+];
 const PALETTE=['#2aabee','#ff453a','#ff9f0a','#30d158','#bf5af2','#ff375f','#64d2ff','#ffd60a'];
 
 /* Сила тяги в % от пика по дням воздержания. Это опорные точки из исследований,
@@ -593,6 +647,35 @@ const PHASES={
     {from:180*D, to:365*D,   rank:'II',  tier:'gold',  name:'Ясность',              desc:'Мозг полностью адаптировался без каннабиноидов. Тяга становится редкой гостьей.'},
     {from:365*D, to:Infinity,rank:'I',   tier:'plat',  name:'Свобода',              desc:'Зависимость в прошлом. Когнитивные функции полностью восстановлены. Ты живёшь в полную силу.'},
   ],
+  scroll:[
+    {from:0,     to:2*D,     rank:'VII', tier:'bronze',name:'Рука сама тянется',    desc:'Первые дни рука тянется к телефону десятки раз в день. Фантомные вибрации, пустой экран блокировки. Это не слабость — это выученный рефлекс, и он гаснет.'},
+    {from:2*D,   to:7*D,     rank:'VI',  tier:'bronze',name:'Скука накрывает',      desc:'Главный симптом не тяга, а скука. Мозг привык к новой картинке каждые пятнадцать секунд и не знает, что делать с тишиной. Скука здесь — не враг, а признак перестройки.'},
+    {from:7*D,   to:14*D,    rank:'V',   tier:'bronze',name:'Внимание возвращается',desc:'Снова получается читать дольше пары минут и не терять нить. Мысли перестают скакать. Первое, что замечают почти все, — стало легче засыпать.'},
+    {from:14*D,  to:30*D,    rank:'IV',  tier:'silver',name:'Тишина не пугает',     desc:'Очередь, лифт, дорога — без телефона. Появляется время, которого раньше «не было». Ты замечаешь, сколько его уходило.'},
+    {from:30*D,  to:90*D,    rank:'III', tier:'silver',name:'Интерес возвращается', desc:'То, что казалось скучным — книга, разговор, работа без перерывов, — снова цепляет. Медленное перестаёт быть невыносимым.'},
+    {from:90*D,  to:180*D,   rank:'II',  tier:'gold',  name:'Новая норма',          desc:'Лента больше не тянет. Телефон стал инструментом, а не средой обитания. Ты открываешь его с целью и закрываешь, когда цель выполнена.'},
+    {from:180*D, to:Infinity,rank:'I',   tier:'plat',  name:'Свобода',              desc:'Ты решаешь, на что смотреть. Не алгоритм.'},
+  ],
+  porn:[
+    {from:0,     to:7*D,     rank:'VII', tier:'bronze',name:'Пик тяги',             desc:'Старые триггеры работают на полную: скука, стресс, одиночество, поздний вечер. Первая неделя — самая громкая. Знать свои триггеры сейчас важнее, чем терпеть.'},
+    {from:7*D,   to:21*D,    rank:'VI',  tier:'bronze',name:'Первый рубеж',         desc:'Тяга приходит волнами, но между волнами появляются промежутки. Сон и концентрация обычно улучшаются первыми.'},
+    {from:21*D,  to:45*D,    rank:'V',   tier:'silver',name:'Флэтлайн',             desc:'Возможен период, когда пропадает и тяга, и влечение вообще, а настроение становится ровным до плоского. Это описанный этап, и он проходит. Многие срываются именно здесь, решив, что сломались. Ты не сломался.'},
+    {from:45*D,  to:90*D,    rank:'IV',  tier:'silver',name:'Возвращение',          desc:'Чувствительность и живой интерес возвращаются. Реальное начинает конкурировать с экраном — и выигрывать.'},
+    {from:90*D,  to:180*D,   rank:'III', tier:'gold',  name:'Перенастройка',        desc:'Мозг перестаёт искать быстрый дофамин по привычке. Триггеры остаются, но власть теряют.'},
+    {from:180*D, to:365*D,   rank:'II',  tier:'gold',  name:'Устойчивость',         desc:'Редкие всплески желания проходят мимо. Ты знаешь свои триггеры в лицо и не споришь с ними.'},
+    {from:365*D, to:Infinity,rank:'I',   tier:'plat',  name:'Свобода',              desc:'Это больше не борьба и не режим. Просто то, как ты живёшь.'},
+  ],
+};
+
+/* Честно о том, на чём стоят фазы. У курения, алкоголя и марихуаны за ними
+   клинические исследования; у скроллинга и порно таких данных нет, и делать
+   вид, что есть, — значит обесценить всё остальное. */
+const PHASE_SOURCE={
+  smoking:'Фазы опираются на клинические исследования отмены никотина и восстановления организма. Сроки усреднённые — у каждого свой темп.',
+  alcohol:'Фазы опираются на клинические данные о синдроме отмены алкоголя и восстановлении (в том числе NIAAA). При тяжёлых симптомах отмены нужен врач, а не приложение.',
+  weed:'Фазы опираются на исследования отмены каннабиса (Budney 2003, Allsop 2011) и данные о восстановлении рецепторов CB1. Отдалённые сроки — приблизительная оценка.',
+  scroll:'Данных уровня никотиновых здесь нет. Фазы собраны из исследований проблемного использования смартфонов и коротких видео и из наблюдений за периодами воздержания. Это ориентир, а не клинический прогноз.',
+  porn:'Компульсивное сексуальное поведение включено в МКБ-11, но данных о сроках восстановления мало, а часть исследований спорна. Фазы собраны из наблюдений и опыта людей, проходивших через это. Ориентир, а не медицинский прогноз.',
 };
 const phasesOf=k=>PHASES[k]||null;
 function phaseAt(k,sec){
@@ -698,6 +781,10 @@ function normalize(d){
     startedAt:h.startedAt||new Date().toISOString(),
     vow:h.vow&&h.vow.status==='active'?h.vow:null,
     history:Array.isArray(h.history)?h.history:[],
+    sid:h.sid||1,
+    daily:(KINDS[h.kind]&&KINDS[h.kind].mode==='daily')
+      ? {wakeBy:(h.daily&&h.daily.wakeBy)||'07:00',checks:(h.daily&&h.daily.checks)||{}}
+      : undefined,
   }));
   if(!d.habits.find(h=>h.id===d.activeId))d.activeId=d.habits.length?d.habits[0].id:null;
   return d;
@@ -751,14 +838,17 @@ function mkHabit(o){
     name:o.name,kind:o.kind,color:o.color,
     startedAt:o.startedAt,
     vow:null,
+    sid:1,
+    daily:(KINDS[o.kind]&&KINDS[o.kind].mode==='daily')?{wakeBy:o.wakeBy||'07:00',checks:{}}:undefined,
     history:[{t:'start',at:o.startedAt}],
   };
 }
 /** Помечает все уже пройденные вехи как увиденные — чтобы не сыпать праздниками при переносе. */
 function seedMilestones(h){
+  if(isDaily(h))return;                       // у режима серия начинается с первой отметки
   const sec=(Date.now()-new Date(h.startedAt).getTime())/1000;
   MILESTONES.forEach(m=>{
-    if(sec>=m.sec)h.history.push({t:'milestone',at:new Date(new Date(h.startedAt).getTime()+m.sec*1000).toISOString(),key:m.key,seen:true});
+    if(sec>=m.sec)h.history.push({t:'milestone',at:new Date(new Date(h.startedAt).getTime()+m.sec*1000).toISOString(),key:m.key,sid:h.sid||1,seen:true});
   });
 }
 
@@ -767,11 +857,46 @@ function seedMilestones(h){
    ------------------------------------------------------------ */
 const active=()=>S.habits.find(h=>h.id===S.activeId)||null;
 const elapsed=h=>Math.max(0,(Date.now()-new Date(h.startedAt).getTime())/1000);
+
+/* --- режим: серия дней вместо непрерывного таймера --- */
+const dayKey=d=>localDate(d);
+const today=()=>dayKey(new Date());
+function shiftDay(key,n){const d=new Date(key+'T12:00:00');d.setDate(d.getDate()+n);return localDate(d)}
+const checksOf=h=>(h&&h.daily&&h.daily.checks)||{};
+const wakeBy=h=>(h&&h.daily&&h.daily.wakeBy)||'07:00';
+
+/** Серия = дни подряд с отметкой «вовремя», считая назад от сегодня.
+    Незакрытый сегодняшний день серию не обрывает — он ещё идёт. */
+function streakInfo(h){
+  const c=checksOf(h),t=today(),mark=c[t]||null;
+  if(mark&&!mark.ok)return{days:0,startDay:null,mark};
+  let cur=mark?t:shiftDay(t,-1),days=0,startDay=null;
+  while(c[cur]&&c[cur].ok){days++;startDay=cur;cur=shiftDay(cur,-1)}
+  return{days,startDay,mark};
+}
+/** Незакрытые прошедшие дни, которые ещё можно отметить задним числом. */
+function openDays(h,back){
+  const c=checksOf(h),out=[],from=dayKey(new Date(h.startedAt));
+  for(let i=1;i<=(back||3);i++){
+    const k=shiftDay(today(),-i);
+    if(k<from)break;
+    if(!c[k])out.push(k);
+  }
+  return out;
+}
+const streakDays=h=>isDaily(h)?streakInfo(h).days:Math.floor(elapsed(h)/D);
+const msList=h=>isDaily(h)?DAILY_MS:MILESTONES;
+function msLabel(h,key){const m=msList(h).find(x=>x.key===key);return m?m.label:'Веха'}
+
 function vowInfo(h){
   if(!h||!h.vow)return null;
+  if(isDaily(h)){
+    const total=Math.max(1,h.vow.days),done=clamp(streakInfo(h).days,0,total);
+    return{daily:true,days:total,doneDays:done,leftDays:total-done,p:done/total,complete:done>=total};
+  }
   const a=new Date(h.vow.startedAt).getTime(),b=new Date(h.vow.endsAt).getTime(),now=Date.now();
   const total=Math.max(1,(b-a)/1000),done=clamp((now-a)/1000,0,total);
-  return{days:h.vow.days,total,done,left:Math.max(0,(b-now)/1000),p:done/total,doneDays:Math.floor(done/D),complete:now>=b};
+  return{daily:false,days:h.vow.days,total,done,left:Math.max(0,(b-now)/1000),p:done/total,doneDays:Math.floor(done/D),complete:now>=b};
 }
 function kindOf(h){return(h&&KINDS[h.kind])?KINDS[h.kind]:KINDS.custom}
 function habitColor(h){return(h&&h.color)?h.color:kindOf(h).color}
@@ -833,15 +958,87 @@ function renderHome(animate){
     </div>`;
     R={};setGlow('#2aabee');renderTop();return;
   }
-  const sec=elapsed(h),col=habitColor(h),vi=vowInfo(h);
-  const totalDays=Math.floor(sec/D);
-  const b=breakdown(h.startedAt,Date.now());
-  const has=hasCurve(h.kind);
-  const ph=phaseAt(h.kind,sec);
+  el.className=animate?'stagger':'';
+  el.innerHTML = isDaily(h) ? dailyHome(h) : abstainHome(h);
 
+  R={
+    big:$('big'),ring:$('ring'),vowLeft:$('vow-left'),
+    cv:$('cv'),cvZone:$('cv-zone'),
+    daily:isDaily(h),
+    shownKeys:isDaily(h)?'daily':shownKeysNow(h),
+    day:today(),
+    bars:{},last:{},
+  };
+  if(!isDaily(h)){
+    el.querySelectorAll('.obar').forEach(node=>{
+      const k=node.dataset.u;
+      R.bars[k]={fill:node.querySelector('.obar-fill'),n:node.querySelector('.obar-n'),
+                 l:node.querySelector('.obar-l'),max:+node.dataset.max,labels:node.dataset.l.split('|')};
+    });
+    updateCraving(true);
+    updateOdometer(true);
+  }
+
+  setGlow(phaseColorOf(h));
+  renderTop();
+
+  const vi=vowInfo(h);
+  // узел кольца держим локально: экран может перерисоваться между кадрами,
+  // и тогда R.ring уже указывает на другой элемент или на null
+  const ringNode=R.ring;
+  if(ringNode&&vi){
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      if(!ringNode.isConnected)return;
+      ringNode.style.strokeDashoffset=(ringLen*(1-vi.p)).toFixed(1);
+      setTimeout(()=>{if(ringNode.isConnected)ringNode.classList.add('live')},1250);
+    }));
+  }
+  if(animate)countUp(R.big,vi?vi.doneDays:streakDays(h));
+}
+
+/** Кольцо аскезы — общий герой обоих архетипов. */
+function heroRing(h,unitWord){
+  const col=habitColor(h),vi=vowInfo(h);
   const RAD=98,CIRC=2*Math.PI*RAD;ringLen=CIRC;
-  const p=vi?vi.p:0;
+  const n=vi?vi.doneDays:streakDays(h);
+  let below;
+  if(vi){
+    below=isDaily(h)
+      ? `<div class="hero-left">осталось <b>${nDays(vi.leftDays)}</b> подряд</div>`
+      : `<div class="hero-left">осталось <b class="num" id="vow-left">${fmtLeft(vi.left)}</b></div>`;
+  }else{
+    below=`<button class="vow-cta" data-act="vow">${ICO.bolt}Дать обет</button>`;
+  }
+  return `<div class="hero">
+    <div class="ring-wrap" data-act="vow" role="button" aria-label="${vi?'Аскеза':'Дать обет'}">
+      <svg class="ring" viewBox="0 0 220 220" aria-hidden="true">
+        <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="${col}"/><stop offset="100%" stop-color="${col}" stop-opacity=".45"/>
+        </linearGradient></defs>
+        <circle class="ring-track${vi?'':' dashed'}" cx="110" cy="110" r="${RAD}"/>
+        ${vi?`<circle class="ring-fill" id="ring" cx="110" cy="110" r="${RAD}" stroke="url(#rg)"
+               stroke-dasharray="${CIRC.toFixed(1)}" stroke-dashoffset="${CIRC.toFixed(1)}"/>`:''}
+      </svg>
+      <div class="ring-center">
+        <div class="ring-big num" id="big">${n}</div>
+        <div class="ring-unit">${plural(n,'день','дня','дней')}${unitWord?' '+unitWord:''}</div>
+        ${vi?`<div class="ring-of num">из ${vi.days}</div>`:''}
+      </div>
+    </div>
+    ${below}
+  </div>`;
+}
 
+const historyCard=h=>`<div class="card" data-act="history" role="button"><div class="row">
+  <div class="row-body"><div class="row-title">История</div>
+  <div class="row-sub">${historySummary(h)}</div></div>${ICO.chev}
+</div></div>`;
+const quoteBlock=()=>`<div class="quote" data-act="quote"><span>${esc(QUOTES[S.quoteIdx%QUOTES.length])}</span></div>`;
+
+/* ---------- архетип «отказ» ---------- */
+function abstainHome(h){
+  const sec=elapsed(h),b=breakdown(h.startedAt,Date.now());
+  const has=hasCurve(h.kind),ph=phaseAt(h.kind,sec);
   const units=[
     {k:'y', v:b.y, max:Math.max(10,Math.ceil((b.y+1)/5)*5), l:['год','года','лет'],           c:['#ff3b30','#c1121f']},
     {k:'mo',v:b.mo,max:12,                                  l:['месяц','месяца','месяцев'],  c:['#ff9f0a','#c76a00']},
@@ -849,40 +1046,13 @@ function renderHome(animate){
     {k:'h', v:b.h, max:24,                                  l:['час','часа','часов'],        c:['#5b5bd6','#3a3a9e']},
     {k:'mi',v:b.mi,max:60,                                  l:['минута','минуты','минут'],   c:['#8a6fa8','#5d4a74']},
     {k:'s', v:b.s, max:60,                                  l:['секунда','секунды','секунд'],c:['#9a9aa2','#6b6b72']},
-  ];
-  const shown=units.filter((u,i)=>u.v>0||i>=3);
+  ].filter((u,i)=>u.v>0||i>=3);
 
-  el.className=animate?'stagger':'';
-  el.innerHTML=`
-    <div class="h-head">
+  return `<div class="h-head">
       <div class="h-name">${esc(h.name)}</div>
       <div class="h-since">свободен с ${fmtDateTime(h.startedAt)}</div>
     </div>
-
-    <div class="hero">
-      <div class="ring-wrap" data-act="vow" role="button" aria-label="${vi?'Аскеза':'Дать обет'}">
-        <svg class="ring" viewBox="0 0 220 220" aria-hidden="true">
-          <defs>
-            <linearGradient id="rg" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="${col}"/>
-              <stop offset="100%" stop-color="${col}" stop-opacity=".45"/>
-            </linearGradient>
-          </defs>
-          <circle class="ring-track${vi?'':' dashed'}" cx="110" cy="110" r="${RAD}"/>
-          ${vi?`<circle class="ring-fill" id="ring" cx="110" cy="110" r="${RAD}" stroke="url(#rg)"
-                 stroke-dasharray="${CIRC.toFixed(1)}" stroke-dashoffset="${CIRC.toFixed(1)}"/>`:''}
-        </svg>
-        <div class="ring-center">
-          <div class="ring-big num" id="big">${vi?vi.doneDays:totalDays}</div>
-          <div class="ring-unit">${plural(vi?vi.doneDays:totalDays,'день','дня','дней')}</div>
-          ${vi?`<div class="ring-of num">из ${vi.days}</div>`:''}
-        </div>
-      </div>
-      ${vi
-        ?`<div class="hero-left">осталось <b class="num" id="vow-left">${fmtLeft(vi.left)}</b></div>`
-        :`<button class="vow-cta" data-act="vow">${ICO.bolt}Дать обет</button>`}
-    </div>
-
+    ${heroRing(h,'')}
     ${has?`<div class="card craving" data-act="chart" role="button">
       <div class="craving-top"><span class="craving-label">Тяга</span>${ICO.chev}</div>
       <div class="craving-main">
@@ -890,14 +1060,12 @@ function renderHome(animate){
         <div class="zone" id="cv-zone"></div>
       </div>
     </div>`:''}
-
     <div class="odo" id="odo">
-      ${shown.map(u=>`<div class="obar" data-u="${u.k}">
+      ${units.map(u=>`<div class="obar" data-u="${u.k}" data-max="${u.max}" data-l="${u.l.join('|')}">
         <div class="obar-fill" style="width:${clamp(u.v/u.max*100,0,100)}%;background:linear-gradient(90deg,${u.c[0]},${u.c[1]})"></div>
         <div class="obar-txt"><span class="obar-n num">${u.v}</span><span class="obar-l">${plural(u.v,u.l[0],u.l[1],u.l[2])}</span></div>
       </div>`).join('')}
     </div>
-
     ${ph?`<div class="card" data-act="phases" role="button"><div class="row">
       <div class="phase-rank" style="color:${TIERS[ph.tier].color}">${ph.rank}</div>
       <div class="row-body">
@@ -906,45 +1074,92 @@ function renderHome(animate){
         <div class="phase-desc">${esc(ph.desc)}</div>
       </div>${ICO.chev}
     </div></div>`:''}
-
     <button class="sos-btn" data-act="sos">${ICO.bolt}Тянет</button>
+    ${historyCard(h)}
+    ${quoteBlock()}`;
+}
 
-    <div class="card" data-act="history" role="button"><div class="row">
-      <div class="row-body">
-        <div class="row-title">История</div>
-        <div class="row-sub">${historySummary(h)}</div>
-      </div>${ICO.chev}
-    </div></div>
+/* ---------- архетип «режим» ---------- */
+function dailyHome(h){
+  const col=habitColor(h),target=wakeBy(h);
+  const st=streakInfo(h),mark=st.mark;
+  const open=openDays(h,3);
+  const stats=dailyStats(h);
 
-    <div class="quote" data-act="quote"><span>${esc(QUOTES[S.quoteIdx%QUOTES.length])}</span></div>
-  `;
-
-  R={
-    big:$('big'),ring:$('ring'),vowLeft:$('vow-left'),
-    cv:$('cv'),cvZone:$('cv-zone'),odo:$('odo'),
-    shownKeys:shown.map(u=>u.k).join(','),
-    bars:{},last:{},
-  };
-  shown.forEach(u=>{
-    const node=el.querySelector(`.obar[data-u="${u.k}"]`);
-    R.bars[u.k]={fill:node.querySelector('.obar-fill'),n:node.querySelector('.obar-n'),l:node.querySelector('.obar-l'),
-                 max:u.max,labels:u.l};
-  });
-
-  setGlow(phaseColorOf(h));
-  renderTop();
-  updateCraving(true);
-  updateOdometer(true);
-
-  // кольцо: рисуем от нуля к цели после монтирования
-  if(R.ring&&vi){
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      R.ring.style.strokeDashoffset=(ringLen*(1-vi.p)).toFixed(1);
-      setTimeout(()=>R.ring&&R.ring.classList.add('live'),1250);
-    }));
+  let checkin;
+  if(mark){
+    const ok=mark.ok;
+    checkin=`<div class="checkin"><div class="ci-done">
+      <div class="ci-ico" style="background:${ok?'rgba(48,209,88,.16)':'rgba(255,69,58,.16)'};color:${ok?'#30d158':'#ff6a60'}">${ok?'✓':'✕'}</div>
+      <div><div class="ci-t">${ok?'Встал вовремя':'Проспал'}</div>
+        <div class="ci-s">Сегодня${mark.at?' в '+mark.at:''} · цель ${target}</div></div>
+      <div class="ci-edit" data-act="redoToday" role="button">Изменить</div>
+    </div></div>`;
+  }else{
+    checkin=`<div class="checkin">
+      <button class="ci-btn" data-act="wake" style="background:${col}">☀️ Я проснулся</button>
+      <div class="ci-s" style="text-align:center;margin-top:9px">Отметь подъём — время запишется само. Цель: до ${target}</div>
+    </div>`;
   }
-  // число дней: счёт вверх
-  if(animate)countUp(R.big,vi?vi.doneDays:totalDays);
+
+  const ask=open.length?`<div class="ask">
+    <div class="ask-t">${open.length===1?'Один день не отмечен':nDays(open.length)+' не отмечено'}</div>
+    <div class="ask-s">${fmtDayName(open[0])} — встал вовремя, до ${target}?</div>
+    <div class="ask-b">
+      <button class="ask-yes" data-act="backfill" data-arg="${open[0]}|1">Да</button>
+      <button class="ask-no" data-act="backfill" data-arg="${open[0]}|0">Нет</button>
+    </div></div>`:'';
+
+  const cells=calendarCells(h);
+  const dows=['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];
+
+  return `<div class="h-head">
+      <div class="h-name">${esc(h.name)}</div>
+      <div class="h-since">подъём до ${target} · с ${fmtDate(h.startedAt)}</div>
+    </div>
+    ${heroRing(h,'подряд')}
+    ${ask}
+    ${checkin}
+    <div class="cal-h">${dows.map(d=>`<span>${d}</span>`).join('')}</div>
+    <div class="cal">${cells.map(c=>
+      `<div class="cal-d ${c.st}${c.isToday?' today':''}">${c.n}</div>`).join('')}</div>
+    <div class="dstat">
+      <div class="hs"><div class="hs-n num" style="color:${col}">${stats.ok}</div><div class="hs-l">ВОВРЕМЯ</div></div>
+      <div class="hs"><div class="hs-n num">${stats.miss}</div><div class="hs-l">ПРОСПАЛ</div></div>
+      <div class="hs"><div class="hs-n num">${stats.avg||'—'}</div><div class="hs-l">В СРЕДНЕМ</div></div>
+    </div>
+    ${historyCard(h)}
+    ${quoteBlock()}`;
+}
+
+function fmtDayName(key){
+  const t=today();
+  if(key===shiftDay(t,-1))return'Вчера';
+  if(key===shiftDay(t,-2))return'Позавчера';
+  const d=new Date(key+'T12:00:00');
+  return d.getDate()+' '+MONTHS_SHORT[d.getMonth()];
+}
+/** Пять недель, понедельник первым. */
+function calendarCells(h){
+  const c=checksOf(h),t=new Date();
+  const monday=new Date(t);monday.setDate(t.getDate()-((t.getDay()+6)%7));
+  const start=new Date(monday);start.setDate(monday.getDate()-28);
+  const from=dayKey(new Date(h.startedAt)),tk=today(),out=[];
+  for(let i=0;i<35;i++){
+    const d=new Date(start);d.setDate(start.getDate()+i);
+    const k=localDate(d);
+    let st='out';
+    if(k<=tk&&k>=from)st=c[k]?(c[k].ok?'ok':'miss'):'none';
+    out.push({k,st,n:d.getDate(),isToday:k===tk});
+  }
+  return out;
+}
+function dailyStats(h){
+  const c=checksOf(h),keys=Object.keys(c);
+  const ok=keys.filter(k=>c[k].ok).length;
+  const mins=keys.filter(k=>c[k].at).map(k=>{const[a,b]=c[k].at.split(':');return +a*60+ +b});
+  const avg=mins.length?pad(Math.floor(mins.reduce((x,y)=>x+y,0)/mins.length/60))+':'+pad(Math.round(mins.reduce((x,y)=>x+y,0)/mins.length)%60):null;
+  return{ok,miss:keys.length-ok,total:keys.length,avg};
 }
 
 function historySummary(h){
@@ -1025,6 +1240,10 @@ function updateOdometer(force){
 
 function tickSecond(){
   const h=active();if(!h)return;
+  if(R.daily){                                  // серия растёт отметками, а не секундами
+    if(R.day&&R.day!==today()){renderHome(false);return}
+    checkProgress();return;
+  }
   if(R.shownKeys&&shownKeysNow(h)!==R.shownKeys){renderHome(false);return}
   updateOdometer(false);
   const vi=vowInfo(h);
@@ -1056,19 +1275,37 @@ function loop(t){
 function checkProgress(){
   let dirty=false;
   S.habits.forEach(h=>{
-    const start=new Date(h.startedAt).getTime(),sec=(Date.now()-start)/1000;
-    // вехи: фиксируем ВСЕ пройденные, с настоящей датой пересечения
-    const seen=new Set(h.history.filter(e=>e.t==='milestone').map(e=>e.key));
-    MILESTONES.forEach(m=>{
-      if(sec>=m.sec&&!seen.has(m.key)){
-        h.history.push({t:'milestone',at:new Date(start+m.sec*1000).toISOString(),key:m.key,seen:false});
-        dirty=true;
+    if(!h.sid)h.sid=1;
+    // вехи считаются только для ТЕКУЩЕЙ серии, но прошлые остаются в истории:
+    // срыв больше не стирает то, что было пройдено
+    const seen=new Set(h.history.filter(e=>e.t==='milestone'&&(e.sid||1)===h.sid).map(e=>e.key));
+    if(isDaily(h)){
+      const st=streakInfo(h);
+      const seenD=new Set(h.history.filter(e=>e.t==='milestone'&&e.from===st.startDay).map(e=>e.key));
+      if(st.startDay)DAILY_MS.forEach(m=>{
+        if(st.days>=m.days&&!seenD.has(m.key)){
+          h.history.push({t:'milestone',at:new Date(shiftDay(st.startDay,m.days-1)+'T12:00:00').toISOString(),
+                          key:m.key,from:st.startDay,seen:false});dirty=true;
+        }
+      });
+      const vi=vowInfo(h);
+      if(h.vow&&h.vow.status==='active'&&vi&&vi.complete){
+        h.history.push({t:'vow_done',at:new Date().toISOString(),days:h.vow.days,from:h.vow.startedAt,seen:false});
+        h.vow=null;dirty=true;
       }
-    });
-    // аскеза: завершение определяется сравнением времени, а не поимкой момента
-    if(h.vow&&h.vow.status==='active'&&Date.now()>=new Date(h.vow.endsAt).getTime()){
-      h.history.push({t:'vow_done',at:h.vow.endsAt,days:h.vow.days,from:h.vow.startedAt,seen:false});
-      h.vow=null;dirty=true;
+    }else{
+      const start=new Date(h.startedAt).getTime(),sec=(Date.now()-start)/1000;
+      MILESTONES.forEach(m=>{
+        if(sec>=m.sec&&!seen.has(m.key)){
+          h.history.push({t:'milestone',at:new Date(start+m.sec*1000).toISOString(),key:m.key,sid:h.sid,seen:false});
+          dirty=true;
+        }
+      });
+      // аскеза: завершение определяется сравнением времени, а не поимкой момента
+      if(h.vow&&h.vow.status==='active'&&Date.now()>=new Date(h.vow.endsAt).getTime()){
+        h.history.push({t:'vow_done',at:h.vow.endsAt,days:h.vow.days,from:h.vow.startedAt,seen:false});
+        h.vow=null;dirty=true;
+      }
     }
   });
   if(dirty){save();queueCelebrations();if(active())renderHome(false)}
@@ -1086,8 +1323,9 @@ function queueCelebrations(){
     fresh.filter(e=>e.t==='vow_done').forEach(e=>celQueue.push({h,e}));
     // Вехи схлопываем: вернулся через две недели — получаешь одно празднование
     // самой крупной вехи, а не шесть окон подряд.
+    const L=msList(h);
     const ms=fresh.filter(e=>e.t==='milestone')
-      .sort((a,b)=>MILESTONES.findIndex(m=>m.key===a.key)-MILESTONES.findIndex(m=>m.key===b.key));
+      .sort((a,b)=>L.findIndex(m=>m.key===a.key)-L.findIndex(m=>m.key===b.key));
     if(ms.length)celQueue.push({h,e:ms[ms.length-1]});
     fresh.forEach(e=>e.seen=true);
   });
@@ -1107,10 +1345,9 @@ function showNextCelebration(){
           <button class="btn ghost" data-act="celVowNew" data-id="${h.id}">Новый срок</button>
           <button class="btn ghost" data-act="celClose">Оставить без срока</button>`;
   }else{
-    const m=MILESTONES.find(x=>x.key===e.key)||{label:''};
     kicker='Веха пройдена';
-    title=m.label;
-    sub=`${esc(h.name)} · ${fmtDateTime(e.at)}`;
+    title=msLabel(h,e.key);
+    sub=`${esc(h.name)} · ${isDaily(h)?fmtDate(e.at):fmtDateTime(e.at)}`;
     badge='★';
     acts=`<button class="btn" data-act="celClose">Продолжаю</button>`;
   }
@@ -1121,7 +1358,6 @@ function showNextCelebration(){
     <div class="cel-sub">${sub}</div>
     <div class="cel-acts">${acts}</div>`;
   $('cel').classList.add('on');
-  confetti(col);
 }
 function closeCelebration(){
   $('cel').classList.remove('on');celBusy=false;
@@ -1129,38 +1365,29 @@ function closeCelebration(){
 }
 
 /* ------------------------------------------------------------
-   Конфетти на канвасе
+   Отметка дня (режим)
    ------------------------------------------------------------ */
-let confRAF=null;
-function confetti(color){
-  if(prefersReduced())return;
-  const c=$('confetti'),dpr=Math.min(devicePixelRatio||1,2);
-  const W=innerWidth,H=innerHeight;
-  c.width=W*dpr;c.height=H*dpr;c.style.width=W+'px';c.style.height=H+'px';
-  const ctx=c.getContext('2d');ctx.scale(dpr,dpr);
-  const cols=[color,'#ffd60a','#30d158','#2aabee','#bf5af2','#ff9f0a'];
-  const bits=Array.from({length:90},()=>({
-    x:Math.random()*W,y:-20-Math.random()*H*.4,
-    vx:(Math.random()-.5)*1.7,vy:2+Math.random()*3.2,
-    w:5+Math.random()*6,h:4+Math.random()*7,
-    a:Math.random()*6.28,va:(Math.random()-.5)*.22,
-    col:cols[Math.floor(Math.random()*cols.length)],
-  }));
-  c.classList.add('on');
-  const t0=performance.now();
-  cancelAnimationFrame(confRAF);
-  (function step(t){
-    const age=t-t0;
-    ctx.clearRect(0,0,W,H);
-    bits.forEach(b=>{
-      b.x+=b.vx;b.y+=b.vy;b.vy+=0.045;b.a+=b.va;
-      ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.a);
-      ctx.globalAlpha=clamp(1-(age-2200)/900,0,1);
-      ctx.fillStyle=b.col;ctx.fillRect(-b.w/2,-b.h/2,b.w,b.h);ctx.restore();
-    });
-    if(age<3100)confRAF=requestAnimationFrame(step);
-    else{c.classList.remove('on');ctx.clearRect(0,0,W,H)}
-  })(t0);
+function markDay(h,key,timeStr,forceOk){
+  if(!h.daily)h.daily={wakeBy:'07:00',checks:{}};
+  const ok=(forceOk===undefined)?(!!timeStr&&timeStr<=wakeBy(h)):!!forceOk;
+  h.daily.checks[key]={ok,at:timeStr||null};
+  // переотметка того же дня заменяет запись, а не плодит дубли
+  h.history=h.history.filter(e=>!((e.t==='wake'||e.t==='oversleep')&&e.day===key));
+  h.history.push({t:ok?'wake':'oversleep',at:new Date(key+'T'+(timeStr||'09:00')+':00').toISOString(),
+                  day:key,time:timeStr||null});
+  save();renderHome(true);checkProgress();
+  const late=timeStr&&!ok?' в '+timeStr:'';
+  toast(ok?(timeStr?'Засчитано, '+timeStr:'Засчитано'):'Записано'+late+'. Завтра новый шанс');
+}
+function bestStreak(h){
+  if(!isDaily(h))return Math.max(streakDays(h),...h.history.filter(e=>e.t==='relapse').map(e=>e.streakDays||0),0);
+  const c=checksOf(h),keys=Object.keys(c).sort();
+  let best=0,cur=0,prev=null;
+  keys.forEach(k=>{
+    if(c[k].ok)cur=(prev&&shiftDay(prev,1)===k)?cur+1:1;else cur=0;
+    best=Math.max(best,cur);prev=k;
+  });
+  return best;
 }
 
 /* ------------------------------------------------------------
@@ -1175,7 +1402,7 @@ function renderMenu(){
         <div class="m-bar" style="background:${habitColor(h)}"></div>
         <div class="m-info">
           <div class="m-name">${esc(h.name)}</div>
-          <div class="m-sub">${fmtRough(elapsed(h))}${vi?` · обет ${vi.doneDays}/${vi.days}`:''}</div>
+          <div class="m-sub">${isDaily(h)?nDays(streakDays(h))+' подряд':fmtRough(elapsed(h))}${vi?` · обет ${vi.doneDays}/${vi.days}`:''}</div>
         </div>${on?ICO.check:''}
       </div>`;
     }).join('')}
@@ -1235,24 +1462,28 @@ function openVow(){
 }
 function drawVowPage(){
   const h=active();if(!h)return;
-  const sec=elapsed(h),passed=Math.floor(sec/D);
+  const daily=isDaily(h),passed=streakDays(h);
   const ends=new Date(new Date(h.startedAt).getTime()+vowDays*D*1000);
   const left=Math.max(0,(ends.getTime()-Date.now())/1000);
   const done=vowDays<=passed;
   openPage('p-vow',
     pageBar('Аскеза','closeVow')+
     `<div class="page-body">
-      <div class="page-sub">Обет — это отказ на конкретный срок.<br>Отсчёт идёт с даты отказа, уже пройденное засчитывается.</div>
+      <div class="page-sub">${daily
+        ? 'Обет — это срок, который надо выдержать без пропусков.<br>Уже набранная серия засчитывается.'
+        : 'Обет — это отказ на конкретный срок.<br>Отсчёт идёт с даты отказа, уже пройденное засчитывается.'}</div>
       <div class="vow-preview">
         <div class="stepper">
           <button class="st-b" data-act="vowMinus" aria-label="Уменьшить срок">−</button>
           <div class="vp-days num">${vowDays}</div>
           <button class="st-b" data-act="vowPlus" aria-label="Увеличить срок">+</button>
         </div>
-        <div class="vp-sub">${plural(vowDays,'день','дня','дней')} без привычки<br>
+        <div class="vp-sub">${daily?'дней подряд без пропусков':plural(vowDays,'день','дня','дней')+' без привычки'}<br>
           ${done
             ? `<span style="color:var(--green)">этот срок уже пройден — выбери больше</span>`
-            : `закончится <b>${fmtLong(ends)}</b> · осталось ${fmtRough(left)}`}
+            : daily
+              ? `осталось ${nDays(vowDays-passed)} · каждый день нужно закрыть отметкой`
+              : `закончится <b>${fmtLong(ends)}</b> · осталось ${fmtRough(left)}`}
         </div>
       </div>
       <div class="f-group">
@@ -1261,7 +1492,7 @@ function drawVowPage(){
           `<div class="chip ${d===vowDays?'on':''}" data-act="vowSet" data-arg="${d}" style="${d===vowDays?'color:'+habitColor(h):''}">${d}</div>`).join('')}
         </div>
       </div>
-      <div class="note">Уже пройдено ${nDays(passed)}. Если сорвёшься — аскеза прервётся и попадёт в историю, а отсчёт начнётся заново.</div>
+      <div class="note">Уже ${daily?'набрано':'пройдено'} ${nDays(passed)}. ${daily?'Пропущенный или проспанный день':'Срыв'} прервёт аскезу — она попадёт в историю, а отсчёт начнётся заново.</div>
     </div>
     <div class="page-foot">
       <button class="btn" data-act="vowSave" style="background:${habitColor(h)}" ${done?'disabled':''}>Дать обет</button>
@@ -1272,11 +1503,11 @@ function drawVowPage(){
 let form={kind:null,name:'',color:'#2aabee',date:'',time:''};
 function openAdd(){
   const n=new Date();
-  form={kind:null,name:'',color:'#2aabee',date:localDate(n),time:localTime(n)};
+  form={kind:null,name:'',color:'#2aabee',date:localDate(n),time:localTime(n),wake:'07:00'};
   drawAddPage();
 }
 function drawAddPage(){
-  const ready=!!form.kind&&form.name.trim().length>0&&!!form.date;
+  const ready=!!form.kind&&form.name.trim().length>0&&(form.kind==='sleep'?!!form.wake:!!form.date);
   const col=form.color;
   openPage('p-add',
     pageBar('Новая привычка','closeAdd')+
@@ -1295,7 +1526,13 @@ function drawAddPage(){
         <div class="f-label">Цвет</div>
         <div class="colors">${PALETTE.map(c=>`<div class="col ${form.color===c?'on':''}" data-act="pickColor" data-arg="${c}" style="background:${c};color:${c}" role="button" aria-label="Цвет"></div>`).join('')}</div>
       </div>`:''}
-      ${form.kind?`
+      ${form.kind==='sleep'?`
+      <div class="sec-h">Во сколько вставать</div>
+      <div class="f-group">
+        <input class="f-input" id="a-wake" type="time" value="${form.wake}">
+        <div class="note" style="padding:12px 4px 0">Каждое утро отмечаешь подъём одной кнопкой — время запишется само. Серия растёт днями, а не секундами, и обрывается, если проспал. Отсчёт начинается с сегодня.</div>
+      </div>`:''}
+      ${(form.kind&&form.kind!=='sleep')?`
       <div class="sec-h">Когда отказался</div>
       <div class="f-group">
         <div class="chips" style="margin-bottom:12px">
@@ -1315,9 +1552,10 @@ function drawAddPage(){
     </div>`);
   const ni=$('a-name');
   if(ni){ni.oninput=e=>{form.name=e.target.value;syncAddCta()};}
-  const di=$('a-date'),ti=$('a-time');
+  const di=$('a-date'),ti=$('a-time'),wi=$('a-wake');
   if(di)di.onchange=e=>{form.date=e.target.value;refreshNote()};
   if(ti)ti.onchange=e=>{form.time=e.target.value;refreshNote()};
+  if(wi)wi.onchange=e=>{form.wake=e.target.value||'07:00';syncAddCta()};
 }
 function addNote(){
   const t=formStart();
@@ -1333,8 +1571,27 @@ function formStart(){
 }
 function syncAddCta(){
   const btn=document.querySelector('#p-add .btn');if(!btn)return;
+  if(form.kind==='sleep'){btn.disabled=!(form.name.trim()&&form.wake);return}
   const t=formStart();
   btn.disabled=!(form.kind&&form.name.trim()&&t&&t.getTime()<=Date.now()+60000);
+}
+
+/* ---------------- страница: один день режима ---------------- */
+function openDayPage(key){
+  const h=active();if(!h||!isDaily(h))return;
+  const c=checksOf(h)[key];
+  openPage('p-day',pageBar(fmtDayName(key),'closeDay')+
+    `<div class="page-body">
+      <div class="page-sub">Цель — встать до ${wakeBy(h)}</div>
+      <div class="f-group" style="padding-top:8px">
+        <div class="f-label">Во сколько встал</div>
+        <input class="f-input" id="d-time" type="time" value="${(c&&c.at)||wakeBy(h)}">
+      </div>
+      <div class="note">Раньше цели — день засчитан. Позже — записан как проспанный, и серия начнётся заново.</div>
+    </div>
+    <div class="page-foot">
+      <button class="btn" data-act="saveDay" data-arg="${key}" style="background:${habitColor(h)}">Сохранить</button>
+    </div>`);
 }
 
 /* ---------------- страница: фазы ---------------- */
@@ -1379,6 +1636,8 @@ function openPhases(){
           </div>
         </div>`;
       }).join('')}</div>
+      ${PHASE_SOURCE[h.kind]?`<div class="ch-info" data-act="phInfo">Откуда эти сроки <span class="ch-arrow" id="ph-arrow">›</span></div>
+      <div class="ch-body" id="ph-body">${PHASE_SOURCE[h.kind]}</div>`:''}
     </div>`);
 }
 
@@ -1387,12 +1646,13 @@ function openHistory(){
   const h=active();if(!h)return;
   const evs=h.history.slice().sort((a,b)=>new Date(b.at)-new Date(a.at));
   const urges=h.history.filter(e=>e.t==='urge');
-  const rel=h.history.filter(e=>e.t==='relapse');
-  const best=Math.max(Math.floor(elapsed(h)/D),...rel.map(e=>e.streakDays||0),0);
+  const over=h.history.filter(e=>e.t==='oversleep');
+  const best=bestStreak(h);
   const vows=h.history.filter(e=>e.t==='vow_done').length;
+  const third=isDaily(h)?{n:over.length,l:'ПРОСПАЛ'}:{n:urges.length,l:'ПЕРЕЖИТЫХ ТЯГ'};
 
   let hist='';
-  if(urges.length>=5){
+  if(!isDaily(h)&&urges.length>=5){
     const byHour=new Array(24).fill(0);
     urges.forEach(e=>byHour[new Date(e.at).getHours()]++);
     const mx=Math.max(...byHour);
@@ -1408,7 +1668,7 @@ function openHistory(){
       <div class="hist-stat">
         <div class="hs"><div class="hs-n num" style="color:${habitColor(h)}">${best}</div><div class="hs-l">ЛУЧШАЯ СЕРИЯ</div></div>
         <div class="hs"><div class="hs-n num">${vows}</div><div class="hs-l">ОБЕТОВ</div></div>
-        <div class="hs"><div class="hs-n num">${urges.length}</div><div class="hs-l">ПЕРЕЖИТЫХ ТЯГ</div></div>
+        <div class="hs"><div class="hs-n num">${third.n}</div><div class="hs-l">${third.l}</div></div>
       </div>
       ${hist}
       <div class="sec-h">События</div>
@@ -1419,7 +1679,9 @@ function evRow(e,h){
   const M={
     start:    {i:'🚩',c:'#2aabee',t:'Начало отсчёта',s:()=>fmtDateTime(e.at)},
     relapse:  {i:'↩︎',c:'#ff453a',t:'Срыв',s:()=>fmtDateTime(e.at)+' · серия '+nDays(e.streakDays||0)+(e.note?' · '+esc(e.note):'')},
-    milestone:{i:'★', c:'#ffd60a',t:()=>{const m=MILESTONES.find(x=>x.key===e.key);return m?m.label:'Веха'},s:()=>fmtDateTime(e.at)},
+    milestone:{i:'★', c:'#ffd60a',t:()=>msLabel(h,e.key),s:()=>isDaily(h)?fmtDate(e.at):fmtDateTime(e.at)},
+    wake:     {i:'☀️',c:'#30d158',t:'Встал вовремя',s:()=>fmtDayName(e.day)+(e.time?' · '+e.time:'')+' · цель '+wakeBy(h)},
+    oversleep:{i:'😴',c:'#ff9f0a',t:'Проспал',      s:()=>fmtDayName(e.day)+(e.time?' · '+e.time:'')},
     vow_done: {i:'✓', c:'#30d158',t:()=>'Аскеза выполнена · '+nDays(e.days),s:()=>fmtDate(e.at)},
     vow_fail: {i:'✕', c:'#ff9f0a',t:()=>'Аскеза прервана · '+nDays(e.days),s:()=>fmtDateTime(e.at)+' · на '+nDays(e.onDay||0)},
     urge:     {i:'⚡',c:'#ff6a30',t:'Пережил тягу',s:()=>fmtDateTime(e.at)},
@@ -1730,7 +1992,7 @@ const ACT={
       {ico:'✏️',label:'Изменить',act:'edit'},
       vi?{ico:'⚡',label:'Аскеза: '+vi.doneDays+' из '+vi.days,act:'vow'}:{ico:'⚡',label:'Дать обет',act:'vow'},
       {ico:'🕘',label:'История',act:'history'},
-      {ico:'↩︎',label:'Записать срыв',act:'relapseAsk',cls:'warn'},
+      ...(isDaily(h)?[]:[{ico:'↩︎',label:'Записать срыв',act:'relapseAsk',cls:'warn'}]),
       {ico:'🗑',label:'Удалить привычку',act:'deleteAsk',cls:'danger'},
     ]);
   },
@@ -1755,8 +2017,16 @@ const ACT={
     drawAddPage();
   },
   saveNew(){
-    const t=formStart();const name=form.name.trim();
-    if(!form.kind||!name||!t)return;
+    const name=form.name.trim();
+    if(!form.kind||!name)return;
+    if(form.kind==='sleep'){
+      const nh=mkHabit({name,kind:'sleep',color:form.color,startedAt:new Date().toISOString(),wakeBy:form.wake||'07:00'});
+      S.habits.push(nh);S.activeId=nh.id;save();
+      closePage('p-add');renderHome(true);
+      return toast('Режим включён. Отметь подъём кнопкой');
+    }
+    const t=formStart();
+    if(!t)return;
     if(t.getTime()>Date.now()+60000)return toast('Это время ещё не наступило');
     const h=mkHabit({name,kind:form.kind,color:form.color,startedAt:t.toISOString()});
     // всё, что уже пройдено к моменту добавления, фиксируем без праздников
@@ -1781,8 +2051,12 @@ const ACT={
           <div class="f-label">Цвет</div>
           <div class="colors">${PALETTE.map(c=>`<div class="col ${form.color===c?'on':''}" data-act="editColor" data-arg="${c}" style="background:${c};color:${c}"></div>`).join('')}</div>
         </div>
+        ${isDaily(h)?`<div class="f-group">
+          <div class="f-label">Во сколько вставать</div>
+          <input class="f-input" id="e-wake" type="time" value="${wakeBy(h)}">
+        </div>`:''}
         <div class="f-group">
-          <div class="f-label">Начало отсчёта</div>
+          <div class="f-label">${isDaily(h)?'Ведём режим с':'Начало отсчёта'}</div>
           <div class="f-row">
             <input class="f-input" id="e-date" type="date" value="${form.date}" max="${localDate(new Date())}">
             <input class="f-input" id="e-time" type="time" value="${form.time}">
@@ -1807,13 +2081,20 @@ const ACT={
     if(!t)return toast('Проверь дату');
     if(t.getTime()>Date.now()+60000)return toast('Это время ещё не наступило');
     h.name=name;h.color=form.color;
+    const wk=$('e-wake');
+    if(isDaily(h)&&wk&&wk.value){
+      if(!h.daily)h.daily={wakeBy:'07:00',checks:{}};
+      h.daily.wakeBy=wk.value;
+    }
     if(t.toISOString()!==h.startedAt){
       h.startedAt=t.toISOString();
       const st=h.history.find(e=>e.t==='start');if(st)st.at=h.startedAt;
-      // вехи пересобираем под новую дату, без праздников за прошлое
-      h.history=h.history.filter(e=>e.t!=='milestone');
-      seedMilestones(h);
-      if(h.vow){h.vow.startedAt=h.startedAt;h.vow.endsAt=new Date(t.getTime()+h.vow.days*D*1000).toISOString()}
+      if(!isDaily(h)){
+        // вехи текущей серии пересобираем под новую дату, прошлые серии не трогаем
+        h.history=h.history.filter(e=>!(e.t==='milestone'&&(e.sid||1)===(h.sid||1)));
+        seedMilestones(h);
+        if(h.vow){h.vow.startedAt=h.startedAt;h.vow.endsAt=new Date(t.getTime()+h.vow.days*D*1000).toISOString()}
+      }
     }
     save();closePage('p-add');renderHome(true);toast('Сохранено');
   },
@@ -1826,6 +2107,12 @@ const ACT={
   vowMinus(){vowDays=clamp(vowDays-(vowDays>100?10:vowDays>30?5:1),1,999);drawVowPage()},
   vowSave(){
     const h=active();if(!h)return;
+    if(isDaily(h)){
+      if(vowDays<=streakDays(h))return toast('Этот срок уже пройден');
+      h.vow={days:vowDays,startedAt:new Date().toISOString(),endsAt:null,status:'active'};
+      save();closePage('p-vow');renderHome(true);
+      return toast('Обет дан: '+nDays(vowDays)+' подряд');
+    }
     const start=new Date(h.startedAt);
     const ends=new Date(start.getTime()+vowDays*D*1000);
     if(ends.getTime()<=Date.now())return toast('Этот срок уже прошёл');
@@ -1842,6 +2129,10 @@ const ACT={
   },
   celVowRepeat(id,el){
     const h=S.habits.find(x=>x.id===id);const d=parseInt(el.dataset.days,10);
+    if(h&&isDaily(h)){
+      h.vow={days:d,startedAt:new Date().toISOString(),endsAt:null,status:'active'};save();
+      closeCelebration();renderHome(true);return toast('Новый обет: '+nDays(d)+' подряд');
+    }
     if(h){
       // новый срок продолжает предыдущий с момента его окончания:
       // дни, прожитые между финишем и открытием приложения, честно засчитываются
@@ -1873,7 +2164,7 @@ const ACT={
     }
     h.history.push({t:'relapse',at:now,streakDays:days});
     h.startedAt=now;
-    h.history=h.history.filter(e=>e.t!=='milestone');
+    h.sid=(h.sid||1)+1;                       // новая серия: прошлые вехи остаются в истории
     h.history.push({t:'start',at:now});
     save();renderHome(true);toast('Записано. Начинаем заново');
   },
@@ -1906,9 +2197,43 @@ const ACT={
     const on=b.classList.toggle('on');
     if(a)a.style.transform=on?'rotate(90deg)':'';
   },
+  phInfo(){
+    const b=$('ph-body'),a=$('ph-arrow');if(!b)return;
+    const on=b.classList.toggle('on');
+    if(a)a.style.transform=on?'rotate(90deg)':'';
+  },
+
+  /* режим */
+  wake(){const h=active();if(h&&isDaily(h))markDay(h,today(),localTime(new Date()))},
+  backfill(_id,el){
+    const h=active();if(!h||!isDaily(h))return;
+    const[key,flag]=el.dataset.arg.split('|');
+    markDay(h,key,null,flag==='1');
+  },
+  redoToday(){
+    const h=active();if(!h||!isDaily(h))return;
+    const m=checksOf(h)[today()];
+    sheet('Сегодня'+(m&&m.at?' · отмечено в '+m.at:''),[
+      {ico:'✓',label:'Встал вовремя',act:'setDay',arg:today()+'|1'},
+      {ico:'✕',label:'Проспал',act:'setDay',arg:today()+'|0'},
+      {ico:'🕐',label:'Указать точное время',act:'timeDay',arg:today()},
+    ]);
+  },
+  setDay(_id,el){
+    const h=active();if(!h||!isDaily(h))return;closeSheet();
+    const[key,flag]=el.dataset.arg.split('|');
+    setTimeout(()=>markDay(h,key,null,flag==='1'),170);
+  },
+  timeDay(_id,el){closeSheet();const k=el.dataset.arg;setTimeout(()=>openDayPage(k),170)},
+  closeDay(){closePage('p-day')},
+  saveDay(_id,el){
+    const h=active();if(!h||!isDaily(h))return;
+    const t=$('d-time');if(!t||!t.value)return toast('Укажи время');
+    closePage('p-day');markDay(h,el.dataset.arg,t.value);
+  },
 
   /* SOS */
-  sos(){openSOS()},
+  sos(){const h=active();if(h&&!isDaily(h))openSOS()},
   sosDone(){closeSOS(true)},
   sosClose(){closeSOS(false)},
 
@@ -2014,7 +2339,9 @@ window.__askeza={
   get S(){return S},
   plural,breakdown,localDate,craving,cravingDigits,zoneOf,phaseAt,buildCurve,CRAVING,CURVES,
   MILESTONES,vowInfo,elapsed,active,renderHome,checkProgress,guessKind,exportJSON,applyImport,
-  esc,fmtLeft,fmtRough,nDays,
+  esc,fmtLeft,fmtRough,nDays,KINDS,PHASE_SOURCE,
+  isDaily,today,shiftDay,streakInfo,openDays,streakDays,bestStreak,calendarCells,dailyStats,
+  markDay,wakeBy,checksOf,DAILY_MS,hasCurve,
   set(next){S=normalize(next);saveNow();renderHome(true);renderMenu()},
 };
 </script>

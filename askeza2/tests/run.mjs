@@ -76,6 +76,8 @@ async function dismissCel() {
     await page.waitForTimeout(450);
   }
 }
+/** Клик, который сперва гасит празднование, если оно перехватывает нажатия. */
+async function tap(sel) { await dismissCel(); await page.click(sel); }
 /** Подставляет состояние «как из хранилища»: вехи прошлого уже отмечены увиденными. */
 async function setState(s) {
   await page.evaluate(st => {
@@ -605,7 +607,15 @@ const afterRel = await page.evaluate(() => {
 eq('счётчик обнулился', afterRel.days, 0);
 eq('срыв записан в историю', afterRel.rel.length, 1);
 eq('в срыве сохранена длина серии', afterRel.rel[0].streakDays, beforeRel.days);
-eq('вехи сброшены вместе с серией', afterRel.ms, 0);
+// v2.1: срыв больше НЕ стирает вехи из истории — они остаются как факт,
+// но новая серия может заработать их заново
+ok('прошлые вехи остались в истории', afterRel.ms >= 8, `вех в истории: ${afterRel.ms}`);
+const sidInfo = await page.evaluate(() => {
+  const h = window.__askeza.active();
+  return { sid: h.sid, curr: h.history.filter(e => e.t === 'milestone' && (e.sid || 1) === h.sid).length };
+});
+ok('серия получила новый номер', sidInfo.sid >= 2, 'sid=' + sidInfo.sid);
+eq('у новой серии вех пока нет', sidInfo.curr, 0);
 
 // срыв во время аскезы обрывает и её
 await setState(seed({
@@ -808,9 +818,287 @@ const yearLbl = (await page.locator('.obar-l').allInnerTexts())[0];
 ok('единица «год/года/лет» просклонена', /год|года|лет/.test(yearLbl), yearLbl);
 await shot('22-long-streak');
 
+/* ═══════════════ 19. Конфетти убрано ═══════════════ */
+group('19. Конфетти убрано');
+await reload();
+eq('канваса конфетти нет в разметке', await page.locator('#confetti').count(), 0);
+ok('функции конфетти нет в коде', await page.evaluate(() => typeof window.confetti === 'undefined'));
+await setStateRaw({
+  v: 2, quoteIdx: 0, activeId: 'h1',
+  habits: [{ id: 'h1', name: 'Курение', kind: 'smoking', color: '#ff453a', startedAt: ISO(35 * DAY),
+    vow: { days: 30, startedAt: ISO(35 * DAY), endsAt: ISO(5 * DAY), status: 'active' },
+    history: [{ t: 'start', at: ISO(35 * DAY) }] }],
+});
+await page.evaluate(() => window.__askeza.checkProgress());
+await page.waitForTimeout(1300);
+ok('празднование по-прежнему показывается', await page.locator('#cel.on').isVisible());
+eq('во время празднования нет летящих частиц', await page.locator('.confetti-piece, #confetti').count(), 0);
+await page.screenshot({ path: path.join(SHOTS, '23-celebration-no-confetti.png') });
+await dismissCel();
+
+/* ═══════════════ 20. Скроллинг и порно ═══════════════ */
+group('20. Новые привычки: скроллинг и порно');
+for (const [kind, title, phases] of [['scroll', 'Скроллинг', 7], ['porn', 'Порно', 7]]) {
+  await setState({
+    v: 2, quoteIdx: 0, activeId: 'x1',
+    habits: [{ id: 'x1', name: title, kind, color: '#5e9eff', startedAt: ISO(10 * DAY), vow: null,
+      history: [{ t: 'start', at: ISO(10 * DAY) }] }],
+  });
+  await page.waitForTimeout(700);
+  eq(`${title}: экран открылся`, (await page.locator('.h-name').innerText()).trim(), title);
+  eq(`${title}: карточки тяги НЕТ`, await page.locator('.craving').count(), 0);
+  ok(`${title}: одометр есть`, (await page.locator('.obar').count()) > 0);
+  ok(`${title}: карточка фазы есть`, await page.locator('.phase-rank').isVisible());
+  ok(`${title}: кнопка «Тянет» есть`, await page.locator('.sos-btn').isVisible());
+  ok(`${title}: кривой тяги в коде нет`, await page.evaluate(k => !window.__askeza.hasCurve(k), kind));
+
+  await page.click('.card:has(.phase-rank)');
+  await page.waitForSelector('#p-phases.on');
+  await page.waitForTimeout(400);
+  eq(`${title}: фаз в ленте ${phases}`, await page.locator('#p-phases .tl-i').count(), phases);
+  const d = await page.locator('#p-phases .tl-desc').allInnerTexts();
+  eq(`${title}: описание у каждой фазы`, d.length, phases);
+  ok(`${title}: есть блок «Откуда эти сроки»`, await page.locator('[data-act="phInfo"]').isVisible());
+  await page.click('[data-act="phInfo"]');
+  await page.waitForTimeout(500);
+  const src = await page.locator('#ph-body').innerText();
+  ok(`${title}: источник честно говорит, что это не клиника`,
+     /не клиническ|данных.*нет|ориентир|спорн/i.test(src), src.slice(0, 80));
+  await page.screenshot({ path: path.join(SHOTS, `24-phases-${kind}.png`) });
+  await page.click('[data-act="closePhases"]');
+  await page.waitForTimeout(450);
+}
+const srcSmoke = await page.evaluate(() => window.__askeza.PHASE_SOURCE.smoking);
+ok('у курения источник ссылается на клинические данные', /клиническ/i.test(srcSmoke), srcSmoke.slice(0, 60));
+
+/* ═══════════════ 21. Режим сна ═══════════════ */
+group('21. Режим сна — добавление');
+await page.evaluate(() => window.__askeza.set({ v: 2, habits: [], activeId: null }));
+await page.waitForTimeout(700);
+await page.click('.empty [data-act="add"]');
+await page.waitForSelector('#p-add.on');
+await page.waitForTimeout(300);
+eq('в списке типов семь карточек', await page.locator('#p-add .kind').count(), 7);
+await page.click('[data-act="pickKind"][data-arg="sleep"]');
+await page.waitForTimeout(400);
+ok('появилось поле времени подъёма', await page.locator('#a-wake').isVisible());
+eq('поля даты отказа нет — режим начинается сегодня', await page.locator('#a-date').count(), 0);
+eq('время подъёма по умолчанию 07:00', await page.locator('#a-wake').inputValue(), '07:00');
+ok('кнопка активна сразу', !(await page.locator('#p-add .btn').isDisabled()));
+await page.screenshot({ path: path.join(SHOTS, '25-add-sleep.png') });
+await page.click('[data-act="saveNew"]');
+await page.waitForTimeout(1200);
+const made = await page.evaluate(() => {
+  const h = window.__askeza.active();
+  return { name: h.name, kind: h.kind, daily: !!h.daily, wake: h.daily && h.daily.wakeBy, isDaily: window.__askeza.isDaily(h) };
+});
+eq('создан «Режим сна»', made.name, 'Режим сна');
+eq('тип sleep', made.kind, 'sleep');
+ok('привычка помечена как режим', made.isDaily && made.daily);
+eq('цель подъёма сохранена', made.wake, '07:00');
+
+group('21б. Главный экран режима');
+ok('одометра нет', (await page.locator('.obar').count()) === 0);
+ok('карточки тяги нет', (await page.locator('.craving').count()) === 0);
+ok('карточки фазы нет', (await page.locator('.phase-rank').count()) === 0);
+ok('кнопки «Тянет» нет', (await page.locator('.sos-btn').count()) === 0);
+ok('есть кнопка «Я проснулся»', await page.locator('[data-act="wake"]').isVisible());
+ok('в шапке указана цель', (await page.locator('.h-since').innerText()).includes('подъём до 07:00'));
+eq('календарь на пять недель', await page.locator('.cal-d').count(), 35);
+eq('шапка дней недели', await page.locator('.cal-h span').count(), 7);
+eq('сегодняшний день подсвечен', await page.locator('.cal-d.today').count(), 1);
+eq('три показателя', await page.locator('.dstat .hs').count(), 3);
+ok('кольцо-заглушка пунктирное', await page.locator('.ring-track.dashed').isVisible());
+eq('в кольце ноль дней', (await page.locator('#big').innerText()).trim(), '0');
+await page.screenshot({ path: path.join(SHOTS, '26-sleep-home.png') });
+
+group('21в. Отметка подъёма');
+await page.evaluate(() => { window.__askeza.active().daily.wakeBy = '23:59'; window.__askeza.renderHome(false); });
+await page.waitForTimeout(400);
+await page.click('[data-act="wake"]');
+await page.waitForTimeout(1200);
+const afterWake = await page.evaluate(() => {
+  const A = window.__askeza, h = A.active();
+  return { streak: A.streakDays(h), check: A.checksOf(h)[A.today()], ev: h.history.filter(e => e.t === 'wake').length };
+});
+eq('серия стала 1', afterWake.streak, 1);
+ok('день отмечен как «вовремя»', afterWake.check && afterWake.check.ok);
+ok('записано фактическое время', /^\d\d:\d\d$/.test(afterWake.check.at), afterWake.check.at);
+eq('событие попало в историю', afterWake.ev, 1);
+ok('кнопка сменилась на статус', await page.locator('.ci-done').isVisible());
+ok('видно «Встал вовремя»', (await page.locator('.ci-t').innerText()).includes('вовремя'));
+eq('в календаре появился засчитанный день', await page.locator('.cal-d.ok').count(), 1);
+await page.screenshot({ path: path.join(SHOTS, '27-sleep-checked.png') });
+ok('первая отметка празднуется вехой «Первое утро»', await page.locator('#cel.on').isVisible());
+const celFirst = await page.locator('#cel').innerText();
+ok('в празднике названа веха режима', /первое утро/i.test(celFirst), celFirst.slice(0, 60));
+ok('у вехи режима показана дата без бессмысленного времени', !/\d\d:\d\d/.test(celFirst), celFirst.replace(/\n/g, ' '));
+await dismissCel();
+
+await page.click('[data-act="redoToday"]');
+await page.waitForTimeout(500);
+ok('открылся выбор действия для сегодня', await page.locator('#sheet-bd.on').isVisible());
+await page.click('[data-act="timeDay"]');
+await page.waitForTimeout(700);
+ok('открылась страница дня', await page.locator('#p-day.on').isVisible());
+await page.evaluate(() => { window.__askeza.active().daily.wakeBy = '07:00'; });
+await page.fill('#d-time', '09:41');
+await page.click('[data-act="saveDay"]');
+await page.waitForTimeout(1200);
+const over = await page.evaluate(() => {
+  const A = window.__askeza, h = A.active();
+  return { streak: A.streakDays(h), check: A.checksOf(h)[A.today()], ev: h.history.filter(e => e.t === 'oversleep').length,
+           wake: h.history.filter(e => e.t === 'wake').length };
+});
+eq('поздний подъём обнулил серию', over.streak, 0);
+ok('день помечен как проспанный', over.check && !over.check.ok);
+eq('время сохранено', over.check.at, '09:41');
+eq('событие «проспал» записано', over.ev, 1);
+eq('прошлая отметка того же дня заменена, а не продублирована', over.wake, 0);
+ok('на экране «Проспал»', (await page.locator('.ci-t').innerText()).includes('Проспал'));
+eq('в календаре день красный', await page.locator('.cal-d.miss').count(), 1);
+
+group('21г. Серия, пропуски и отметка задним числом');
+await page.evaluate(() => {
+  const A = window.__askeza, t = A.today(), checks = {};
+  for (let i = 0; i < 7; i++) checks[A.shiftDay(t, -i)] = { ok: true, at: '06:30' };
+  const start = new Date(Date.now() - 30 * 86400e3).toISOString();
+  A.set({ v: 2, activeId: 's1', habits: [{ id: 's1', name: 'Режим сна', kind: 'sleep', color: '#7c8cff',
+    startedAt: start, vow: null, daily: { wakeBy: '07:00', checks }, history: [{ t: 'start', at: start }] }] });
+});
+await page.waitForTimeout(900);
+await dismissCel();
+eq('семь отметок подряд — серия 7', await page.evaluate(() => window.__askeza.streakDays(window.__askeza.active())), 7);
+eq('в кольце 7', (await page.locator('#big').innerText()).trim(), '7');
+eq('в календаре семь засчитанных дней', await page.locator('.cal-d.ok').count(), 7);
+const stats = await page.evaluate(() => window.__askeza.dailyStats(window.__askeza.active()));
+eq('вовремя: 7', stats.ok, 7);
+eq('средний подъём посчитан', stats.avg, '06:30');
+ok('средний подъём виден на экране', (await page.locator('.dstat').innerText()).includes('06:30'));
+
+await page.evaluate(() => {
+  const A = window.__askeza, h = A.active();
+  delete h.daily.checks[A.shiftDay(A.today(), -3)];
+  A.renderHome(false);
+});
+await page.waitForTimeout(500);
+eq('пропуск обрывает серию на третьем дне', await page.evaluate(() => window.__askeza.streakDays(window.__askeza.active())), 3);
+ok('появилась карточка «не отмечено»', await page.locator('.ask').isVisible());
+await page.screenshot({ path: path.join(SHOTS, '28-sleep-backfill.png') });
+await dismissCel();   // укоротившаяся серия могла отпраздновать свою веху
+await page.click('[data-act="backfill"][data-arg$="|1"]');
+await page.waitForTimeout(1100);
+await dismissCel();
+eq('отметка задним числом восстановила серию', await page.evaluate(() => window.__askeza.streakDays(window.__askeza.active())), 7);
+ok('карточка исчезла', (await page.locator('.ask').count()) === 0);
+
+const openBounded = await page.evaluate(() => {
+  const A = window.__askeza;
+  const start = new Date(Date.now() - 86400e3).toISOString();
+  return A.openDays({ startedAt: start, daily: { wakeBy: '07:00', checks: {} } }, 3).length;
+});
+ok('задним числом не спрашивает про дни до начала режима', openBounded <= 1, `дней: ${openBounded}`);
+
+group('21д. Аскеза и вехи режима');
+await dismissCel();
+await page.click('.ring-wrap');
+await page.waitForSelector('#p-vow.on');
+await page.waitForTimeout(500);
+ok('текст аскезы адаптирован под режим', (await page.locator('#p-vow .page-sub').innerText()).includes('без пропусков'));
+ok('вместо даты окончания — счёт дней подряд', (await page.locator('.vp-sub').innerText()).includes('подряд'));
+await page.click('[data-act="vowSet"][data-arg="30"]');
+await page.waitForTimeout(200);
+await page.click('[data-act="vowSave"]');
+await page.waitForTimeout(1500);
+const dv = await page.evaluate(() => {
+  const A = window.__askeza, h = A.active();
+  return { days: h.vow.days, vi: A.vowInfo(h) };
+});
+eq('обет на 30 дней создан', dv.days, 30);
+ok('прогресс считается по серии, а не по времени', dv.vi.daily && dv.vi.doneDays === 7, String(dv.vi.doneDays));
+ok('кольцо отрисовано', await page.locator('#ring').isVisible());
+eq('в центре «из 30»', (await page.locator('.ring-of').innerText()).trim(), 'из 30');
+ok('показано, сколько дней осталось подряд', (await page.locator('.hero-left').innerText()).includes('подряд'));
+await page.screenshot({ path: path.join(SHOTS, '29-sleep-vow.png') });
+
+const dms = await page.evaluate(() => {
+  const h = window.__askeza.active();
+  return h.history.filter(e => e.t === 'milestone').map(e => e.key);
+});
+ok('веха «Неделя» засчитана', dms.includes('w1'), dms.join(','));
+ok('вехи режима считаются в днях, а не в секундах', !dms.includes('h1') && !dms.includes('m1'), dms.join(','));
+
+group('21е. История и меню режима');
+await page.click('.card:has-text("История")');
+await page.waitForSelector('#p-history.on');
+await page.waitForTimeout(500);
+const hs = await page.locator('.hist-stat').innerText();
+ok('в сводке «ПРОСПАЛ» вместо «ПЕРЕЖИТЫХ ТЯГ»', hs.includes('ПРОСПАЛ'), hs.replace(/\n/g, ' '));
+eq('гистограммы тяги в режиме нет', await page.locator('.urge-chart').count(), 0);
+ok('события подъёма есть в ленте', (await page.locator('.ev').count()) > 3);
+await page.screenshot({ path: path.join(SHOTS, '30-sleep-history.png') });
+await page.click('[data-act="closeHistory"]');
+await page.waitForTimeout(450);
+
+await page.click('[data-act="habitMenu"]');
+await page.waitForTimeout(450);
+const menuTxt = await page.locator('#sheet').innerText();
+ok('в меню режима нет пункта «Записать срыв»', !menuTxt.includes('Записать срыв'), menuTxt.replace(/\n/g, ' '));
+ok('аскеза в меню показана', menuTxt.includes('Аскеза'));
+await page.click('[data-act="closeSheet"]');
+await page.waitForTimeout(400);
+
+await page.click('[data-act="toggleMenu"]');
+await page.waitForTimeout(450);
+ok('в списке привычек серия подписана «подряд»', (await page.locator('.m-sub').first().innerText()).includes('подряд'));
+await page.click('[data-act="closeMenu"]');
+await page.waitForTimeout(350);
+
+group('21ж. Переключение между режимом и отказом');
+await page.evaluate(() => {
+  const A = window.__askeza, t = A.today(), checks = {};
+  for (let i = 0; i < 4; i++) checks[A.shiftDay(t, -i)] = { ok: true, at: '06:15' };
+  const s0 = new Date(Date.now() - 20 * 86400e3).toISOString();
+  A.set({ v: 2, activeId: 's1', habits: [
+    { id: 's1', name: 'Режим сна', kind: 'sleep', color: '#7c8cff', startedAt: s0, vow: null,
+      daily: { wakeBy: '07:00', checks }, history: [{ t: 'start', at: s0 }] },
+    { id: 'k1', name: 'Курение', kind: 'smoking', color: '#ff453a', startedAt: s0, vow: null,
+      history: [{ t: 'start', at: s0 }] },
+  ] });
+});
+await page.waitForTimeout(900);
+await dismissCel();
+for (let i = 0; i < 3; i++) {
+  await tap('[data-act="toggleMenu"]'); await page.waitForTimeout(400);
+  await tap('[data-act="pick"][data-id="k1"]'); await page.waitForTimeout(900);
+  await dismissCel();
+  ok(`переключение на отказ (${i + 1}): одометр вернулся`, (await page.locator('.obar').count()) > 0);
+  ok(`переключение на отказ (${i + 1}): тяга вернулась`, await page.locator('.craving').isVisible());
+  await tap('[data-act="toggleMenu"]'); await page.waitForTimeout(400);
+  await tap('[data-act="pick"][data-id="s1"]'); await page.waitForTimeout(900);
+  await dismissCel();
+  ok(`переключение на режим (${i + 1}): календарь вернулся`, (await page.locator('.cal-d').count()) === 35);
+  ok(`переключение на режим (${i + 1}): одометра нет`, (await page.locator('.obar').count()) === 0);
+}
+await page.waitForTimeout(2500);
+ok('после переключений экран не мигает перерисовкой', (await page.locator('.cal-d').count()) === 35);
+
+group('21з. Режим переживает перезагрузку');
+await reload();
+await page.waitForTimeout(1100);
+const reloaded = await page.evaluate(() => {
+  const A = window.__askeza, h = A.S.habits.find(x => x.kind === 'sleep');
+  return { has: !!h, wake: h && h.daily && h.daily.wakeBy, checks: h && Object.keys(h.daily.checks).length, streak: h && A.streakDays(h) };
+});
+ok('режим сохранился', reloaded.has);
+eq('цель подъёма сохранилась', reloaded.wake, '07:00');
+eq('отметки сохранились', reloaded.checks, 4);
+eq('серия пересчиталась после перезагрузки', reloaded.streak, 4);
+
+
 /* ═══════════════ 19. Ошибки на консоли ═══════════════ */
 group('19. Ошибки исполнения');
-eq('за весь прогон не было ошибок JS', errors.length, 0, errors.slice(0, 4).join(' ;; '));
+ok('за весь прогон не было ошибок JS', errors.length === 0, errors.slice(0, 5).join('  ;;  '));
 
 } catch (e) {
   fail++; fails.push('ИСКЛЮЧЕНИЕ: ' + e.message);
