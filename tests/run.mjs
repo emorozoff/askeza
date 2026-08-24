@@ -1,5 +1,5 @@
 /* askeza 2 — автотесты.
-   Запуск:  node askeza2/tests/run.mjs
+   Запуск:  node tests/run.mjs
    Поднимает статику, гоняет приложение в Chromium, проверяет чистые функции
    и все пользовательские сценарии, кладёт скриншоты в tests/shots/. */
 
@@ -1261,7 +1261,7 @@ ok('за весь прогон не было ошибок JS', errors.length ===
 console.log('\n' + '─'.repeat(52));
 console.log(`\x1b[1mИтог:\x1b[0m \x1b[32m${pass} прошло\x1b[0m` + (fail ? `, \x1b[31m${fail} упало\x1b[0m` : ''));
 if (fails.length) { console.log('\nУпавшие:'); fails.forEach(f => console.log('  • ' + f)); }
-console.log('Скриншоты: askeza2/tests/shots/');
+console.log('Скриншоты: tests/shots/');
 
 await browser.close();
 server.close();

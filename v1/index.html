@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="askeza">
+<meta name="theme-color" content="#1c1c1e">
+<link rel="manifest" href="data:application/json,%7B%22name%22%3A%22askeza%22%2C%22short_name%22%3A%22askeza%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%231c1c1e%22%2C%22theme_color%22%3A%22%231c1c1e%22%7D">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=1.3.1">
+<link rel="icon" type="image/png" href="apple-touch-icon.png?v=1.3.1">
+<title>askeza</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#1c1c1e;--surface:#2c2c2e;--surface2:#3a3a3c;
+  --text:#f2f2f7;--text2:#8e8e93;--text3:#636366;
+  --accent:#2aabee;--accent-dim:rgba(42,171,238,0.12);
+  --red:#ff453a;--green:#30d158;--gold:#ffd60a;
+  --safe-top:env(safe-area-inset-top,20px);--safe-bottom:env(safe-area-inset-bottom,20px);
+}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;overflow-x:hidden;padding-top:var(--safe-top);padding-bottom:calc(var(--safe-bottom)+20px)}
+
+/* === ANIMATIONS === */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes barGrow{from{width:0%}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+@keyframes celBounce{0%{transform:scale(0) rotate(-10deg)}60%{transform:scale(1.15) rotate(2deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+
+.animate-in{animation:fadeUp 0.35s ease-out both}
+.animate-in:nth-child(1){animation-delay:0.03s}
+.animate-in:nth-child(2){animation-delay:0.06s}
+.animate-in:nth-child(3){animation-delay:0.09s}
+.animate-in:nth-child(4){animation-delay:0.12s}
+.animate-in:nth-child(5){animation-delay:0.15s}
+
+/* === TOP BAR === */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;animation:fadeIn 0.3s ease}
+.topbar h1{font-size:28px;font-weight:700;color:#fff;letter-spacing:1.5px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.menu-btn{background:none;border:none;color:var(--text2);font-size:24px;cursor:pointer;padding:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background 0.2s,transform 0.15s}
+.menu-btn:active{background:var(--surface);transform:scale(0.92)}
+
+/* === SIDE MENU === */
+/* === HABIT DROPDOWN === */
+.hd-backdrop{position:fixed;inset:0;z-index:499;display:none}
+.hd-backdrop.open{display:block}
+.habit-dropdown{position:fixed;top:calc(var(--safe-top) + 54px);right:12px;width:min(290px,calc(100vw - 24px));background:#1c1c1e;border-radius:14px;z-index:500;transform:translateY(-8px) scale(0.96);transform-origin:top right;opacity:0;pointer-events:none;transition:transform 0.22s cubic-bezier(0.34,1.56,0.64,1),opacity 0.18s ease;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.6),0 0 0 0.5px rgba(255,255,255,0.08)}
+.habit-dropdown.open{transform:translateY(0) scale(1);opacity:1;pointer-events:all}
+.hd-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;padding:11px 14px 6px}
+.hd-list{overflow:hidden}
+/* Swipe rows */
+.sh-wrap{position:relative;overflow:hidden;border-top:1px solid rgba(255,255,255,0.05)}
+.sh-wrap:first-child{border-top:none}
+.sh-actions{position:absolute;right:0;top:0;bottom:0;display:flex;width:148px}
+.sh-act{flex:1;border:none;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;color:#fff;transition:filter 0.15s}
+.sh-act:active{filter:brightness(0.85)}
+.sh-act-reset{background:#ff9f0a}
+.sh-act-del{background:#ff453a}
+.sh-row{position:relative;z-index:1;display:flex;align-items:center;padding:11px 14px 11px 10px;gap:10px;cursor:pointer;background:#1c1c1e;will-change:transform;-webkit-user-select:none;user-select:none}
+.sh-row.sh-active{background:#252528}
+.sh-row:active{background:#222224}
+.sh-bar{width:3px;height:36px;border-radius:2px;flex-shrink:0}
+.sh-info{flex:1;min-width:0}
+.sh-name{font-size:15px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sh-sub{font-size:12px;color:var(--text3);margin-top:1px}
+.sh-check{font-size:14px;color:var(--accent);flex-shrink:0}
+.hd-add{width:100%;padding:13px 14px;background:none;border:none;border-top:1px solid rgba(255,255,255,0.07);color:var(--accent);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;text-align:left;transition:opacity 0.15s}
+.hd-add:active{opacity:0.6}
+
+/* === HABIT HEADER === */
+.habit-header{text-align:center;padding:10px 20px 4px;animation:fadeUp 0.3s ease-out}
+.habit-name-big{font-size:26px;font-weight:700;color:#fff;letter-spacing:-0.3px}
+.habit-sub{text-align:center;font-size:13px;color:var(--text3);padding:0 20px 10px;font-weight:400}
+
+/* === QUOTE === */
+.quote-simple{margin:0 32px 14px;text-align:center;font-size:12px;color:var(--text3);line-height:1.6;font-style:italic;cursor:pointer;animation:fadeUp 0.35s ease-out both;animation-delay:0.05s;user-select:none}
+.quote-simple span{transition:opacity 0.2s,transform 0.2s;display:inline-block}
+.quote-simple:active{opacity:0.6}
+
+/* === PROGRESS CARD (milestone + token merged) === */
+.progress-card{margin:0 20px 16px;padding:16px;background:var(--surface);border-radius:16px;cursor:pointer;transition:transform 0.15s,opacity 0.15s;animation:fadeUp 0.35s ease-out both;animation-delay:0.25s}
+.progress-card:active{transform:scale(0.98);opacity:0.85}
+.pc-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.pc-rank{font-size:26px;font-weight:800;font-family:Georgia,serif;min-width:52px;max-width:52px;text-align:center;line-height:1;flex-shrink:0;white-space:nowrap}
+.pc-info{flex:1;min-width:0;overflow:hidden}
+.pc-current{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-next-label{font-size:12px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-arrow{font-size:20px;color:var(--text3);opacity:0.6}
+.pc-bar-track{height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.pc-bar-fill{height:100%;border-radius:2px;transition:width 0.8s ease}
+.pc-footer{display:flex;justify-content:space-between}
+.pc-pct{font-size:12px;color:var(--text2);font-weight:600}
+.pc-time{font-size:12px;color:var(--text3)}
+
+/* === ACTIONS SHEET === */
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:450;opacity:0;pointer-events:none;transition:opacity 0.25s}
+.sheet-overlay.active{opacity:1;pointer-events:all}
+.sheet{position:fixed;bottom:0;left:0;right:0;background:#2c2c2e;border-radius:18px 18px 0 0;padding:0 16px calc(var(--safe-bottom,16px) + 12px);z-index:451;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.25,1,0.5,1)}
+.sheet-overlay.active .sheet{transform:translateY(0)}
+.sheet-handle{width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:10px auto 14px}
+.sheet-item{display:flex;align-items:center;gap:14px;width:100%;padding:14px 4px;border:none;background:none;font-family:inherit;font-size:16px;color:var(--text);cursor:pointer;text-align:left;border-bottom:1px solid rgba(255,255,255,0.06);transition:opacity 0.15s}
+.sheet-item:last-of-type{border-bottom:none}
+.sheet-item:active{opacity:0.5}
+.sheet-item.danger{color:var(--red)}
+.sheet-item.warn{color:#ff9f0a}
+.sheet-item-icon{font-size:20px;width:28px;text-align:center}
+.sheet-cancel{display:block;width:100%;padding:14px;background:var(--surface);border:none;border-radius:14px;font-size:16px;font-weight:600;color:var(--text2);cursor:pointer;font-family:inherit;margin-top:10px}
+.sheet-cancel:active{opacity:0.6}
+
+/* === RISK COUNTER === */
+.risk-block{margin:0 20px 16px;padding:16px;background:var(--surface);border-radius:14px;animation:fadeUp 0.35s ease-out both;animation-delay:0.08s}
+.risk-number{display:flex;align-items:baseline;justify-content:center;gap:1px;font-variant-numeric:tabular-nums}
+.risk-int{font-size:36px;font-weight:700;line-height:1}
+.risk-dot{font-size:28px;font-weight:700;line-height:1}
+.risk-dec{font-size:20px;font-weight:600;line-height:1;opacity:0.7}
+.risk-pct{font-size:18px;font-weight:600;margin-left:2px;opacity:0.5;line-height:1}
+.risk-phase{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;margin-top:10px}
+.risk-center{text-align:center}
+
+/* === TIMER BARS === */
+.timer-bars{display:flex;flex-direction:column;gap:6px;padding:0 20px;margin-bottom:16px}
+.tbar{position:relative;height:38px;background:var(--surface);border-radius:10px;overflow:visible;animation:fadeUp 0.35s ease-out both}
+.tbar:nth-child(1){animation-delay:0.06s}
+.tbar:nth-child(2){animation-delay:0.1s}
+.tbar:nth-child(3){animation-delay:0.14s}
+.tbar:nth-child(4){animation-delay:0.18s}
+.tbar:nth-child(5){animation-delay:0.22s}
+.tbar-fill{height:100%;border-radius:10px;transition:width 1s cubic-bezier(0.4,0,0.2,1);min-width:2px;animation:barGrow 0.8s ease-out both}
+.tbar-text{position:absolute;left:12px;top:0;height:100%;font-size:15px;font-weight:600;color:#fff;white-space:nowrap;display:flex;align-items:center;gap:5px;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,0.4)}
+.tbar-text .tbar-num{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;color:#fff}
+.tbar-text .tbar-label{font-size:12px;font-weight:500;color:#fff}
+
+/* === MILESTONE === */
+.milestone-section{padding:0 20px;margin-bottom:16px;animation:fadeUp 0.35s ease-out both;animation-delay:0.2s}
+.milestone-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.milestone-label{font-size:12px;color:var(--text2)}
+.milestone-target{font-size:12px;font-weight:600;color:var(--accent)}
+.progress-track{height:4px;background:var(--surface);border-radius:2px;overflow:hidden}
+.progress-fill{height:100%;border-radius:2px;transition:width 1s cubic-bezier(0.4,0,0.2,1);background:var(--accent)}
+
+/* === TOKENS === */
+.tokens-section{padding:0 20px;animation:fadeUp 0.35s ease-out both;animation-delay:0.25s;cursor:pointer}
+.tokens-title{font-size:13px;color:var(--text3);font-weight:500;margin-bottom:8px}
+.tokens-row{display:flex;gap:6px;flex-wrap:wrap}
+.token{font-size:12px;padding:6px 12px;border-radius:8px;font-weight:600;display:flex;align-items:center;gap:4px;transition:transform 0.15s}
+.token:active{transform:scale(0.95)}
+.token.earned{background:rgba(255,214,10,0.1);color:var(--gold);border:1px solid rgba(255,214,10,0.2)}
+.token.locked{background:var(--surface);color:var(--text3);border:none;opacity:0.6;cursor:default}
+.token-next-hint{font-size:11px;color:var(--text3);margin-top:6px;display:flex;align-items:center;gap:4px}
+.token-next-hint span{color:var(--text2);font-weight:500}
+.tokens-section-tap{font-size:10px;color:var(--text3);margin-top:5px;letter-spacing:0.2px}
+
+/* === TOKENS PAGE === */
+.tokens-page{position:fixed;inset:0;background:var(--bg);z-index:300;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.25,1,0.5,1);overflow-y:auto;padding-top:var(--safe-top);padding-bottom:calc(var(--safe-bottom)+20px)}
+.tokens-page.open{transform:translateY(0)}
+.tp-topbar{display:flex;align-items:center;padding:14px 20px 8px;gap:12px;position:sticky;top:0;background:var(--bg);z-index:1}
+.tp-back{background:none;border:none;color:var(--accent);font-size:26px;font-weight:300;font-family:inherit;cursor:pointer;padding:2px 4px;line-height:1;display:flex;align-items:center}
+.tp-title{font-size:17px;font-weight:700;color:var(--text)}
+.tp-habit{font-size:13px;color:var(--text3);text-align:center;padding:0 20px 16px}
+/* Tier colors */
+:root{--bronze:#cd7f32;--silver:#b0b0b8;--gold:#ffd60a;--plat:#bf9fff}
+/* Next token card */
+.tp-next{margin:0 20px 20px;border-radius:18px;padding:22px 20px 18px;text-align:center;position:relative;overflow:hidden}
+.tp-next::before{content:'';position:absolute;inset:0;opacity:0.07;background:radial-gradient(circle at 50% 0%,#fff,transparent 70%)}
+.tp-next-tier-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px}
+.tp-next-rank{font-size:58px;font-weight:800;font-family:Georgia,serif;line-height:1;margin-bottom:4px}
+.tp-next-label{font-size:17px;font-weight:600;color:rgba(255,255,255,0.85);margin-bottom:18px}
+.tp-next-bar-track{height:5px;background:rgba(255,255,255,0.12);border-radius:3px;overflow:hidden;margin-bottom:10px}
+.tp-next-bar-fill{height:100%;border-radius:3px;transition:width 0.8s ease}
+.tp-next-meta{display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,0.55)}
+.tp-next-meta strong{color:rgba(255,255,255,0.85);font-weight:700}
+.tp-no-next{margin:0 20px 20px;padding:20px;background:var(--surface);border-radius:16px;text-align:center;color:var(--text2);font-size:14px}
+/* Section */
+.tp-section{padding:0 20px;margin-bottom:8px}
+.tp-section-header{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;padding:0 4px}
+/* Token row */
+.tp-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;margin-bottom:4px;background:rgba(255,255,255,0.03);transition:transform 0.15s}
+.tp-row.future{opacity:0.38}
+.tp-row-rank{font-size:18px;font-weight:800;font-family:Georgia,serif;min-width:38px;text-align:center;line-height:1}
+.tp-row-info{flex:1;min-width:0}
+.tp-row-label{font-size:14px;font-weight:600;color:var(--text)}
+.tp-row-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.tp-tier-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:0.4px;white-space:nowrap}
+
+/* === CELEBRATION FLIP === */
+@keyframes cardFlip{0%{transform:rotateY(-90deg) scale(0.85);opacity:0}55%{transform:rotateY(8deg) scale(1.06)}100%{transform:rotateY(0deg) scale(1);opacity:1}}
+
+/* === ACTION BUTTONS === */
+.action-row{display:flex;gap:16px;padding:12px 20px 8px;justify-content:center;animation:fadeUp 0.35s ease-out both;animation-delay:0.3s}
+.action-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;font-weight:500;font-family:inherit;transition:color 0.15s,transform 0.15s;padding:6px 0;display:flex;align-items:center;gap:5px}
+.action-btn:active{transform:scale(0.95)}
+.action-btn .action-icon{font-size:14px}
+.action-btn.danger{color:var(--red)}
+
+/* === EMPTY STATE === */
+.empty-state{text-align:center;padding:80px 40px;color:var(--text2);animation:fadeUp 0.4s ease-out}
+.empty-state .empty-icon{font-size:56px;margin-bottom:16px}
+.empty-state h2{font-size:18px;color:var(--text);margin-bottom:8px;font-weight:600}
+.empty-state p{font-size:14px;line-height:1.5;margin-bottom:24px}
+.empty-btn{display:inline-block;padding:12px 28px;border-radius:12px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:transform 0.15s,opacity 0.15s}
+.empty-btn:active{transform:scale(0.96);opacity:0.85}
+
+/* === MODAL === */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s}
+.modal-overlay.active{opacity:1;pointer-events:all}
+.modal{background:#2c2c2e;border-radius:16px;padding:24px 28px 40px;width:calc(100% - 40px);max-width:460px;max-height:80vh;overflow-y:auto;transform:translateY(110%);transition:transform 0.3s cubic-bezier(0.25,1,0.5,1);margin:0 auto 24px}
+.modal-overlay.active .modal{transform:translateY(0)}
+.modal h2{font-size:18px;font-weight:700;margin-bottom:20px;text-align:center}
+.modal-handle{width:36px;height:4px;background:var(--surface2);border-radius:2px;margin:0 auto 14px}
+.form-group{margin-bottom:14px}
+.form-label{font-size:13px;color:var(--text2);margin-bottom:6px;display:block;font-weight:500}
+.form-input{width:100%;background:var(--surface);border:none;border-radius:12px;padding:12px 14px;font-size:16px;color:var(--text);font-family:inherit;outline:none;transition:box-shadow 0.2s}
+.form-input:focus{box-shadow:0 0 0 2px var(--accent)}
+.preset-picker{display:flex;gap:8px;flex-wrap:wrap}
+.preset-btn{padding:8px 14px;border-radius:20px;background:var(--surface);border:2px solid transparent;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;transition:all 0.15s;line-height:1}
+.preset-btn:active{transform:scale(0.95)}
+.preset-btn.selected{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+.btn-primary{width:100%;padding:14px;border:none;border-radius:12px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:8px;transition:transform 0.15s,opacity 0.15s}
+.btn-primary:active{transform:scale(0.98);opacity:0.85}
+.btn-secondary{width:100%;padding:12px;border:none;border-radius:12px;background:var(--surface);color:var(--text2);font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;margin-top:8px;transition:transform 0.15s}
+.btn-secondary:active{transform:scale(0.98)}
+
+/* === ALL TOKENS MODAL === */
+.all-tokens-section{margin-bottom:20px}
+.all-tokens-label{font-size:13px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:0.3px}
+.all-tokens-label.active-label{color:var(--gold)}
+.all-tokens-label.old-label{color:var(--text3)}
+.all-token-card{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:rgba(255,255,255,0.04);margin-bottom:6px;transition:transform 0.15s}
+.all-token-card:active{transform:scale(0.98)}
+.all-token-card.old{opacity:0.5}
+.all-token-emoji{font-size:22px}
+.all-token-info{flex:1}
+.all-token-habit{font-size:13px;font-weight:600}
+.all-token-detail{font-size:11px;color:var(--text2);margin-top:1px}
+.all-token-badge{font-size:11px;padding:3px 10px;border-radius:8px;font-weight:600}
+.all-token-badge.active-badge{background:rgba(255,214,10,0.1);color:var(--gold)}
+.all-token-badge.old-badge{background:var(--surface);color:var(--text3)}
+
+/* === RISK CHART PAGE === */
+.chart-page{position:fixed;inset:0;background:var(--bg);z-index:300;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.25,1,0.5,1);display:flex;flex-direction:column;padding-top:var(--safe-top)}
+.chart-page.open{transform:translateY(0)}
+.chart-topbar{display:flex;align-items:center;padding:14px 20px 6px;gap:12px}
+.chart-back{background:none;border:none;color:var(--accent);font-size:26px;font-weight:300;font-family:inherit;cursor:pointer;padding:2px 4px;line-height:1;display:flex;align-items:center}
+.chart-live{padding:4px 20px 8px}
+.clr-label{font-size:12px;font-weight:500;color:var(--text3);letter-spacing:0.3px;display:block;margin-bottom:2px}
+.chart-live-num{display:inline-flex;align-items:baseline;gap:1px;font-variant-numeric:tabular-nums}
+.clr-int{font-size:48px;font-weight:700;line-height:1}
+.clr-dot{font-size:36px;font-weight:700;line-height:1}
+.clr-dec{font-size:26px;font-weight:600;line-height:1;opacity:.8}
+.clr-pct{font-size:22px;font-weight:600;margin-left:3px;opacity:.5;line-height:1;color:var(--text)}
+.clr-motive{font-size:13px;color:var(--text2);margin-top:5px;line-height:1.4}
+.chart-range{display:flex;gap:6px;padding:6px 16px 10px;justify-content:center}
+.crb{background:rgba(255,255,255,0.08);border:none;border-radius:20px;padding:5px 14px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s}
+.crb.active{background:rgba(255,255,255,0.18);color:#fff}
+.crb:active{transform:scale(0.95)}
+.chart-canvas-wrap{flex:1;padding:0 8px;min-height:0;position:relative;touch-action:none;display:flex;align-items:stretch}
+.chart-canvas-wrap canvas{width:100%!important;height:100%!important;display:block;cursor:crosshair}
+.chart-info{padding:2px 20px 6px;font-size:11px;color:var(--text3);text-align:center;cursor:pointer;user-select:none}
+.chart-info-arrow{display:inline-block;transition:transform .25s ease;font-size:12px}
+.chart-info-body{max-height:0;overflow:hidden;transition:max-height .35s ease,opacity .35s ease;opacity:0;font-size:13px;color:var(--text2);line-height:1.55;padding:0 24px}
+.chart-info-body.open{max-height:300px;opacity:1;padding:0 24px 16px}
+
+/* === PHASE CARD (main screen) === */
+.phase-card{margin:0 20px 16px;padding:14px 16px;background:var(--surface);border-radius:16px;cursor:pointer;transition:transform 0.15s,opacity 0.15s;animation:fadeUp 0.35s ease-out both;animation-delay:0.22s;display:flex;align-items:center;gap:12px}
+.phase-card:active{transform:scale(0.98);opacity:0.85}
+.pc2-rank{font-size:24px;font-weight:800;font-family:Georgia,serif;min-width:36px;text-align:center;line-height:1;flex-shrink:0}
+.pc2-body{flex:1;min-width:0}
+.pc2-tier{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:3px}
+.pc2-name{font-size:15px;font-weight:600;color:var(--text)}
+.pc2-desc{font-size:12px;color:var(--text3);margin-top:2px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+.pc2-arrow{font-size:20px;color:var(--text3);opacity:0.6;flex-shrink:0}
+
+/* === PHASE TIMELINE (tokens/phases page) === */
+.pt-list{padding:0 20px 32px}
+.pt-item{display:flex}
+.pt-left{display:flex;flex-direction:column;align-items:center;width:36px;flex-shrink:0}
+.pt-vline{width:2px;background:rgba(255,255,255,0.08);flex:1;min-height:10px}
+.pt-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin:2px 0}
+.pt-dot.done{background:rgba(255,255,255,0.25)}
+.pt-dot.active{width:14px;height:14px;margin:-2px 0;box-shadow:0 0 8px currentColor}
+.pt-dot.future{background:transparent;border:2px solid rgba(255,255,255,0.12)}
+.pt-right{flex:1;padding:2px 0 20px 6px;min-width:0}
+.pt-item:last-child .pt-right{padding-bottom:4px}
+.pt-item-header{display:flex;align-items:center;gap:8px}
+.pt-item-rank{font-size:15px;font-weight:800;font-family:Georgia,serif;line-height:1;flex-shrink:0}
+.pt-item-name{font-size:14px;font-weight:600;color:var(--text);flex:1;min-width:0}
+.pt-item-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:0.4px;white-space:nowrap;flex-shrink:0}
+.pt-item-desc{font-size:13px;color:var(--text2);line-height:1.5;margin-top:6px}
+.pt-item-nexthint{font-size:11px;color:var(--text3);margin-top:5px}
+.pt-item.done .pt-right{opacity:0.5}
+.pt-item.done .pt-item-name{color:var(--text2)}
+.pt-item.future .pt-right{opacity:0.28}
+
+/* === CELEBRATION === */
+.celebration{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;background:rgba(0,0,0,0.8);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);z-index:600;opacity:0;pointer-events:none;transition:opacity 0.3s}
+.celebration.active{opacity:1;pointer-events:all}
+.celebration .cel-emoji{font-size:72px;animation:cardFlip 0.55s cubic-bezier(0.25,1,0.5,1) both;perspective:600px}
+.celebration .cel-title{font-size:24px;font-weight:700;margin:16px 0 8px;text-align:center;padding:0 20px}
+.celebration .cel-sub{font-size:14px;color:var(--text2);text-align:center;max-width:280px;line-height:1.5}
+.celebration .btn-primary{width:auto;padding:12px 36px;margin-top:24px}
+
+.confetti-piece{position:fixed;width:8px;height:8px;z-index:501;pointer-events:none;border-radius:2px;animation:confettiFall 2.5s ease-out forwards}
+
+/* === ADD HABIT PAGE === */
+.add-page{position:fixed;inset:0;background:var(--bg);z-index:300;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.25,1,0.5,1);overflow-y:auto;padding-top:var(--safe-top);padding-bottom:calc(var(--safe-bottom)+24px)}
+.add-page.open{transform:translateY(0)}
+.add-topbar{display:flex;align-items:center;padding:10px 20px 6px;gap:12px;position:sticky;top:0;background:var(--bg);z-index:1}
+.add-cancel{background:none;border:none;color:var(--accent);font-size:16px;font-weight:600;font-family:inherit;cursor:pointer;padding:4px 0}
+.add-title{font-size:17px;font-weight:700;color:var(--text)}
+
+/* Preset cards */
+.add-presets{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:6px 20px 10px}
+.add-preset-card{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 12px 10px;background:var(--surface);border-radius:16px;cursor:pointer;transition:transform 0.15s,background 0.2s,box-shadow 0.2s;border:2px solid transparent;gap:5px;user-select:none}
+.add-preset-card:active{transform:scale(0.96)}
+.add-preset-card.sel{border-color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.08)!important;box-shadow:none}
+.add-preset-emoji{font-size:26px;line-height:1}
+.add-preset-name{font-size:13px;font-weight:600;color:var(--text2)}
+.add-preset-card.sel .add-preset-name{font-weight:700}
+
+/* Custom name */
+.add-custom-wrap{padding:0 20px 12px;animation:fadeUp 0.2s ease-out}
+.add-custom-input{width:100%;background:var(--surface);border:none;border-radius:14px;padding:14px 16px;font-size:17px;color:var(--text);font-family:inherit;outline:none;transition:box-shadow 0.2s}
+.add-custom-input:focus{box-shadow:0 0 0 2px var(--accent)}
+
+/* Drum picker */
+.picker-section{margin:0 20px 12px}
+.picker-section-label{font-size:12px;color:var(--text3);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;padding:0 2px}
+.picker-row{display:flex;align-items:stretch;background:var(--surface);border-radius:16px;overflow:hidden;position:relative;height:132px}
+.picker-hl{position:absolute;top:50%;left:0;right:0;height:44px;transform:translateY(-50%);background:rgba(255,255,255,0.07);pointer-events:none;z-index:2;border-radius:0}
+.picker-fade{position:absolute;inset:0;background:linear-gradient(to bottom,var(--surface) 0%,transparent 30%,transparent 70%,var(--surface) 100%);pointer-events:none;z-index:3}
+.picker-col{flex:1;height:132px;overflow-y:scroll;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;text-align:center}
+.picker-col::-webkit-scrollbar{display:none}
+.picker-item{height:44px;display:flex;align-items:center;justify-content:center;scroll-snap-align:center;font-size:18px;font-weight:500;color:var(--text)}
+.picker-sep{width:28px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--text2);flex-shrink:0;position:relative;z-index:4}
+.picker-divider{width:1px;background:rgba(255,255,255,0.06);flex-shrink:0;position:relative;z-index:4}
+
+/* CTA button */
+.add-cta{display:block;width:calc(100% - 40px);margin:4px 20px 0;padding:14px;border:none;border-radius:16px;font-size:17px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;transition:transform 0.15s,opacity 0.15s;letter-spacing:0.2px}
+.add-cta:active{transform:scale(0.98);opacity:0.88}
+.add-cta:disabled{opacity:0.35;pointer-events:none}
+
+/* === SUPPRESS ANIMATIONS AFTER INIT (body.app-ready) === */
+body.app-ready .habit-header,
+body.app-ready .quote-simple,
+body.app-ready .risk-block,
+body.app-ready .tbar,
+body.app-ready .tbar-fill,
+body.app-ready .progress-card,
+body.app-ready .tokens-section,
+body.app-ready .milestone-section,
+body.app-ready .action-row,
+body.app-ready .topbar{animation:none!important}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const STORAGE_KEY='askeza_data';
+(function(){const o=localStorage.getItem('quittrack_data');if(o&&!localStorage.getItem(STORAGE_KEY))localStorage.setItem(STORAGE_KEY,o)})();
+
+const MILESTONES=[
+  {label:'Начало',      sec:60,       rank:'XX'},
+  {label:'1 час',       sec:3600,     rank:'XIX'},
+  {label:'3 часа',      sec:10800,    rank:'XVIII'},
+  {label:'6 часов',     sec:21600,    rank:'XVII'},
+  {label:'12 часов',    sec:43200,    rank:'XVI'},
+  {label:'1 день',      sec:86400,    rank:'XV'},
+  {label:'2 дня',       sec:172800,   rank:'XIV'},
+  {label:'3 дня',       sec:259200,   rank:'XIII'},
+  {label:'5 дней',      sec:432000,   rank:'XII'},
+  {label:'1 неделя',    sec:604800,   rank:'XI'},
+  {label:'10 дней',     sec:864000,   rank:'X'},
+  {label:'2 недели',    sec:1209600,  rank:'IX'},
+  {label:'3 недели',    sec:1814400,  rank:'VIII'},
+  {label:'1 месяц',     sec:2592000,  rank:'VII'},
+  {label:'6 недель',    sec:3628800,  rank:'VI'},
+  {label:'2 месяца',    sec:5184000,  rank:'V'},
+  {label:'3 месяца',    sec:7776000,  rank:'IV'},
+  {label:'4 месяца',    sec:10368000, rank:'III'},
+  {label:'6 месяцев',   sec:15552000, rank:'II'},
+  {label:'1 год',       sec:31536000, rank:'I'},
+];
+
+const QUOTES=[
+  "Ты уже дальше, чем вчера. Продолжай!",
+  "Каждая секунда без привычки — это победа над собой",
+  "Ты сильнее, чем думаешь. Доказательство — прямо перед тобой",
+  "Сила воли — это мышца. И ты качаешь её прямо сейчас",
+  "В будущем ты скажешь себе спасибо",
+  "Маленькие победы складываются в большие перемены",
+  "Привычка — это цепь. Каждый день ты разбиваешь ещё одно звено",
+  "Сегодня тяжело. Завтра станет легче. Послезавтра — ещё легче",
+  "Дискомфорт — это цена роста. И ты уже платишь",
+  "Каждый раз, когда ты говоришь «нет» привычке, ты говоришь «да» себе",
+  "Ты меняешь минуту дискомфорта на годы свободы",
+  "То, что тянет тебя назад — не сильнее тебя",
+  "Тяга временна. Гордость за себя — навсегда",
+  "Свобода начинается там, где заканчивается привычка",
+  "Не жди мотивации. Будь дисциплиной",
+  "Вчерашний ты начал. Сегодняшний — продолжает",
+  "Ты меняешься прямо сейчас. С каждой секундой",
+  "Слабость кричит. Сила действует молча",
+  "Сегодня ты сильнее, чем вчера. Завтра — сильнее, чем сегодня",
+];
+
+const HABIT_PRESETS=[
+  {name:'Курение',   emoji:'🚭', color:'#ff453a'},
+  {name:'Алкоголь',  emoji:'🍷', color:'#ff9f0a'},
+  {name:'Марихуана', emoji:'🌿', color:'#4cd964'},
+];
+const HABIT_PHASES={
+  smoking:[
+    {startSec:0,           endSec:3*86400,       name:'Острая отмена',                desc:'Никотин выводится из крови за 72 часа. Тело требует дозу каждый час. Самый трудный момент — уже позади или прямо сейчас.',             rank:'VIII',tier:'bronze'},
+    {startSec:3*86400,     endSec:7*86400,       name:'Пик ломки',                    desc:'Никотин ушёл полностью, но рецепторы ещё сигналят. Раздражительность, тревога, нарушения сна — норма. Это пройдёт.',                 rank:'VII', tier:'bronze'},
+    {startSec:7*86400,     endSec:30*86400,      name:'Тело перестраивается',          desc:'Физическая зависимость слабеет. Кашель — знак того, что лёгкие начали очищаться. Обоняние и вкус возвращаются.',                     rank:'VI',  tier:'bronze'},
+    {startSec:30*86400,    endSec:90*86400,      name:'Сила привычки',                desc:'Тело свободно, но мозг ещё ищет старый ритуал. Кофе, стресс, скука — главные триггеры. Ты уже знаешь их в лицо.',                    rank:'V',   tier:'silver'},
+    {startSec:90*86400,    endSec:180*86400,     name:'Триггеры слабеют',             desc:'Ситуативные желания становятся реже и слабее. Ты учишься проходить мимо. Мозг строит новые реакции.',                                 rank:'IV',  tier:'silver'},
+    {startSec:180*86400,   endSec:365*86400,     name:'Новый ритм',                   desc:'Большинство триггеров нейтрализованы. Мозг освоил жизнь без сигарет. Дыхание свободнее, выносливость выше.',                         rank:'III', tier:'gold'},
+    {startSec:365*86400,   endSec:3*365*86400,   name:'Укрепление',                   desc:'Редкие вспышки желания. Ты знаешь, как с ними справляться. Риск рецидива — минимальный.',                                           rank:'II',  tier:'gold'},
+    {startSec:3*365*86400, endSec:Infinity,      name:'Почти свобода',                desc:'Зависимость стала фоновым шумом. Ты управляешь ею, а не она тобой. Это — навсегда.',                                                  rank:'I',   tier:'platinum'},
+  ],
+  alcohol:[
+    {startSec:0,           endSec:2*86400,       name:'Физическая отмена',            desc:'Первые 48 часов — пик физических симптомов. Тревога, дрожь, потливость. При сильных симптомах — обратись к врачу.',                  rank:'VIII',tier:'bronze'},
+    {startSec:2*86400,     endSec:7*86400,       name:'Острый синдром',               desc:'Симптомы отмены ещё активны, но слабеют. Сон постепенно восстанавливается. Мозг начинает перестройку.',                              rank:'VII', tier:'bronze'},
+    {startSec:7*86400,     endSec:30*86400,      name:'Тело восстанавливается',       desc:'Печень начинает регенерацию. Кожа светлеет, отёки спадают. Давление нормализуется. Тело благодарит тебя.',                          rank:'VI',  tier:'bronze'},
+    {startSec:30*86400,    endSec:90*86400,      name:'Психологическая тяга',         desc:'Физика позади, но привычка пить «по поводу» ещё жива. Стресс, праздники, компания — зоны риска.',                                    rank:'V',   tier:'silver'},
+    {startSec:90*86400,    endSec:180*86400,     name:'Новые паттерны',               desc:'Мозг учится получать дофамин без алкоголя. Социальные ситуации становятся легче. Ты уже нашёл замену.',                              rank:'IV',  tier:'silver'},
+    {startSec:180*86400,   endSec:365*86400,     name:'Стабилизация',                 desc:'Риск рецидива существенно снижается. Эмоциональный фон ровнее. Жизнь без алкоголя стала нормой.',                                   rank:'III', tier:'gold'},
+    {startSec:365*86400,   endSec:3*365*86400,   name:'Новая идентичность',           desc:'«Я не пью» — это уже часть тебя. Не правило, а выбор. Год трезвости — статистически переломная точка.',                             rank:'II',  tier:'gold'},
+    {startSec:3*365*86400, endSec:Infinity,      name:'Трезвость как норма',          desc:'Жизнь без алкоголя стала привычной. Редкие мысли уходят сами. Ты доказал себе всё.',                                                 rank:'I',   tier:'platinum'},
+  ],
+  weed:[
+    {startSec:0,           endSec:3*86400,       name:'Первые симптомы',              desc:'Мозг ищет привычный стимул. Раздражительность, потеря аппетита, бессонница — признаки настоящей зависимости.',                      rank:'VII', tier:'bronze'},
+    {startSec:3*86400,     endSec:14*86400,      name:'Пик отмены',                   desc:'Симптомы достигают пика к 3–5 дням. Яркие, необычные сны — признак восстановления фаз сна.',                                         rank:'VI',  tier:'bronze'},
+    {startSec:14*86400,    endSec:30*86400,      name:'Симптомы спадают',             desc:'Аппетит возвращается. Тревога уменьшается. Мозг начинает адаптацию к жизни без каннабиноидов.',                                      rank:'V',   tier:'bronze'},
+    {startSec:30*86400,    endSec:90*86400,      name:'Психологическая привязанность',desc:'Физика позади. Но привычка расслабляться с травой ещё активна. Найди новый способ отдыхать.',                                         rank:'IV',  tier:'silver'},
+    {startSec:90*86400,    endSec:180*86400,     name:'Когнитивное восстановление',   desc:'Память и концентрация улучшаются. Мотивация возвращается. Мозг снова работает в полную силу.',                                      rank:'III', tier:'silver'},
+    {startSec:180*86400,   endSec:365*86400,     name:'Ясность',                      desc:'Мозг полностью адаптировался без каннабиноидов. Тяга становится редкой гостьей.',                                                    rank:'II',  tier:'gold'},
+    {startSec:365*86400,   endSec:Infinity,      name:'Свобода',                      desc:'Зависимость в прошлом. Когнитивные функции полностью восстановлены. Ты живёшь в полную силу.',                                       rank:'I',   tier:'platinum'},
+  ],
+};
+const BAR_COLORS=[
+  ['#ff3830','#cc0808'],  // years   — красный,  насыщенность 100%
+  ['#f07810','#c05000'],  // months  — оранжевый, насыщенность 85%
+  ['#30a8e0','#1080c0'],  // days    — голубой,   насыщенность 70%
+  ['#5050c8','#3535a0'],  // hours   — синий,     насыщенность 55%
+  ['#7a6090','#5a4070'],  // minutes — сиренево-серый, насыщенность 30%
+  ['#a0a0a8','#787880'],  // seconds — почти серый,    насыщенность 5%
+];
+
+function loadData(){try{const d=JSON.parse(localStorage.getItem(STORAGE_KEY));return d&&d.habits?d:{habits:[]}}catch{return{habits:[]}}}
+function saveData(d){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(d))}catch{}}
+function getElapsed(qd){
+  const diff=Math.max(0,(Date.now()-new Date(qd).getTime())/1000);
+  const years=Math.floor(diff/31536000);const rem0=diff%31536000;
+  const months=Math.floor(rem0/2592000);const rem=rem0%2592000;
+  const days=Math.floor(rem/86400);const hours=Math.floor((rem%86400)/3600);
+  const minutes=Math.floor((rem%3600)/60);const seconds=Math.floor(rem%60);
+  return{totalSeconds:diff,years,months,days,hours,minutes,seconds};
+}
+function getCurrentMilestone(ts){let c=null,n=null;for(const m of MILESTONES){if(ts>=m.sec)c=m;else{n=m;break}}return{current:c,next:n}}
+function getMilestoneProgress(ts,nxt){if(!nxt)return 100;const i=MILESTONES.indexOf(nxt);const p=i>0?MILESTONES[i-1].sec:0;return Math.min(100,((ts-p)/(nxt.sec-p))*100)}
+function getEarnedBadges(ts){return MILESTONES.filter(m=>ts>=m.sec)}
+function getTopBadge(ts){const earned=getEarnedBadges(ts);return earned.length>0?earned[earned.length-1]:null}
+// From an array of old tokens, return only the one matching the highest milestone
+function getTopOldToken(oldTokens){
+  if(!oldTokens||oldTokens.length===0)return null;
+  let best=null,bestIdx=-1;
+  oldTokens.forEach(t=>{
+    const idx=MILESTONES.findIndex(m=>m.label===t.label);
+    if(idx>bestIdx){bestIdx=idx;best=t;}
+  });
+  return best;
+}
+
+// Smoking relapse — s=0 → 100%, ~1% через 10 лет
+function riskFromSeconds(s){return 99/Math.pow(1+s/86400,0.50)+1}
+function speedFromSeconds(s){return -49.5/(86400*Math.pow(1+s/86400,1.50))}
+function getRiskDecimals(s){const spd=Math.abs(speedFromSeconds(s));const c=spd*0.1;if(c<=0)return 8;return Math.max(4,Math.ceil(-Math.log10(c))+1)}
+
+// === Кривые тяги/зависимости (алкоголь, марихуана) ===
+// Метрика = сила тяги (craving) в % от пика по дням трезвости. Значения — не подгонка
+// формулой, а интерполяция РЕАЛЬНЫХ опорных точек из исследований (см. getChartInfoText):
+// тяга максимальна в первые дни, круто слабеет за 1–3 месяца и выходит на низкий, но
+// ненулевой уровень. Интерполяция — монотонная кубическая (PCHIP) в лог-пространстве дней,
+// поэтому кривая проходит точно через данные и остаётся гладкой и невозрастающей.
+const CRAVING_ANCHORS={
+  // [день трезвости, тяга % от пика]
+  alcohol:[[0,100],[3,97],[7,88],[14,76],[30,62],[90,42],[180,30],[365,20],[730,12],[1825,4],[3650,3]],
+  weed:   [[0,100],[3,100],[7,85],[14,63],[30,43],[90,27],[180,17],[365,10],[730,6], [1825,3],[3650,2]],
+};
+function buildCravingFn(anchors){
+  const xs=anchors.map(a=>Math.log10(1+a[0])),ys=anchors.map(a=>a[1]),n=xs.length;
+  const h=[],d=[];
+  for(let i=0;i<n-1;i++){h[i]=xs[i+1]-xs[i];d[i]=(ys[i+1]-ys[i])/h[i];}
+  const m=new Array(n);m[0]=d[0];m[n-1]=d[n-2];
+  for(let i=1;i<n-1;i++){
+    if(d[i-1]*d[i]<=0)m[i]=0;
+    else{const w1=2*h[i]+h[i-1],w2=h[i]+2*h[i-1];m[i]=(w1+w2)/(w1/d[i-1]+w2/d[i]);}
+  }
+  return function(sec){
+    const day=Math.max(0,sec/86400),x=Math.log10(1+day);
+    if(x<=xs[0])return ys[0];
+    if(x>=xs[n-1])return ys[n-1];
+    let i=0;while(i<n-1&&x>xs[i+1])i++;
+    const t=(x-xs[i])/h[i],t2=t*t,t3=t2*t;
+    return (2*t3-3*t2+1)*ys[i]+(t3-2*t2+t)*h[i]*m[i]+(-2*t3+3*t2)*ys[i+1]+(t3-t2)*h[i]*m[i+1];
+  };
+}
+const alcRisk=buildCravingFn(CRAVING_ANCHORS.alcohol);
+const weedRisk=buildCravingFn(CRAVING_ANCHORS.weed);
+// Число знаков после запятой — по фактической скорости изменения (численная производная)
+function cravingDecimals(fn,s){const spd=Math.abs(fn(s+0.5)-fn(s-0.5));const c=spd*0.1;if(c<=0)return 8;return Math.max(4,Math.ceil(-Math.log10(c))+1)}
+function getAlcDecimals(s){return cravingDecimals(alcRisk,s)}
+function getWeedDecimals(s){return cravingDecimals(weedRisk,s)}
+
+// Risk calculations — Generic (B=0.7134, для своей привычки)
+function genericRisk(s){return 90/Math.pow(1+s/86400,0.7134)}
+function genericSpeedFn(s){return -90*0.7134/(86400*Math.pow(1+s/86400,1.7134))}
+function getGenericDecimals(s){const spd=Math.abs(genericSpeedFn(s));const c=spd*0.1;if(c<=0)return 8;return Math.max(4,Math.ceil(-Math.log10(c))+1)}
+
+function getTokenTier(idx){
+  if(idx<5)return{name:'Бронза',color:'var(--bronze)',bg:'rgba(205,127,50,0.15)',glow:'rgba(205,127,50,0.35)'};
+  if(idx<10)return{name:'Серебро',color:'var(--silver)',bg:'rgba(176,176,184,0.15)',glow:'rgba(176,176,184,0.35)'};
+  if(idx<15)return{name:'Золото',color:'var(--gold)',bg:'rgba(255,214,10,0.15)',glow:'rgba(255,214,10,0.35)'};
+  return{name:'Платина',color:'var(--plat)',bg:'rgba(191,159,255,0.15)',glow:'rgba(191,159,255,0.35)'};
+}
+function getHabitPhases(name){
+  if(isSmoking(name))return HABIT_PHASES.smoking;
+  if(isAlcohol(name))return HABIT_PHASES.alcohol;
+  if(isWeed(name))return HABIT_PHASES.weed;
+  return null;
+}
+function getCurrentPhaseObj(seconds,name){
+  const phases=getHabitPhases(name);
+  if(!phases)return null;
+  let cur=phases[0];
+  for(const p of phases){if(seconds>=p.startSec)cur=p;else break;}
+  return cur;
+}
+function getPhaseTierStyle(tier){
+  if(tier==='bronze')  return{name:'Бронза', color:'var(--bronze)',bg:'rgba(205,127,50,0.15)', glow:'rgba(205,127,50,0.35)'};
+  if(tier==='silver')  return{name:'Серебро',color:'var(--silver)',bg:'rgba(176,176,184,0.15)',glow:'rgba(176,176,184,0.35)'};
+  if(tier==='gold')    return{name:'Золото', color:'var(--gold)',  bg:'rgba(255,214,10,0.15)', glow:'rgba(255,214,10,0.35)'};
+  if(tier==='platinum')return{name:'Платина',color:'var(--plat)', bg:'rgba(191,159,255,0.15)',glow:'rgba(191,159,255,0.35)'};
+  return{name:'',color:'var(--text3)',bg:'rgba(255,255,255,0.05)',glow:'rgba(255,255,255,0.1)'};
+}
+function formatTimeLeft(secs){
+  if(secs<=0)return'—';
+  const d=Math.floor(secs/86400),h=Math.floor((secs%86400)/3600),m=Math.floor((secs%3600)/60);
+  if(d>0)return d+' дн '+(h>0?h+' ч':'');
+  if(h>0)return h+' ч '+(m>0?m+' мин':'');
+  return m+' мин';
+}
+function isAlcohol(name){return name&&/алкоголь/i.test(name)}
+function isWeed(name){return name&&/марихуан|конопл/i.test(name)}
+function isSmoking(name){return name&&/курен/i.test(name)}
+// «Отслеживаемая» привычка = один из пресетов с научными данными (курение/алкоголь/марихуана).
+// Своя (добавленная вручную) привычка — без графика зависимости, уровней и жетонов.
+function isTracked(name){return isSmoking(name)||isAlcohol(name)||isWeed(name)}
+function getRiskFns(name){
+  if(isAlcohol(name))return{riskFn:alcRisk,decFn:getAlcDecimals};
+  if(isWeed(name))return{riskFn:weedRisk,decFn:getWeedDecimals};
+  if(isSmoking(name))return{riskFn:riskFromSeconds,decFn:getRiskDecimals};
+  return{riskFn:genericRisk,decFn:getGenericDecimals};
+}
+
+function getRiskPhase(risk,alc){
+  if(alc){
+    if(risk>60)return{label:'Критическая зона',color:'#ff453a',bg:'rgba(255,69,58,0.12)'};
+    if(risk>35)return{label:'Опасный период',color:'#ff9f0a',bg:'rgba(255,159,10,0.12)'};
+    if(risk>15)return{label:'Становится легче',color:'#ffd60a',bg:'rgba(255,214,10,0.12)'};
+    return{label:'Минимальный риск',color:'#30d158',bg:'rgba(48,209,88,0.12)'};
+  }
+  if(risk>50)return{label:'Критическая зона',color:'#ff453a',bg:'rgba(255,69,58,0.12)'};
+  if(risk>20)return{label:'Опасный период',color:'#ff9f0a',bg:'rgba(255,159,10,0.12)'};
+  if(risk>8)return{label:'Становится легче',color:'#ffd60a',bg:'rgba(255,214,10,0.12)'};
+  return{label:'Минимальный риск',color:'#30d158',bg:'rgba(48,209,88,0.12)'};
+}
+function formatMenuTime(el){
+  if(el.totalSeconds<120)return'только что начал';
+  if(el.years>0)return el.years+' '+(el.years===1?'год':el.years<5?'года':'лет')+(el.months>0?' '+el.months+' мес.':'');
+  if(el.months>0)return el.months+' мес.'+(el.days>0?' '+el.days+' дн.':'');
+  if(el.days>0)return el.days+' '+(el.days===1?'день':el.days<5?'дня':'дней');
+  if(el.hours>0)return el.hours+' ч.';
+  return Math.floor(el.totalSeconds/60)+' мин.';
+}
+// Зоны тяги/зависимости (0-100) — общие для курения, алкоголя и марихуаны
+function getCravingPhase(v){
+  if(v>90)return{label:'Тяга нарастает',color:'#ff453a',bg:'rgba(255,69,58,0.12)'};
+  if(v>75)return{label:'Пик синдрома отмены',color:'#ff6930',bg:'rgba(255,105,48,0.12)'};
+  if(v>50)return{label:'Тяга убывает',color:'#ff9f0a',bg:'rgba(255,159,10,0.12)'};
+  if(v>25)return{label:'Становится легче',color:'#ffd60a',bg:'rgba(255,214,10,0.12)'};
+  if(v>10)return{label:'Тяга слабеет',color:'#30d158',bg:'rgba(48,209,88,0.12)'};
+  return{label:'Минимальная тяга',color:'#30d158',bg:'rgba(48,209,88,0.12)'};
+}
+function getPhaseForHabit(value,name){
+  if(isTracked(name))return getCravingPhase(value);
+  return getRiskPhase(value,false);
+}
+function getMetricLabel(name){return 'Зависимость'}
+function getChartMotive(risk,name){
+  if(isSmoking(name)){
+    if(risk>=90)return'Первые часы самые тяжёлые — это нормально';
+    if(risk>=75)return'Пик уже близко. После него — только легче';
+    if(risk>=50)return'Тяга пошла на спад. Худшее позади';
+    if(risk>=25)return'С каждым днём тяга слабеет';
+    if(risk>=10)return'Ты почти свободен';
+    return'Тяга больше не управляет тобой';
+  }
+  if(risk>=80)return'Первые шаги — самые тяжёлые. Именно сейчас ты сильнее всего';
+  if(risk>=50)return'Тело перестраивается. Тяга временна — свобода навсегда';
+  if(risk>=25)return'Самое страшное уже позади. Ты это прошёл';
+  if(risk>=10)return'Каждый день делает тебя чуть свободнее';
+  if(risk>=5)return'Самый сложный период уже позади';
+  if(risk>=1)return'Это больше не власть над тобой';
+  return'Ты победил. Береги это';
+}
+let currentQuoteIndex=Math.floor(Math.random()*QUOTES.length);
+function getQuote(){return QUOTES[currentQuoteIndex]}
+function refreshQuote(){
+  let next;
+  do{next=Math.floor(Math.random()*QUOTES.length)}while(next===currentQuoteIndex&&QUOTES.length>1);
+  currentQuoteIndex=next;
+  const el=document.querySelector('.quote-simple span');
+  if(el){el.style.opacity='0';el.style.transform='translateY(4px)';setTimeout(()=>{el.textContent=QUOTES[currentQuoteIndex];el.style.opacity='1';el.style.transform='translateY(0)'},200)}
+}
+function pad(n){return String(n).padStart(2,'0')}
+function hexToRgba(hex,a){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return`rgba(${r},${g},${b},${a})`}
+function fmtDate(d){return new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'})}
+function fmtDateTime(d){const dt=new Date(d);return dt.toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'})+', '+pad(dt.getHours())+':'+pad(dt.getMinutes())}
+
+function countAllTokens(){
+  let active=0,old=0;
+  data.habits.forEach(h=>{
+    if(!isTracked(h.name))return;
+    if(getTopBadge(getElapsed(h.quitDate).totalSeconds))active++;
+    if(getTopOldToken(h.oldTokens))old++;
+  });
+  return{active,old,total:active+old};
+}
+
+let data=loadData();
+let activeHabitId=data.habits.length>0?data.habits[0].id:null;
+let sideMenuOpen=false;
+let activeModal=null;
+let editingId=null;
+let celebrationData=null;
+let checkedMilestones={};
+let formName='',formEmoji='',formColor='#2aabee',formDate='',formTime='';
+let chartRange=365;
+let chartLiveInterval=null;
+let chartAnimRAF=null;
+let chartPulseRAF=null;
+let chartAnimStart=null;
+let chartActiveTouchDay=null;
+const CHART_ANIM_MS=500;
+let addPageSelectedPreset=null; // preset index 0-2 or 'custom'
+let pickerState={};
+
+function render(){
+  const app=document.getElementById('app');
+  const h=data.habits.find(x=>x.id===activeHabitId);
+  const tokens=countAllTokens();
+  let html='';
+
+  // Top bar
+  html+=`<div class="topbar">
+    <h1>askeza <span style="font-size:11px;font-weight:500;color:var(--text3);letter-spacing:0.5px;vertical-align:middle">v1.4.0</span></h1>
+    <div class="topbar-right">
+      ${h?`<button class="menu-btn" onclick="openHabitActions('${h.id}')" style="font-size:22px;letter-spacing:1px;padding-bottom:10px">···</button>`:''}
+      <button class="menu-btn" onclick="toggleSideMenu()">☰</button>
+    </div>
+  </div>`;
+
+  if(h){
+    const e=getElapsed(h.quitDate);
+    const{current,next}=getCurrentMilestone(e.totalSeconds);
+    const progress=getMilestoneProgress(e.totalSeconds,next);
+    const color=h.color||'#2aabee';
+
+    // Habit title
+    html+=`<div class="habit-header"><span class="habit-name-big">${h.name}</span></div>`;
+    html+=`<div class="habit-sub">свободен с ${fmtDateTime(h.quitDate)}</div>`;
+
+    // Quote
+    html+=`<div class="quote-simple" onclick="refreshQuote()"><span>${getQuote()}</span></div>`;
+
+    // Risk counter — только для отслеживаемых привычек (курение/алкоголь/марихуана)
+    if(isTracked(h.name)){
+    const riskS=e.totalSeconds;
+    const {riskFn,decFn}=getRiskFns(h.name);
+    const risk=riskFn(riskS);
+    const rDec=decFn(riskS);
+    const phase=getPhaseForHabit(risk,h.name);
+    const riskStr=risk.toFixed(rDec);
+    const dotIdx=riskStr.indexOf('.');
+    const rInt=riskStr.substring(0,dotIdx);
+    const rFrac=riskStr.substring(dotIdx+1);
+    html+=`<div class="risk-block" data-quit="${h.quitDate}" data-name="${h.name}" onclick="openRiskChart()" style="cursor:pointer">
+      <div class="risk-center">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:500">${getMetricLabel(h.name)}</div>
+        <div class="risk-number" id="risk-num">
+          <span class="risk-int">${rInt}</span><span class="risk-dot">.</span><span class="risk-dec">${rFrac}</span><span class="risk-pct">%</span>
+        </div>
+        <div><span class="risk-phase" style="color:${phase.color};background:${phase.bg}">${phase.label}</span></div>
+        <div style="font-size:10px;color:var(--text3);margin-top:8px;letter-spacing:0.3px">График динамики ›</div>
+      </div>
+    </div>`;
+    }
+
+    // Timer bars
+    const barItems=[
+      {v:e.years,  max:10, label:'лет',    c:BAR_COLORS[0], key:'years',   op:1.00},
+      {v:e.months, max:12, label:'месяцев',c:BAR_COLORS[1], key:'months',  op:0.92},
+      {v:e.days,   max:30, label:'дней',   c:BAR_COLORS[2], key:'days',    op:0.82},
+      {v:e.hours,  max:24, label:'часов',  c:BAR_COLORS[3], key:'hours',   op:0.65},
+      {v:e.minutes,max:60, label:'минут',  c:BAR_COLORS[4], key:'minutes', op:0.50},
+      {v:e.seconds,max:60, label:'секунд', c:BAR_COLORS[5], key:'seconds', op:0.35},
+    ];
+
+    html+=`<div class="timer-bars" data-quit="${h.quitDate}">`;
+    barItems.forEach(b=>{
+      const show=b.v>0;
+      const pct=show?Math.min(100,(b.v/b.max)*100):0;
+      html+=`<div class="tbar" data-bar-key="${b.key}" style="${show?'':'display:none'}"><div class="tbar-fill" style="opacity:${b.op};width:${pct}%;background:linear-gradient(90deg,${b.c[0]},${b.c[1]})"></div><div class="tbar-text"><span class="tbar-num">${b.v}</span><span class="tbar-label">${b.label}</span></div></div>`;
+    });
+    html+=`</div>`;
+
+    // Phase card (known habits only)
+    const curPhase=getCurrentPhaseObj(e.totalSeconds,h.name);
+    if(curPhase){
+      const pTier=getPhaseTierStyle(curPhase.tier);
+      html+=`<div class="phase-card" onclick="openTokensPage()">
+        <div class="pc2-rank" style="color:${pTier.color}">${curPhase.rank}</div>
+        <div class="pc2-body">
+          <div class="pc2-tier" style="color:${pTier.color}">${pTier.name}</div>
+          <div class="pc2-name">${curPhase.name}</div>
+          <div class="pc2-desc">${curPhase.desc}</div>
+        </div>
+        <div class="pc2-arrow">›</div>
+      </div>`;
+    }
+
+  } else {
+    html+=`<div class="empty-state">
+      <div class="empty-icon">🔥</div>
+      <h2>Начни свой путь</h2>
+      <p>Добавь вредную привычку, которую хочешь бросить, и следи за прогрессом</p>
+      <button class="empty-btn" onclick="openAddPage()">Добавить привычку</button>
+    </div>`;
+  }
+
+  // Side menu
+  html+=`<div class="hd-backdrop ${sideMenuOpen?'open':''}" onclick="closeSideMenu()"></div>
+  <div class="habit-dropdown ${sideMenuOpen?'open':''}" id="habit-dropdown" onclick="event.stopPropagation()">
+    <div class="hd-label">Мои привычки</div>
+    <div class="hd-list">
+      ${data.habits.map(hab=>{
+        const el=getElapsed(hab.quitDate);
+        const isActive=hab.id===activeHabitId;
+        const col=hab.color||'#2aabee';
+        return `<div class="sh-wrap" id="sh-wrap-${hab.id}">
+          <div class="sh-actions">
+            <button class="sh-act sh-act-reset" onclick="swipeReset('${hab.id}')">Сброс</button>
+            <button class="sh-act sh-act-del" onclick="swipeDel('${hab.id}')">Удалить</button>
+          </div>
+          <div class="sh-row${isActive?' sh-active':''}" id="sh-row-${hab.id}" onclick="selectHabit('${hab.id}')">
+            <div class="sh-bar" style="background:${col}"></div>
+            <div class="sh-info">
+              <div class="sh-name">${hab.name}</div>
+              <div class="sh-sub">${formatMenuTime(el)}</div>
+            </div>
+            ${isActive?'<div class="sh-check">✓</div>':''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <button class="hd-add" onclick="closeSideMenu();openAddPage()">+ Добавить привычку</button>
+  </div>`;
+
+  // Habit actions sheet (always in DOM, shown/hidden via CSS class)
+  html+=`<div class="sheet-overlay ${activeModal==='habitActions'?'active':''}" onclick="closeHabitActions()">
+    <div class="sheet" onclick="event.stopPropagation()">
+      <div class="sheet-handle"></div>
+      <button class="sheet-item" onclick="editHabit('${h?h.id:''}');closeHabitActions()"><span class="sheet-item-icon">✏️</span>Изменить</button>
+      <button class="sheet-item warn" onclick="resetStreak('${h?h.id:''}');closeHabitActions()"><span class="sheet-item-icon">🔄</span>Сброс отсчёта</button>
+      <button class="sheet-item danger" onclick="deleteHabit('${h?h.id:''}');closeHabitActions()"><span class="sheet-item-icon">🗑️</span>Удалить привычку</button>
+      <button class="sheet-cancel" onclick="closeHabitActions()">Отмена</button>
+    </div>
+  </div>`;
+
+  // Edit modal (add is now a full-screen page)
+  if(activeModal==='edit'){
+    html+=`<div class="modal-overlay active" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div><h2>Редактировать</h2>
+      <div class="form-group"><div class="form-label">Название</div><input class="form-input" id="f-name" placeholder="Например: Курение" value="${formName}" oninput="formName=this.value"></div>
+      <div class="form-group"><div class="form-label">Дата (когда бросил/а)</div><input class="form-input" id="f-date" type="date" value="${formDate}" oninput="formDate=this.value"></div>
+      <div class="form-group"><div class="form-label">Время</div><input class="form-input" id="f-time" type="time" value="${formTime}" oninput="formTime=this.value"></div>
+      <button class="btn-primary" onclick="saveHabit()">Сохранить</button>
+      <button class="btn-secondary" onclick="closeModal()">Отмена</button>
+    </div></div>`;
+  }
+
+  // Add habit page (full-screen slide-up, always in DOM)
+  {
+    const selP=addPageSelectedPreset!==null&&addPageSelectedPreset!=='custom'?HABIT_PRESETS[addPageSelectedPreset]:null;
+    const ctaColor=addPageSelectedPreset!==null?'#34C759':'#636366';
+    html+=`<div class="add-page ${activeModal==='addPage'?'open':''}" id="add-page">
+      <div class="add-topbar">
+        <button class="add-cancel" onclick="closeAddPage()">Отмена</button>
+        <div class="add-title">Новая привычка</div>
+      </div>
+      <div class="add-presets">
+        ${HABIT_PRESETS.map((p,i)=>{
+          const isSel=addPageSelectedPreset===i;
+          return`<div class="add-preset-card ${isSel?'sel':''}" onclick="addSelectPreset(${i})">
+            <div class="add-preset-emoji">${p.emoji}</div>
+            <div class="add-preset-name">${p.name}</div>
+          </div>`;
+        }).join('')}
+        <div class="add-preset-card ${addPageSelectedPreset==='custom'?'sel':''}" onclick="addSelectPreset('custom')">
+          <div class="add-preset-emoji">✏️</div>
+          <div class="add-preset-name">Своя</div>
+        </div>
+      </div>
+      ${addPageSelectedPreset==='custom'?`<div class="add-custom-wrap"><input class="add-custom-input" id="add-name-input" placeholder="Название привычки" value="${formName}" oninput="formName=this.value" autocomplete="off" autocorrect="off"></div>`:''}
+      <div class="picker-section">
+        <div class="picker-section-label">Когда бросил(а)</div>
+        <div class="picker-row" style="margin-bottom:10px">
+          <div class="picker-hl"></div>
+          <div class="picker-fade"></div>
+          <div class="picker-col" id="picker-day" style="flex:0.7"></div>
+          <div class="picker-divider"></div>
+          <div class="picker-col" id="picker-month" style="flex:1.2"></div>
+          <div class="picker-divider"></div>
+          <div class="picker-col" id="picker-year" style="flex:1"></div>
+        </div>
+        <div class="picker-row">
+          <div class="picker-hl"></div>
+          <div class="picker-fade"></div>
+          <div class="picker-col" id="picker-hour"></div>
+          <div class="picker-sep">:</div>
+          <div class="picker-col" id="picker-min"></div>
+        </div>
+      </div>
+      <button class="add-cta" id="add-cta-btn" style="background:${ctaColor}" onclick="saveNewHabit()" ${addPageSelectedPreset===null?'disabled':''}>Начать отсчёт</button>
+    </div>`;
+  }
+
+  // All tokens modal
+  if(activeModal==='allTokens'){
+    let activeTokens=[];
+    let oldTokens=[];
+    data.habits.forEach(hab=>{
+      const el=getElapsed(hab.quitDate);
+      const top=getTopBadge(el.totalSeconds);
+      if(top)activeTokens.push({rank:top.rank,label:top.label,habit:hab.name,color:hab.color});
+      const bestOld=getTopOldToken(hab.oldTokens||[]);
+      if(bestOld)oldTokens.push({rank:bestOld.rank||bestOld.emoji||'',label:bestOld.label,habit:hab.name,date:bestOld.date||''});
+    });
+
+    html+=`<div class="modal-overlay active" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-handle"></div><h2>🏆 Все жетоны</h2>
+      <div class="all-tokens-section">
+        <div class="all-tokens-label active-label">🔥 Активные (${activeTokens.length})</div>
+        ${activeTokens.length>0?activeTokens.map(t=>`<div class="all-token-card">
+          <div class="all-token-emoji" style="font-size:16px;font-weight:700;font-family:Georgia,serif;min-width:40px;text-align:center">${t.rank}</div>
+          <div class="all-token-info">
+            <div class="all-token-habit">${t.habit}</div>
+            <div class="all-token-detail">${t.label}</div>
+          </div>
+          <div class="all-token-badge active-badge">Активный</div>
+        </div>`).join(''):`<div style="font-size:13px;color:var(--text3);padding:8px 0">Пока нет активных жетонов</div>`}
+      </div>
+      ${oldTokens.length>0?`<div class="all-tokens-section">
+        <div class="all-tokens-label old-label">📦 Старые (${oldTokens.length})</div>
+        ${oldTokens.map(t=>`<div class="all-token-card old">
+          <div class="all-token-emoji" style="font-size:16px;font-weight:700;font-family:Georgia,serif;min-width:40px;text-align:center">${t.rank}</div>
+          <div class="all-token-info">
+            <div class="all-token-habit">${t.habit}</div>
+            <div class="all-token-detail">${t.label}${t.date?' · сброс '+t.date:''}</div>
+          </div>
+          <div class="all-token-badge old-badge">Старый</div>
+        </div>`).join('')}
+      </div>`:''}
+      <button class="btn-secondary" onclick="closeModal()">Закрыть</button>
+    </div></div>`;
+  }
+
+  // Risk chart page
+  {
+    const ch=data.habits.find(x=>x.id===activeHabitId);
+    const chRisk=ch?getRiskFns(ch.name).riskFn(getElapsed(ch.quitDate).totalSeconds):100;
+    const chPhase=ch?getPhaseForHabit(chRisk,ch.name):{color:'#fff',label:''};
+    const chStr=chRisk.toFixed(1);const chDot=chStr.indexOf('.');
+    html+=`<div class="chart-page ${activeModal==='riskChart'?'open':''}" id="chart-page">
+      <div class="chart-topbar">
+        <button class="chart-back" onclick="closeRiskChart()">←</button>
+      </div>
+      <div class="chart-live">
+        <span class="clr-label">${ch?getMetricLabel(ch.name):'Зависимость'}</span>
+        <div class="chart-live-num">
+          <span class="clr-int" style="color:${chPhase.color}">${chStr.substring(0,chDot)}</span><span class="clr-dot" style="color:${chPhase.color}">.</span><span class="clr-dec">${chStr.substring(chDot+1)}</span><span class="clr-pct"> %</span>
+        </div>
+        <div class="clr-motive">${ch?getChartMotive(chRisk,ch.name):''}</div>
+      </div>
+      <div class="chart-range">
+        <button class="crb ${chartRange===30?'active':''}" data-days="30" onclick="setChartRange(30)">1 мес</button>
+        <button class="crb ${chartRange===90?'active':''}" data-days="90" onclick="setChartRange(90)">3 мес</button>
+        <button class="crb ${chartRange===180?'active':''}" data-days="180" onclick="setChartRange(180)">6 мес</button>
+        <button class="crb ${chartRange===365?'active':''}" data-days="365" onclick="setChartRange(365)">1 год</button>
+        <button class="crb ${chartRange===1825?'active':''}" data-days="1825" onclick="setChartRange(1825)">5 лет</button>
+        <button class="crb ${chartRange===3650?'active':''}" data-days="3650" onclick="setChartRange(3650)">10 лет</button>
+      </div>
+      <div class="chart-canvas-wrap"><canvas id="risk-chart-canvas"></canvas></div>
+      ${(isSmoking(ch&&ch.name)||isAlcohol(ch&&ch.name)||isWeed(ch&&ch.name))?`<div class="chart-info" onclick="toggleChartInfo()">Основано на научных данных <span class="chart-info-arrow" id="chart-info-arrow">›</span></div><div class="chart-info-body" id="chart-info-body">${getChartInfoText(ch&&ch.name)}</div>`:''}
+    </div>`;
+  }
+
+  // Phases page
+  {
+    const th=data.habits.find(x=>x.id===activeHabitId);
+    const tEl=th?getElapsed(th.quitDate):{totalSeconds:0};
+    const phases=th?getHabitPhases(th.name):null;
+    const curPhase=th&&phases?getCurrentPhaseObj(tEl.totalSeconds,th.name):null;
+    html+=`<div class="tokens-page ${activeModal==='tokensPage'?'open':''}" id="tokens-page">
+      <div class="tp-topbar">
+        <button class="tp-back" onclick="closeTokensPage()">←</button>
+        <div class="tp-title">${phases?'Фазы':'Прогресс'}</div>
+      </div>
+      ${th?`<div class="tp-habit">${th.name} · ${tEl.days>0?tEl.days+' дн ':tEl.hours>0?tEl.hours+' ч ':''}без привычки</div>`:''}
+      ${phases?`<div class="pt-list">
+        ${phases.map((p,i)=>{
+          const isDone=tEl.totalSeconds>=p.endSec;
+          const isCurrent=p===curPhase;
+          const isFuture=!isDone&&!isCurrent;
+          const ts=getPhaseTierStyle(p.tier);
+          const isFirst=i===0;
+          const isLast=i===phases.length-1;
+          let nextHint='';
+          if(isCurrent&&!isLast){
+            const secsLeft=phases[i+1].startSec-tEl.totalSeconds;
+            nextHint=`<div class="pt-item-nexthint">Следующая фаза через ${formatTimeLeft(secsLeft)}</div>`;
+          }
+          return`<div class="pt-item ${isDone?'done':isCurrent?'current':'future'}">
+            <div class="pt-left">
+              ${!isFirst?'<div class="pt-vline"></div>':'<div class="pt-vline" style="min-height:6px"></div>'}
+              <div class="pt-dot ${isDone?'done':isCurrent?'active':'future'}" style="color:${ts.color};${isCurrent?'background:'+ts.color:''}"></div>
+              ${!isLast?'<div class="pt-vline"></div>':''}
+            </div>
+            <div class="pt-right">
+              <div class="pt-item-header">
+                <div class="pt-item-rank" style="color:${isFuture?'var(--text3)':ts.color}">${p.rank}</div>
+                <div class="pt-item-name">${p.name}</div>
+                <div class="pt-item-badge" style="color:${ts.color};background:${ts.bg}">${ts.name}</div>
+              </div>
+              ${isCurrent||isDone?`<div class="pt-item-desc">${p.desc}</div>`:''}
+              ${nextHint}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`:`<div style="padding:48px 24px;text-align:center">
+        <div style="font-size:42px;margin-bottom:14px">🔥</div>
+        <div style="font-size:16px;font-weight:600;color:var(--text2)">Каждый день — победа</div>
+        <div style="font-size:13px;color:var(--text3);margin-top:8px;line-height:1.6">Для своей привычки нет<br>универсальных фаз.<br>Но каждый день без неё делает тебя сильнее.</div>
+      </div>`}
+    </div>`;
+  }
+
+  // Celebration
+  if(celebrationData){
+    html+=`<div class="celebration active" onclick="closeCelebration()">
+      <div class="cel-emoji" style="font-size:56px;font-family:Georgia,serif;font-weight:700">${celebrationData.rank}</div>
+      <div class="cel-title" style="color:${celebrationData.color}">${celebrationData.title}</div>
+      <div class="cel-sub">${celebrationData.subtitle}</div>
+      <button class="btn-primary" onclick="closeCelebration()">Продолжить 💪</button>
+    </div>`;
+  }
+
+  app.innerHTML=html;
+}
+
+// === ACTIONS ===
+function toggleSideMenu(){
+  sideMenuOpen=!sideMenuOpen;
+  const dd=document.getElementById('habit-dropdown');
+  const bd=document.querySelector('.hd-backdrop');
+  if(dd)dd.classList.toggle('open',sideMenuOpen);
+  if(bd)bd.classList.toggle('open',sideMenuOpen);
+  if(sideMenuOpen)setTimeout(initHabitSwipes,60);
+}
+function closeSideMenu(){
+  sideMenuOpen=false;
+  _swipeOpen=null;
+  const dd=document.getElementById('habit-dropdown');
+  const bd=document.querySelector('.hd-backdrop');
+  if(dd)dd.classList.remove('open');
+  if(bd)bd.classList.remove('open');
+}
+function selectHabit(id){activeHabitId=id;closeSideMenu();document.body.classList.remove('app-ready');render();setTimeout(()=>document.body.classList.add('app-ready'),450)}
+
+let _swipeOpen=null; // currently open swipe row
+function initHabitSwipes(){
+  const SNAP=148;
+  document.querySelectorAll('.sh-row').forEach(row=>{
+    if(row._swipeInit)return;
+    row._swipeInit=true;
+    let x0,y0,tracking=false,base=0;
+    row.addEventListener('touchstart',e=>{
+      x0=e.touches[0].clientX;y0=e.touches[0].clientY;tracking=false;
+      base=(row===_swipeOpen?-SNAP:0);
+    },{passive:true});
+    row.addEventListener('touchmove',e=>{
+      const dx=e.touches[0].clientX-x0,dy=e.touches[0].clientY-y0;
+      if(!tracking){if(Math.abs(dy)>Math.abs(dx))return;tracking=true;}
+      e.preventDefault();
+      const nx=Math.max(-SNAP,Math.min(0,base+dx));
+      row.style.transition='none';
+      row.style.transform=`translateX(${nx}px)`;
+    },{passive:false});
+    row.addEventListener('touchend',e=>{
+      if(!tracking)return;
+      const dx=e.changedTouches[0].clientX-x0;
+      row.style.transition='transform 0.25s cubic-bezier(0.25,1,0.5,1)';
+      if(base+dx<-SNAP/2){
+        if(_swipeOpen&&_swipeOpen!==row)closeSwipeRow(_swipeOpen);
+        _swipeOpen=row;
+        row.style.transform=`translateX(${-SNAP}px)`;
+      } else {
+        if(_swipeOpen===row)_swipeOpen=null;
+        row.style.transform='';
+      }
+    },{passive:true});
+  });
+}
+function closeSwipeRow(row){if(!row)return;row.style.transition='transform 0.25s cubic-bezier(0.25,1,0.5,1)';row.style.transform='';}
+function swipeReset(id){closeSwipeRow(_swipeOpen);_swipeOpen=null;closeSideMenu();resetStreak(id);}
+function swipeDel(id){closeSwipeRow(_swipeOpen);_swipeOpen=null;closeSideMenu();deleteHabit(id);}
+function openTokensPage(){activeModal='tokensPage';document.getElementById('tokens-page').classList.add('open')}
+function openAllTokens(){openTokensPage()}
+function closeTokensPage(){activeModal=null;document.getElementById('tokens-page').classList.remove('open')}
+function openHabitActions(id){activeModal='habitActions';document.querySelector('.sheet-overlay').classList.add('active')}
+function closeHabitActions(){activeModal=null;document.querySelector('.sheet-overlay').classList.remove('active')}
+
+// === ADD PAGE ===
+function openAddPage(){
+  addPageSelectedPreset=null;
+  formName='';formColor='#2aabee';
+  const n=new Date();formDate=n.toISOString().split('T')[0];formTime=pad(n.getHours())+':'+pad(n.getMinutes());
+  closeSideMenu();
+  activeModal='addPage';
+  document.getElementById('add-page').classList.add('open');
+  setTimeout(initAddPickers,80);
+}
+function closeAddPage(){
+  activeModal=null;
+  document.getElementById('add-page').classList.remove('open');
+}
+function addSelectPreset(idx){
+  addPageSelectedPreset=idx;
+  // Update card visuals
+  const cards=document.querySelectorAll('.add-preset-card');
+  cards.forEach((card,i)=>{
+    const isCustom=i===HABIT_PRESETS.length;
+    const isSel=(isCustom&&idx==='custom')||(!isCustom&&idx===i);
+    card.classList.toggle('sel',isSel);
+    card.style.background='';
+  });
+  // Show/hide custom input
+  let cw=document.querySelector('.add-custom-wrap');
+  if(idx==='custom'){
+    if(!cw){
+      cw=document.createElement('div');cw.className='add-custom-wrap';
+      cw.innerHTML=`<input class="add-custom-input" id="add-name-input" placeholder="Название привычки" autocomplete="off" autocorrect="off">`;
+      document.querySelector('.picker-section').before(cw);
+    }
+    formName='';
+    document.getElementById('add-name-input').addEventListener('input',e=>{formName=e.target.value;updateAddCta()});
+    setTimeout(()=>document.getElementById('add-name-input')?.focus(),100);
+  }else{
+    cw?.remove();
+    const p=HABIT_PRESETS[idx];
+    formName=p.name;formColor=p.color;
+  }
+  updateAddCta();
+}
+function updateAddCta(){
+  const btn=document.getElementById('add-cta-btn');if(!btn)return;
+  btn.style.background=addPageSelectedPreset!==null?'#34C759':'#636366';
+  const ready=addPageSelectedPreset!==null&&(addPageSelectedPreset!=='custom'||formName.trim().length>0);
+  btn.disabled=!ready;
+}
+function saveNewHabit(){
+  const name=formName.trim();if(!name)return;
+  const color=addPageSelectedPreset!=='custom'&&addPageSelectedPreset!==null?HABIT_PRESETS[addPageSelectedPreset].color:formColor;
+  const qd=new Date(formDate+'T'+(formTime||'00:00')).toISOString();
+  const newH={id:'h_'+Date.now(),name,emoji:'',color,quitDate:qd,bestStreak:0,oldTokens:[]};
+  data.habits.push(newH);activeHabitId=newH.id;
+  saveData(data);
+  closeAddPage();
+  document.body.classList.remove('app-ready');render();
+  setTimeout(()=>document.body.classList.add('app-ready'),450);
+}
+function updateFormDate(){
+  const d=new Date(pickerState.year,pickerState.month,pickerState.day+1,pickerState.hour,pickerState.min);
+  formDate=[d.getFullYear(),pad(d.getMonth()+1),pad(d.getDate())].join('-');
+  formTime=pad(d.getHours())+':'+pad(d.getMinutes());
+}
+function initAddPickers(){
+  const ITEM_H=44,SPACER=44;
+  const now=new Date();
+  const curYear=now.getFullYear();
+  pickerState={year:curYear,month:now.getMonth(),day:now.getDate()-1,hour:now.getHours(),min:now.getMinutes()};
+  const yearItems=[];for(let y=curYear;y>=2010;y--)yearItems.push(String(y));
+  const monthNames=['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+  function getDays(y,m){const c=new Date(y,m+1,0).getDate();return Array.from({length:c},(_,i)=>String(i+1));}
+  function refreshDayDrum(){
+    const days=getDays(pickerState.year,pickerState.month);
+    const idx=Math.min(pickerState.day,days.length-1);pickerState.day=idx;
+    setupDrum('picker-day',days,idx,SPACER,ITEM_H,i=>{pickerState.day=i;updateFormDate();});
+  }
+  const hourItems=Array.from({length:24},(_,i)=>pad(i));
+  const minItems=Array.from({length:60},(_,i)=>pad(i));
+  setupDrum('picker-year',yearItems,0,SPACER,ITEM_H,i=>{pickerState.year=curYear-i;refreshDayDrum();updateFormDate();});
+  setupDrum('picker-month',monthNames,now.getMonth(),SPACER,ITEM_H,i=>{pickerState.month=i;refreshDayDrum();updateFormDate();});
+  setupDrum('picker-day',getDays(curYear,now.getMonth()),now.getDate()-1,SPACER,ITEM_H,i=>{pickerState.day=i;updateFormDate();});
+  setupDrum('picker-hour',hourItems,now.getHours(),SPACER,ITEM_H,i=>{pickerState.hour=i;updateFormDate();});
+  setupDrum('picker-min',minItems,now.getMinutes(),SPACER,ITEM_H,i=>{pickerState.min=i;updateFormDate();});
+  updateFormDate();
+}
+function setupDrum(id,items,defaultIdx,spacer,itemH,onChange){
+  const old=document.getElementById(id);if(!old)return;
+  const el=old.cloneNode(false);
+  old.parentNode.replaceChild(el,old);
+  el.innerHTML=`<div style="height:${spacer}px;flex-shrink:0"></div>`+
+    items.map(l=>`<div class="picker-item">${l}</div>`).join('')+
+    `<div style="height:${spacer}px;flex-shrink:0"></div>`;
+  requestAnimationFrame(()=>{el.scrollTop=defaultIdx*itemH});
+  let t;
+  el.addEventListener('scroll',()=>{
+    clearTimeout(t);
+    t=setTimeout(()=>{
+      const idx=Math.max(0,Math.min(Math.round(el.scrollTop/itemH),items.length-1));
+      onChange(idx);
+    },80);
+  },{passive:true});
+}
+
+function openAddModal(){openAddPage()}
+function selectPreset(n,c){formName=n;formColor=c}
+function closeModal(e){if(e&&e.target!==e.currentTarget)return;activeModal=null;editingId=null;render()}
+
+function saveHabit(){
+  const name=formName.trim();if(!name)return;
+  const qd=new Date(formDate+'T'+(formTime||'00:00')).toISOString();
+  if(editingId){
+    const h=data.habits.find(x=>x.id===editingId);
+    if(h){h.name=name;h.color=formColor;h.quitDate=qd}
+  }else{
+    const newH={id:'h_'+Date.now(),name,emoji:formEmoji,color:formColor,quitDate:qd,bestStreak:0,oldTokens:[]};
+    data.habits.push(newH);
+    activeHabitId=newH.id;
+  }
+  saveData(data);activeModal=null;editingId=null;render();
+}
+
+function editHabit(id){
+  const h=data.habits.find(x=>x.id===id);if(!h)return;
+  activeModal='edit';editingId=id;formName=h.name;formEmoji=h.emoji;formColor=h.color;
+  const d=new Date(h.quitDate);formDate=d.toISOString().split('T')[0];formTime=pad(d.getHours())+':'+pad(d.getMinutes());
+  render();
+}
+
+function resetStreak(id){
+  if(!confirm('Сбросить отсчёт? Текущий жетон перейдёт в «старые».'))return;
+  const h=data.habits.find(x=>x.id===id);
+  if(h){
+    const el=getElapsed(h.quitDate);
+    h.bestStreak=Math.max(h.bestStreak||0,el.days);
+    if(!h.oldTokens)h.oldTokens=[];
+    if(isTracked(h.name)){
+      const topM=getTopBadge(el.totalSeconds);
+      if(topM){
+        const resetDate=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'short'});
+        h.oldTokens.push({rank:topM.rank,label:topM.label,date:resetDate});
+      }
+    }
+    h.quitDate=new Date().toISOString();
+    checkedMilestones[h.id]=0;
+  }
+  saveData(data);render();
+}
+
+function deleteHabit(id){
+  if(!confirm('Удалить эту привычку?'))return;
+  data.habits=data.habits.filter(x=>x.id!==id);
+  if(activeHabitId===id)activeHabitId=data.habits.length>0?data.habits[0].id:null;
+  saveData(data);render();
+}
+
+function closeCelebration(){celebrationData=null;render()}
+
+function spawnConfetti(){
+  const cols=['#ffd60a','#ff453a','#30d158','#2aabee','#bf5af2','#ff9f0a'];
+  for(let i=0;i<50;i++){const el=document.createElement('div');el.className='confetti-piece';el.style.left=Math.random()*100+'vw';el.style.background=cols[Math.floor(Math.random()*cols.length)];el.style.animationDelay=Math.random()*0.8+'s';el.style.animationDuration=(1.5+Math.random()*1.5)+'s';el.style.width=(5+Math.random()*6)+'px';el.style.height=(5+Math.random()*6)+'px';document.body.appendChild(el);setTimeout(()=>el.remove(),3000)}
+}
+
+// === TIMER LOOP ===
+function updateTimers(){
+  document.querySelectorAll('.timer-bars').forEach(container=>{
+    const quit=container.dataset.quit;if(!quit)return;
+    const e=getElapsed(quit);
+    const barData=[
+      {v:e.years,max:10,key:'years'},
+      {v:e.months,max:12,key:'months'},
+      {v:e.days,max:30,key:'days'},
+      {v:e.hours,max:24,key:'hours'},
+      {v:e.minutes,max:60,key:'minutes'},
+      {v:e.seconds,max:60,key:'seconds'},
+    ];
+    barData.forEach(b=>{
+      const tbar=container.querySelector(`[data-bar-key="${b.key}"]`);
+      if(!tbar)return;
+      if(b.v>0){
+        tbar.style.display='';
+        const fill=tbar.querySelector('.tbar-fill');
+        if(fill)fill.style.width=Math.min(100,(b.v/b.max)*100)+'%';
+        const num=tbar.querySelector('.tbar-num');
+        if(num)num.textContent=b.v;
+      }else{
+        tbar.style.display='none';
+      }
+    });
+  });
+
+  // Check milestones
+  data.habits.forEach(h=>{
+    if(!isTracked(h.name))return; // свои привычки не зарабатывают жетоны/уровни
+    const e=getElapsed(h.quitDate);const key=h.id;
+    if(!checkedMilestones[key])checkedMilestones[key]=0;
+    const earned=getEarnedBadges(e.totalSeconds);
+    if(earned.length>checkedMilestones[key]){
+      const m=earned[earned.length-1];checkedMilestones[key]=earned.length;
+      const diff=e.totalSeconds-m.sec;
+      if(diff<3&&!celebrationData){
+        celebrationData={rank:m.rank,title:`Уровень ${m.rank}`,subtitle:`${h.name} · ${m.label}`,color:h.color};
+        spawnConfetti();render();
+      }
+    }
+  });
+
+  const h=data.habits.find(x=>x.id===activeHabitId);
+  if(h){
+    const e=getElapsed(h.quitDate);
+    const{next}=getCurrentMilestone(e.totalSeconds);
+    const p=getMilestoneProgress(e.totalSeconds,next);
+    const fill=document.querySelector('.progress-fill');
+    if(fill)fill.style.width=p+'%';
+  }
+
+  requestAnimationFrame(updateTimers);
+}
+
+// Init
+data.habits.forEach(h=>{
+  if(!h.oldTokens)h.oldTokens=[];
+  checkedMilestones[h.id]=getEarnedBadges(getElapsed(h.quitDate).totalSeconds).length;
+});
+if(!activeHabitId&&data.habits.length>0)activeHabitId=data.habits[0].id;
+render();requestAnimationFrame(updateTimers);setTimeout(()=>document.body.classList.add('app-ready'),500);
+
+// === CHART INFO POPUP ===
+
+function getChartInfoText(name){
+  if(isSmoking(name))return'График показывает уровень зависимости от никотина. В первые дни тяга особенно сильна — это нормально: мозг перестраивается. Кривая никогда не достигает нуля, потому что нейронные связи сохраняются, но со временем сигнал слабеет настолько, что перестаёт управлять тобой. Ты уже делаешь самое трудное.';
+  if(isAlcohol(name))return'График показывает силу тяги к алкоголю по мере трезвости. Кривая построена по исследованиям отказа от алкоголя (данные NIAAA, клинические шкалы тяги PACS/OCDS и наблюдения за периодом воздержания): тяга максимальна в первые дни и сильнее всего слабеет за первые 1–3 месяца, продолжая снижаться в течение года. До нуля она не опускается — небольшой остаточный уровень сохраняется даже спустя годы, поэтому отдельные всплески желания (особенно на 1–2-м месяце) — нормальная часть восстановления, а не срыв. Значения усреднённые и приблизительные: у каждого свой темп.';
+  if(isWeed(name))return'График показывает силу тяги к каннабису. Тяга сильнее всего в первые дни (реальный пик — примерно на 2–6-й день) и затем постепенно слабеет по мере воздержания. К концу первого месяца острый абстинентный синдром в основном проходит, а каннабиноидные рецепторы (CB1) возвращаются к норме; дальше тяга снижается медленнее и выходит на низкий, но не нулевой уровень. Оценка основана на исследованиях отмены каннабиса (Budney 2003, Allsop 2011) и данных о нейробиологическом восстановлении; отдалённые значения (месяцы–годы) — приблизительная экстраполяция.';
+  return'';
+}
+
+function toggleChartInfo(){
+  const body=document.getElementById('chart-info-body');
+  const arrow=document.getElementById('chart-info-arrow');
+  if(!body)return;
+  const open=body.classList.toggle('open');
+  if(arrow)arrow.style.transform=open?'rotate(90deg)':'';
+}
+
+// === RISK CHART ===
+
+function openRiskChart(){
+  const hGuard=data.habits.find(x=>x.id===activeHabitId);
+  if(!hGuard||!isTracked(hGuard.name))return; // нет графика у своих привычек
+  activeModal='riskChart';
+  const h=data.habits.find(x=>x.id===activeHabitId);
+  if(h){
+    const days=getElapsed(h.quitDate).totalSeconds/86400;
+    if(days>3650)chartRange=Math.ceil(days/365)*365;
+    else if(days>1825)chartRange=3650;
+    else if(days>365)chartRange=1825;
+    else if(days>180)chartRange=365;
+    else if(days>90)chartRange=180;
+    else if(days>30)chartRange=90;
+    else chartRange=30;
+    document.querySelectorAll('.crb').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.days)===chartRange));
+  }
+  chartActiveTouchDay=null;
+  document.getElementById('chart-page').classList.add('open');
+  setTimeout(()=>{
+    setupChartInteraction();
+    startChartAnimation();
+    if(chartLiveInterval)clearInterval(chartLiveInterval);
+    chartLiveInterval=setInterval(updateChartLive,100);
+  },50);
+}
+
+function closeRiskChart(){
+  activeModal=null;
+  stopChartAnimation();
+  if(chartLiveInterval){clearInterval(chartLiveInterval);chartLiveInterval=null;}
+  document.getElementById('chart-page').classList.remove('open');
+}
+
+function setChartRange(days){
+  chartRange=days;
+  document.querySelectorAll('.crb').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.days)===days));
+  chartActiveTouchDay=null;
+  startChartAnimation();
+}
+
+function startChartAnimation(){
+  stopChartAnimation();
+  chartAnimStart=null;
+  function step(ts){
+    if(!chartAnimStart)chartAnimStart=ts;
+    const t=Math.min((ts-chartAnimStart)/CHART_ANIM_MS,1);
+    const eased=1-Math.pow(1-t,3);
+    drawRiskChart(chartActiveTouchDay,eased,ts);
+    if(t<1){chartAnimRAF=requestAnimationFrame(step);}
+    else{chartAnimRAF=null;startPulseLoop();}
+  }
+  chartAnimRAF=requestAnimationFrame(step);
+}
+
+function startPulseLoop(){
+  if(chartPulseRAF)cancelAnimationFrame(chartPulseRAF);
+  function step(ts){
+    drawRiskChart(chartActiveTouchDay,1,ts);
+    chartPulseRAF=requestAnimationFrame(step);
+  }
+  chartPulseRAF=requestAnimationFrame(step);
+}
+
+function stopChartAnimation(){
+  if(chartAnimRAF){cancelAnimationFrame(chartAnimRAF);chartAnimRAF=null;}
+  if(chartPulseRAF){cancelAnimationFrame(chartPulseRAF);chartPulseRAF=null;}
+}
+
+function updateChartLive(){
+  const h=data.habits.find(x=>x.id===activeHabitId);if(!h)return;
+  const {riskFn,decFn}=getRiskFns(h.name);
+  const s=(Date.now()-new Date(h.quitDate).getTime())/1000;
+  const risk=riskFn(s);
+  const str=risk.toFixed(1);
+  const di=str.indexOf('.');
+  const phase=getPhaseForHabit(risk,h.name);
+  const iEl=document.querySelector('.clr-int');
+  const dEl=document.querySelector('.clr-dot');
+  const fEl=document.querySelector('.clr-dec');
+  if(iEl){iEl.textContent=str.substring(0,di);iEl.style.color=phase.color}
+  if(dEl){dEl.style.color=phase.color}
+  if(fEl)fEl.textContent=str.substring(di+1);
+  const pEl=document.querySelector('.clr-phase');
+  if(pEl){pEl.textContent=phase.label;pEl.style.color=phase.color}
+  const mEl=document.querySelector('.clr-motive');
+  if(mEl)mEl.textContent=getChartMotive(risk,h.name);
+}
+
+function setupChartInteraction(){
+  const canvas=document.getElementById('risk-chart-canvas');if(!canvas)return;
+  canvas.removeEventListener('touchstart',canvas._ts);canvas.removeEventListener('touchmove',canvas._tm);
+  canvas.removeEventListener('touchend',canvas._te);canvas.removeEventListener('mousemove',canvas._mm);
+  canvas.removeEventListener('mouseleave',canvas._ml);
+  const PL=28,PR=16;
+  function getDay(clientX){
+    const r=canvas.getBoundingClientRect();
+    return Math.max(0,Math.min(chartRange,((clientX-r.left-PL)/(r.width-PL-PR))*chartRange));
+  }
+  canvas._ts=e=>{e.preventDefault();chartActiveTouchDay=getDay(e.touches[0].clientX)};
+  canvas._tm=e=>{e.preventDefault();chartActiveTouchDay=getDay(e.touches[0].clientX)};
+  canvas._te=()=>{setTimeout(()=>{chartActiveTouchDay=null},1800)};
+  canvas._mm=e=>{chartActiveTouchDay=getDay(e.clientX)};
+  canvas._ml=()=>{chartActiveTouchDay=null};
+  canvas.addEventListener('touchstart',canvas._ts,{passive:false});
+  canvas.addEventListener('touchmove',canvas._tm,{passive:false});
+  canvas.addEventListener('touchend',canvas._te);
+  canvas.addEventListener('mousemove',canvas._mm);
+  canvas.addEventListener('mouseleave',canvas._ml);
+}
+
+function drawRiskChart(touchDay,progress,ts){
+  const canvas=document.getElementById('risk-chart-canvas');if(!canvas)return;
+  const h=data.habits.find(x=>x.id===activeHabitId);if(!h)return;
+  const {riskFn}=getRiskFns(h.name);
+  const elapsed=getElapsed(h.quitDate);
+  const currentDays=elapsed.totalSeconds/86400;
+  const xMax=chartRange;
+  progress=progress??1; ts=ts??0;
+
+  const wrap=canvas.parentElement;
+  const W=wrap.clientWidth||300;
+  const H=wrap.clientHeight||260;
+  canvas.width=W*2;canvas.height=H*2;canvas.style.width=W+'px';canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');ctx.scale(2,2);
+  ctx.clearRect(0,0,W,H);
+
+  const pad={top:16,right:16,bottom:26,left:28};
+  const cw=W-pad.left-pad.right,ch=H-pad.top-pad.bottom;
+  const yMax=isTracked(h.name)?110:100;
+  function xPx(d){return pad.left+(d/xMax)*cw}
+  function yPx(r){return pad.top+ch-(Math.min(r,yMax)/yMax)*ch}
+
+  // Build curve points up to progress
+  const STEPS=400;
+  const maxStep=Math.floor(STEPS*progress);
+  const pts=[];
+  for(let i=0;i<=maxStep;i++){
+    const d=(i/STEPS)*xMax;
+    pts.push([xPx(d),yPx(riskFn(d*86400))]);
+  }
+  if(pts.length<2)return;
+  const last=pts[pts.length-1];
+  const bottom=yPx(0);
+
+  // Gradient fill under curve
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0],pts[0][1]);
+  for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);
+  ctx.lineTo(last[0],bottom);
+  ctx.lineTo(pts[0][0],bottom);
+  ctx.closePath();
+  const fillGrd=ctx.createLinearGradient(0,pad.top,0,pad.top+ch);
+  fillGrd.addColorStop(0,'rgba(255,69,58,0.28)');
+  fillGrd.addColorStop(0.45,'rgba(255,159,10,0.12)');
+  fillGrd.addColorStop(1,'rgba(48,209,88,0.02)');
+  ctx.fillStyle=fillGrd;ctx.fill();
+
+  // Curve line with horizontal gradient
+  const lineGrd=ctx.createLinearGradient(pad.left,0,pad.left+cw*progress,0);
+  lineGrd.addColorStop(0,'#ff453a');
+  lineGrd.addColorStop(0.22,'#ff9f0a');
+  lineGrd.addColorStop(0.5,'#ffd60a');
+  lineGrd.addColorStop(1,'#30d158');
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0],pts[0][1]);
+  for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);
+  ctx.strokeStyle=lineGrd;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke();
+
+  // Thin grid lines + Y labels
+  ctx.font='500 9px Inter,-apple-system,sans-serif';ctx.textAlign='right';
+  [0,25,50,75,100].forEach(y=>{
+    if(y>yMax)return;
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=0.7;
+    ctx.beginPath();ctx.moveTo(pad.left,yPx(y));ctx.lineTo(pad.left+cw,yPx(y));ctx.stroke();
+    ctx.fillStyle='rgba(142,142,147,0.5)';
+    ctx.fillText(y+'%',pad.left-5,yPx(y)+3);
+  });
+
+  // X labels + vertical grid
+  const xTicks=xMax<=30?[{d:7,l:'1н'},{d:14,l:'2н'},{d:30,l:'1м'}]
+    :xMax<=90?[{d:30,l:'1м'},{d:60,l:'2м'},{d:90,l:'3м'}]
+    :xMax<=180?[{d:30,l:'1м'},{d:90,l:'3м'},{d:180,l:'6м'}]
+    :xMax<=365?[{d:30,l:'1м'},{d:90,l:'3м'},{d:180,l:'6м'},{d:365,l:'1г'}]
+    :[{d:365,l:'1г'},{d:730,l:'2г'},{d:1095,l:'3г'},{d:1825,l:'5г'}];
+  ctx.textAlign='center';
+  xTicks.forEach(t=>{
+    if(t.d>xMax)return;
+    ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=0.7;
+    ctx.beginPath();ctx.moveTo(xPx(t.d),pad.top);ctx.lineTo(xPx(t.d),pad.top+ch);ctx.stroke();
+    ctx.fillStyle='rgba(142,142,147,0.5)';
+    ctx.fillText(t.l,xPx(t.d),H-pad.bottom+12);
+  });
+
+  // Ты здесь — pulsing dot (only after animation done)
+  if(progress>=1&&currentDays<=xMax){
+    const cx=xPx(currentDays),cy=yPx(riskFn(elapsed.totalSeconds));
+    const phase=getPhaseForHabit(riskFn(elapsed.totalSeconds),h.name);
+    const pulse=(Math.sin(ts/650)+1)/2;
+    const outerR=9+pulse*7;
+    const outerGrd=ctx.createRadialGradient(cx,cy,0,cx,cy,outerR);
+    outerGrd.addColorStop(0,`rgba(255,255,255,${0.12+pulse*0.10})`);
+    outerGrd.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=outerGrd;ctx.beginPath();ctx.arc(cx,cy,outerR,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=phase.color;ctx.beginPath();ctx.arc(cx,cy,5,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.9)';ctx.lineWidth=1.5;ctx.stroke();
+    if(touchDay===null){
+      ctx.fillStyle='rgba(255,255,255,0.65)';
+      ctx.font='600 10px Inter,-apple-system,sans-serif';
+      const right=currentDays>xMax*0.72;
+      ctx.textAlign=right?'right':'left';
+      ctx.fillText('Ты здесь',cx+(right?-12:12),cy-10);
+    }
+  }
+
+  // Touch tooltip
+  if(touchDay!==null){
+    const tx=xPx(touchDay),tr=riskFn(touchDay*86400),ty=yPx(tr);
+    const tPhase=getPhaseForHabit(tr,h.name);
+    // Dashed vertical line
+    ctx.strokeStyle='rgba(255,255,255,0.28)';ctx.lineWidth=1;ctx.setLineDash([3,4]);
+    ctx.beginPath();ctx.moveTo(tx,pad.top);ctx.lineTo(tx,pad.top+ch);ctx.stroke();
+    ctx.setLineDash([]);
+    // Glow halo
+    const dg=ctx.createRadialGradient(tx,ty,0,tx,ty,16);
+    dg.addColorStop(0,'rgba(255,255,255,0.18)');dg.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=dg;ctx.beginPath();ctx.arc(tx,ty,16,0,Math.PI*2);ctx.fill();
+    // Dot
+    ctx.fillStyle=tPhase.color;ctx.beginPath();ctx.arc(tx,ty,5.5,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.9)';ctx.lineWidth=1.5;ctx.stroke();
+    // Tooltip box
+    const rStr=tr.toFixed(1)+'%';
+    const dLabel=touchDay<1?Math.round(touchDay*24)+' ч'
+      :touchDay<7?Math.round(touchDay)+' дн'
+      :touchDay<30?Math.round(touchDay/7)+' нед'
+      :touchDay<365?(touchDay/30).toFixed(1)+' мес'
+      :(touchDay/365).toFixed(1)+' г';
+    const bW=90,bH=50;
+    let bx=tx+16;if(bx+bW>W-pad.right-4)bx=tx-bW-16;
+    const by=Math.max(pad.top+4,Math.min(ty-bH/2,pad.top+ch-bH-4));
+    ctx.fillStyle='rgba(26,26,28,0.97)';
+    ctx.beginPath();ctx.roundRect(bx,by,bW,bH,12);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=0.75;
+    ctx.beginPath();ctx.roundRect(bx,by,bW,bH,12);ctx.stroke();
+    ctx.fillStyle=tPhase.color;ctx.font='700 17px Inter,-apple-system,sans-serif';
+    ctx.textAlign='center';ctx.fillText(rStr,bx+bW/2,by+21);
+    ctx.fillStyle='rgba(142,142,147,0.85)';ctx.font='500 11px Inter,-apple-system,sans-serif';
+    ctx.fillText(dLabel,bx+bW/2,by+38);
+  }
+}
+
+// Risk counter — 10fps update
+setInterval(()=>{
+  const block=document.querySelector('.risk-block');
+  if(!block)return;
+  const quit=block.dataset.quit;if(!quit)return;
+  const name=block.dataset.name||'';
+  const s=(Date.now()-new Date(quit).getTime())/1000;
+  const {riskFn,decFn}=getRiskFns(name);
+  const risk=riskFn(s);
+  const dec=decFn(s);
+  const str=risk.toFixed(dec);
+  const di=str.indexOf('.');
+  const phase=getPhaseForHabit(risk,name);
+  const el=document.getElementById('risk-num');
+  if(el){
+    el.querySelector('.risk-int').textContent=str.substring(0,di);
+    el.querySelector('.risk-dec').textContent=str.substring(di+1);
+    el.querySelector('.risk-int').style.color=phase.color;
+  }
+  const badge=block.querySelector('.risk-phase');
+  if(badge){badge.textContent=phase.label;badge.style.color=phase.color;badge.style.background=phase.bg}
+},100);
+</script>
+</body>
+</html>
