@@ -244,13 +244,16 @@ await setState(seed());
 await page.waitForTimeout(900);
 ok('название привычки видно', await page.locator('.h-name').isVisible());
 ok('строка «свободен с» видна', (await page.locator('.h-since').innerText()).includes('свободен с'));
-ok('кольцо-заглушка пунктирное, пока нет обета', await page.locator('.ring-track.dashed').isVisible());
-ok('кнопка «Дать обет» видна', await page.locator('.vow-cta').isVisible());
+eq('крупное число дней — герой экрана', (await page.locator('#big').innerText()).trim(), '3');
+ok('подпись под числом — «дня»', (await page.locator('.hero-unit').innerText()).trim() === 'дня');
+ok('кольца вокруг числа нет', (await page.locator('.ring, .ring-wrap, svg.ring').count()) === 0);
 ok('карточка тяги видна', await page.locator('.craving').isVisible());
 ok('одометр отрисован', (await page.locator('.obar').count()) >= 3);
-ok('карточка фазы видна', await page.locator('.phase-rank').isVisible());
-ok('кнопка «Тянет» видна', await page.locator('.sos-btn').isVisible());
-ok('карточка истории видна', (await page.locator('.row-title').allInnerTexts()).includes('История'));
+ok('полосок на концах баров нет',
+   await page.evaluate(() => getComputedStyle(document.querySelector('.obar-fill'), '::after').content) === 'none');
+ok('карточки фазы нет', (await page.locator('.phase-rank').count()) === 0);
+ok('кнопки «Тянет» нет', (await page.locator('.sos-btn').count()) === 0);
+ok('карточки истории нет', !(await page.locator('.row-title').allInnerTexts()).includes('История'));
 ok('цитата видна', await page.locator('.quote').isVisible());
 
 // БАГ v1 №1.6: «1 дней» / «2 часов» / «1 секунд»
@@ -270,99 +273,9 @@ const zoneTxt = await page.locator('#cv-zone').innerText();
 ok('зона тяги подписана', zoneTxt.length > 0, zoneTxt);
 await shot('03-home-no-vow');
 
-// фон подкрашивается цветом фазы
+// фон подкрашивается цветом привычки
 const glow = await page.evaluate(() => getComputedStyle(document.getElementById('glow')).color);
-ok('фон подкрашен цветом текущей фазы', glow !== 'rgb(42, 171, 238)', glow);
-
-/* ═══════════════ 4. Аскеза ═══════════════ */
-group('4. Аскеза');
-await page.click('.vow-cta');
-await page.waitForSelector('#p-vow.on');
-ok('страница аскезы открылась', await page.locator('#p-vow.on').isVisible());
-eq("срок по умолчанию — 30 дней", (await page.locator(".vp-days").innerText()).trim(), "30");
-ok('предпросмотр показывает дату окончания', (await page.locator('.vp-sub').innerText()).includes('закончится'));
-ok('готовые сроки показаны', (await page.locator('#p-vow .chip').count()) === 5);
-
-await page.click('[data-act="vowSet"][data-arg="7"]');
-await page.waitForTimeout(150);
-eq('выбор пресета 7 применился', (await page.locator('.vp-days').innerText()).trim(), '7');
-await page.click('[data-act="vowPlus"]');
-await page.waitForTimeout(120);
-eq('шаг +1 на малых сроках', (await page.locator('.vp-days').innerText()).trim(), '8');
-await page.click('[data-act="vowSet"][data-arg="100"]');
-await page.waitForTimeout(120);
-await page.click('[data-act="vowPlus"]');
-await page.waitForTimeout(120);
-eq('шаг +10 на больших сроках', (await page.locator('.vp-days').innerText()).trim(), '110');
-await shot('04-vow-page');
-
-await page.click('[data-act="vowSet"][data-arg="30"]');
-await page.waitForTimeout(120);
-await page.click('[data-act="vowSave"]');
-await page.waitForTimeout(1600);
-
-ok('кольцо аскезы появилось', await page.locator('#ring').isVisible());
-ok('пунктирная заглушка исчезла', (await page.locator('.ring-track.dashed').count()) === 0);
-const of = await page.locator('.ring-of').innerText();
-eq('в центре кольца «из 30»', of.trim(), 'из 30');
-const bigN = parseInt(await page.locator('#big').innerText(), 10);
-eq('засчитаны уже пройденные 3 дня', bigN, 3);
-ok('показан обратный отсчёт', /\d+ (день|дня|дней) \d\d:\d\d:\d\d/.test(await page.locator('#vow-left').innerText()),
-   await page.locator('#vow-left').innerText());
-
-const off1 = await page.locator('#ring').getAttribute('stroke-dashoffset');
-const vowMath = await page.evaluate(() => {
-  const h = window.__askeza.active();
-  const vi = window.__askeza.vowInfo(h);
-  return { p: vi.p, days: vi.days, doneDays: vi.doneDays, startsAtHabitStart: h.vow.startedAt === h.startedAt };
-});
-ok('аскеза стартует с даты отказа', vowMath.startsAtHabitStart);
-ok('прогресс кольца ≈ 3/30', Math.abs(vowMath.p - 3.2 / 30) < 0.02, `p=${vowMath.p.toFixed(4)}`);
-ok('обводка кольца отрисована по прогрессу', parseFloat(off1) > 0 && parseFloat(off1) < 620, off1);
-await shot('05-home-with-vow');
-
-// обратный отсчёт тикает
-const left1 = await page.locator('#vow-left').innerText();
-await page.waitForTimeout(1400);
-const left2 = await page.locator('#vow-left').innerText();
-ok('обратный отсчёт идёт', left1 !== left2, `${left1} → ${left2}`);
-
-// завершение аскезы вычисляется по времени, даже если приложение было закрыто
-group('4б. Финиш аскезы при закрытом приложении');
-const past = ISO(35 * DAY);
-await setStateRaw({
-  v: 2, quoteIdx: 0, activeId: 'h1',
-  habits: [{
-    id: 'h1', name: 'Курение', kind: 'smoking', color: '#ff453a',
-    startedAt: past,
-    vow: { days: 30, startedAt: past, endsAt: ISO(5 * DAY), status: 'active' },
-    history: [{ t: 'start', at: past }],
-  }],
-});
-await page.waitForTimeout(400);
-await page.evaluate(() => window.__askeza.checkProgress());
-await page.waitForTimeout(1400);
-ok('празднование показано ретроспективно', await page.locator('#cel.on').isVisible());
-const celTxt = await page.locator('#cel').innerText();
-ok('в празднике написано «Аскеза выполнена»', /аскеза выполнена/i.test(celTxt), celTxt.slice(0, 80));
-ok('предложено продлить', /продлить/i.test(celTxt));
-ok('предложен новый срок', /новый срок/i.test(celTxt));
-ok('предложено остаться без срока', /без срока/i.test(celTxt));
-await shot('06-vow-complete');
-
-const evDone = await page.evaluate(() => window.__askeza.active().history.filter(e => e.t === 'vow_done'));
-eq('событие vow_done записано', evDone.length, 1);
-ok('дата события — настоящая дата финиша, а не момент открытия',
-   Math.abs(new Date(evDone[0].at) - (Date.now() - 5 * DAY)) < 60000,
-   evDone[0].at);
-
-await page.click('[data-act="celVowRepeat"]');
-await page.waitForTimeout(1200);
-const nv = await page.evaluate(() => window.__askeza.active().vow);
-ok('продление создало новый обет', !!nv && nv.days === 30);
-ok('продление отсчитывается от финиша прошлого, а не от «сейчас»',
-   Math.abs(new Date(nv.startedAt) - (Date.now() - 5 * DAY)) < 60000, nv.startedAt);
-
+eq('фон подкрашен цветом привычки', glow, 'rgb(255, 69, 58)');
 /* ═══════════════ 5. Вехи ═══════════════ */
 group('5. Вехи');
 await setState(seed());
@@ -434,11 +347,11 @@ await page.click('[data-act="saveEdit"]');
 await page.waitForTimeout(900);
 const renamed = await page.evaluate(() => {
   const h = window.__askeza.active();
-  return { name: h.name, kind: h.kind, hasPhase: !!window.__askeza.phaseAt(h.kind, 100) };
+  return { name: h.name, kind: h.kind, hasCurve: window.__askeza.hasCurve(h.kind) };
 });
 eq('название изменилось', renamed.name, 'Сигареты');
 eq('тип привычки сохранён при переименовании', renamed.kind, 'smoking');
-ok('фазы никуда не делись после переименования', renamed.hasPhase);
+ok('кривая тяги не потерялась после переименования', renamed.hasCurve);
 ok('график по-прежнему доступен', await page.locator('.craving').isVisible());
 
 /* ═══════════════ 7. Экранирование ввода ═══════════════ */
@@ -470,14 +383,9 @@ await page.waitForTimeout(500);
 /* ═══════════════ 8. Своя привычка ═══════════════ */
 group('8. Своя привычка');
 ok('у своей привычки нет карточки тяги', (await page.locator('.craving').count()) === 0);
-ok('у своей привычки нет карточки фазы', (await page.locator('.phase-rank').count()) === 0);
 ok('у своей привычки есть одометр', (await page.locator('.obar').count()) > 0);
-ok('у своей привычки есть кнопка обета', await page.locator('.vow-cta').isVisible());
-ok('у своей привычки есть история', (await page.locator('.row-title').allInnerTexts()).includes('История'));
-ok('у своей привычки есть «Тянет»', await page.locator('.sos-btn').isVisible());
-await page.click('[data-act="phases"]').catch(() => {});
-await page.waitForTimeout(200);
-ok('карточка фаз не открывается там, где фаз нет', (await page.locator('#p-phases.on').count()) === 0);
+ok('у своей привычки есть число дней', await page.locator('#big').isVisible());
+ok('у своей привычки есть цитата', await page.locator('.quote').isVisible());
 
 /* ═══════════════ 9. График ═══════════════ */
 group('9. График');
@@ -538,109 +446,6 @@ ok('блок пояснения помещается в экран', chBox && ch
    chBox ? `низ на ${Math.round(chBox.y + chBox.height)} из ${vh}` : 'нет блока');
 await page.click('[data-act="closeChart"]');
 await page.waitForTimeout(500);
-
-/* ═══════════════ 10. Фазы ═══════════════ */
-group('10. Фазы');
-await page.click('.card:has(.phase-rank)');
-await page.waitForSelector('#p-phases.on');
-await page.waitForTimeout(500);
-eq('все 8 фаз в ленте', await page.locator('#p-phases .tl-i').count(), 8);
-const descs = await page.locator('#p-phases .tl-desc').allInnerTexts();
-eq('описание есть у КАЖДОЙ фазы, включая будущие', descs.length, 8);
-ok('описания не обрезаны в одну строку', descs.every(d => d.length > 60), `мин. длина ${Math.min(...descs.map(d => d.length))}`);
-eq('текущая фаза ровно одна', await page.locator('#p-phases .tl-i.now').count(), 1);
-ok('у будущих фаз указано, когда начнутся',
-   (await page.locator('#p-phases .tl-i.next .tl-when').first().innerText()).includes('Начнётся через'));
-await shot('12-phases');
-await page.click('[data-act="closePhases"]');
-await page.waitForTimeout(500);
-
-/* ═══════════════ 11. SOS ═══════════════ */
-group('11. Кнопка «Тянет»');
-await page.click('.sos-btn');
-await page.waitForTimeout(700);
-ok('экран SOS открылся', await page.locator('#sos.on').isVisible());
-eq('дыхание начинается со вдоха', (await page.locator('#br-t').innerText()).trim(), 'Вдох');
-ok('показано, что тяга временна', (await page.locator('.sos-h').innerText()).includes('3–5 минут'));
-const stakes = await page.locator('.stakes').innerText();
-ok('на кону показана серия', stakes.includes('Серия'));
-ok('на кону показана фаза', stakes.includes('Фаза'));
-await shot('13-sos');
-const scale1 = await page.evaluate(() => getComputedStyle(document.getElementById('br-c')).transform);
-await page.waitForTimeout(2200);
-const scale2 = await page.evaluate(() => getComputedStyle(document.getElementById('br-c')).transform);
-ok('круг дыхания анимируется', scale1 !== scale2);
-const cd = await page.locator('#br-n').innerText();
-ok('идёт обратный отсчёт секунд', /^\d+$/.test(cd.trim()), cd);
-
-const urgesBefore = await page.evaluate(() => window.__askeza.active().history.filter(e => e.t === 'urge').length);
-await page.click('[data-act="sosDone"]');
-await page.waitForTimeout(700);
-ok('экран SOS закрылся', !(await page.locator('#sos.on').isVisible()));
-const urgesAfter = await page.evaluate(() => window.__askeza.active().history.filter(e => e.t === 'urge').length);
-eq('пережитая тяга записана в историю', urgesAfter, urgesBefore + 1);
-
-/* ═══════════════ 12. История и срыв ═══════════════ */
-group('12. История и срыв');
-await page.click('.card:has-text("История")');
-await page.waitForSelector('#p-history.on');
-await page.waitForTimeout(500);
-ok('страница истории открылась', await page.locator('#p-history.on').isVisible());
-eq('три сводных показателя', await page.locator('.hs').count(), 3);
-ok('события перечислены', (await page.locator('.ev').count()) > 3);
-await shot('14-history');
-await page.click('[data-act="closeHistory"]');
-await page.waitForTimeout(500);
-
-const beforeRel = await page.evaluate(() => ({
-  started: window.__askeza.active().startedAt,
-  days: Math.floor(window.__askeza.elapsed(window.__askeza.active()) / 86400),
-}));
-await page.click('[data-act="habitMenu"]'); await page.waitForTimeout(400);
-await page.click('[data-act="relapseAsk"]'); await page.waitForTimeout(500);
-ok('срыв требует подтверждения', await page.locator('#sheet-bd.on').isVisible());
-ok('подтверждение объясняет последствия', (await page.locator('.sheet-title').innerText()).includes('начнётся заново'));
-await shot('15-relapse-confirm');
-await page.click('[data-act="relapse"]');
-await page.waitForTimeout(900);
-const afterRel = await page.evaluate(() => {
-  const h = window.__askeza.active();
-  return {
-    days: Math.floor(window.__askeza.elapsed(h) / 86400),
-    rel: h.history.filter(e => e.t === 'relapse'),
-    ms: h.history.filter(e => e.t === 'milestone').length,
-  };
-});
-eq('счётчик обнулился', afterRel.days, 0);
-eq('срыв записан в историю', afterRel.rel.length, 1);
-eq('в срыве сохранена длина серии', afterRel.rel[0].streakDays, beforeRel.days);
-// v2.1: срыв больше НЕ стирает вехи из истории — они остаются как факт,
-// но новая серия может заработать их заново
-ok('прошлые вехи остались в истории', afterRel.ms >= 8, `вех в истории: ${afterRel.ms}`);
-const sidInfo = await page.evaluate(() => {
-  const h = window.__askeza.active();
-  return { sid: h.sid, curr: h.history.filter(e => e.t === 'milestone' && (e.sid || 1) === h.sid).length };
-});
-ok('серия получила новый номер', sidInfo.sid >= 2, 'sid=' + sidInfo.sid);
-eq('у новой серии вех пока нет', sidInfo.curr, 0);
-
-// срыв во время аскезы обрывает и её
-await setState(seed({
-  vow: { days: 30, startedAt: ISO(3 * DAY + 5 * 3600e3), endsAt: ISO(-27 * DAY), status: 'active' },
-}));
-await page.waitForTimeout(800);
-await page.click('[data-act="habitMenu"]'); await page.waitForTimeout(400);
-await page.click('[data-act="relapseAsk"]'); await page.waitForTimeout(450);
-await page.click('[data-act="relapse"]');
-await page.waitForTimeout(800);
-const vf = await page.evaluate(() => {
-  const h = window.__askeza.active();
-  return { vow: h.vow, fails: h.history.filter(e => e.t === 'vow_fail') };
-});
-eq('аскеза снята при срыве', vf.vow, null);
-eq('прерванная аскеза записана в историю', vf.fails.length, 1);
-eq('записан день, на котором прервалась', vf.fails[0].onDay, 3);
-
 /* ═══════════════ 13. Несколько привычек ═══════════════ */
 group('13. Несколько привычек');
 await setState({
@@ -669,53 +474,14 @@ await page.click('.hcard[data-id="h2"]');
 await page.waitForTimeout(1300);
 eq('переключение на другую привычку сработало', (await page.locator('.h-name').innerText()).trim(), 'Алкоголь');
 ok('у алкоголя своя кривая тяги', await page.locator('.craving').isVisible());
-ok('кольцо аскезы показано', await page.locator('#ring').isVisible());
-await shot('17-alcohol-vow');
+eq('у алкоголя своё число дней', (await page.locator('#big').innerText()).trim(), '8');
+await shot('17-alcohol');
 
 await page.click('[data-act="backToList"]'); await page.waitForTimeout(400);
 await page.click('.hcard[data-id="h3"]');
 await page.waitForTimeout(1000);
 eq('переключение на свою привычку', (await page.locator('.h-name').innerText()).trim(), 'Соцсети');
 ok('у своей привычки одометр без графика', (await page.locator('.craving').count()) === 0 && (await page.locator('.obar').count()) > 0);
-
-/* ═══════════════ 14. Данные ═══════════════ */
-group('14. Экспорт, импорт, копия');
-await page.click('[data-act="backToList"]'); await page.waitForTimeout(400);
-await page.click('[data-act="data"]');
-await page.waitForSelector('#p-data.on');
-await page.waitForTimeout(400);
-ok('страница данных открылась', await page.locator('#p-data.on').isVisible());
-ok('сказано, что данные только на устройстве', (await page.locator('#p-data .page-sub').innerText()).includes('только на этом устройстве'));
-await shot('18-data');
-
-const dump = await page.evaluate(() => window.__askeza.exportJSON());
-const parsed = JSON.parse(dump);
-eq('экспорт содержит три привычки', parsed.data.habits.length, 3);
-eq('экспорт помечен приложением', parsed.app, 'askeza');
-ok('в экспорте есть история', parsed.data.habits.every(h => Array.isArray(h.history)));
-
-const backup = await page.evaluate(() => !!localStorage.getItem('askeza2_backup'));
-ok('резервная копия пишется автоматически', backup);
-
-await page.click('[data-act="wipeAsk"]'); await page.waitForTimeout(500);
-ok('удаление всего требует подтверждения', await page.locator('#sheet-bd.on').isVisible());
-await page.click('[data-act="wipe"]');
-await page.waitForTimeout(800);
-ok('после удаления показан пустой экран', await page.locator('.empty h2').isVisible());
-
-await page.evaluate(d => window.__askeza.applyImport(d), dump);
-await page.waitForTimeout(900);
-const restored = await page.evaluate(() => window.__askeza.S.habits.length);
-eq('импорт восстановил все привычки', restored, 3);
-ok('после импорта показан список привычек', await page.locator('#list .hcard').first().isVisible());
-
-// порча основного ключа — приложение должно подняться из копии
-await page.evaluate(() => localStorage.setItem('askeza2_data', '{битый'));
-await reload();
-await page.waitForTimeout(900);
-const recovered = await page.evaluate(() => window.__askeza.S.habits.length);
-eq('битое хранилище восстанавливается из резервной копии', recovered, 3);
-
 /* ═══════════════ 15. Перенос из askeza 1 ═══════════════ */
 group('15. Перенос из askeza 1 (старое приложение не трогаем)');
 const v1data = {
@@ -756,9 +522,12 @@ await page.goBack();
 await page.waitForTimeout(700);
 ok('системная кнопка «назад» закрывает график', !(await page.locator('#p-chart.on').isVisible()));
 ok('приложение при этом не выгрузилось', await page.locator('.h-name').isVisible());
-await page.click('.sos-btn'); await page.waitForTimeout(600);
+await page.click('[data-act="habitMenu"]'); await page.waitForTimeout(500);
 await page.goBack(); await page.waitForTimeout(600);
-ok('«назад» закрывает SOS', !(await page.locator('#sos.on').isVisible()));
+ok('«назад» закрывает нижний шит', !(await page.locator('#sheet-bd.on').isVisible()));
+await page.goBack(); await page.waitForTimeout(600);
+ok('«назад» с экрана привычки возвращает в список', await page.locator('#list.list').isVisible());
+ok('приложение по-прежнему живо', await page.evaluate(() => window.__askeza.view) === 'list');
 
 /* ═══════════════ 17. Доступность и производительность ═══════════════ */
 group('17. Доступность и производительность');
@@ -772,7 +541,9 @@ eq('нет внешних сетевых запросов (шрифты и т.п
 const fonts = await page.evaluate(() => getComputedStyle(document.body).fontFamily);
 ok('используется системный шрифт', /system|SF Pro/i.test(fonts), fonts);
 
-// фоновая пауза
+// фоновая пауза — считаем на экране привычки, где живёт счётчик тяги
+await setState(seed());
+await page.waitForTimeout(700);
 await page.evaluate(() => { Object.defineProperty(document, 'hidden', { value: true, configurable: true }); document.dispatchEvent(new Event('visibilitychange')); });
 const s1 = await page.locator('#cv').innerText();
 await page.waitForTimeout(900);
@@ -849,7 +620,7 @@ await dismissCel();
 
 /* ═══════════════ 20. Скроллинг и порно ═══════════════ */
 group('20. Новые привычки: скроллинг и порно');
-for (const [kind, title, phases] of [['scroll', 'Скроллинг', 7], ['porn', 'Порно', 7]]) {
+for (const [kind, title] of [['scroll', 'Скроллинг'], ['porn', 'Порно']]) {
   await setState({
     v: 2, quoteIdx: 0, activeId: 'x1',
     habits: [{ id: 'x1', name: title, kind, color: '#5e9eff', startedAt: ISO(10 * DAY), vow: null,
@@ -859,28 +630,10 @@ for (const [kind, title, phases] of [['scroll', 'Скроллинг', 7], ['porn
   eq(`${title}: экран открылся`, (await page.locator('.h-name').innerText()).trim(), title);
   eq(`${title}: карточки тяги НЕТ`, await page.locator('.craving').count(), 0);
   ok(`${title}: одометр есть`, (await page.locator('.obar').count()) > 0);
-  ok(`${title}: карточка фазы есть`, await page.locator('.phase-rank').isVisible());
-  ok(`${title}: кнопка «Тянет» есть`, await page.locator('.sos-btn').isVisible());
+  eq(`${title}: число дней`, (await page.locator('#big').innerText()).trim(), '10');
   ok(`${title}: кривой тяги в коде нет`, await page.evaluate(k => !window.__askeza.hasCurve(k), kind));
-
-  await page.click('.card:has(.phase-rank)');
-  await page.waitForSelector('#p-phases.on');
-  await page.waitForTimeout(400);
-  eq(`${title}: фаз в ленте ${phases}`, await page.locator('#p-phases .tl-i').count(), phases);
-  const d = await page.locator('#p-phases .tl-desc').allInnerTexts();
-  eq(`${title}: описание у каждой фазы`, d.length, phases);
-  ok(`${title}: есть блок «Откуда эти сроки»`, await page.locator('[data-act="phInfo"]').isVisible());
-  await page.click('[data-act="phInfo"]');
-  await page.waitForTimeout(500);
-  const src = await page.locator('#ph-body').innerText();
-  ok(`${title}: источник честно говорит, что это не клиника`,
-     /не клиническ|данных.*нет|ориентир|спорн/i.test(src), src.slice(0, 80));
-  await page.screenshot({ path: path.join(SHOTS, `24-phases-${kind}.png`) });
-  await page.click('[data-act="closePhases"]');
-  await page.waitForTimeout(450);
+  await page.screenshot({ path: path.join(SHOTS, `24-${kind}.png`) });
 }
-const srcSmoke = await page.evaluate(() => window.__askeza.PHASE_SOURCE.smoking);
-ok('у курения источник ссылается на клинические данные', /клиническ/i.test(srcSmoke), srcSmoke.slice(0, 60));
 
 /* ═══════════════ 21. Режим сна ═══════════════ */
 group('21. Режим сна — добавление');
@@ -911,16 +664,15 @@ eq('цель подъёма сохранена', made.wake, '07:00');
 group('21б. Главный экран режима');
 ok('одометра нет', (await page.locator('.obar').count()) === 0);
 ok('карточки тяги нет', (await page.locator('.craving').count()) === 0);
-ok('карточки фазы нет', (await page.locator('.phase-rank').count()) === 0);
-ok('кнопки «Тянет» нет', (await page.locator('.sos-btn').count()) === 0);
 ok('есть кнопка «Я проснулся»', await page.locator('[data-act="wake"]').isVisible());
 ok('в шапке указана цель', (await page.locator('.h-since').innerText()).includes('подъём до 07:00'));
 eq('календарь на пять недель', await page.locator('.cal-d').count(), 35);
 eq('шапка дней недели', await page.locator('.cal-h span').count(), 7);
 eq('сегодняшний день подсвечен', await page.locator('.cal-d.today').count(), 1);
 eq('три показателя', await page.locator('.dstat .hs').count(), 3);
-ok('кольцо-заглушка пунктирное', await page.locator('.ring-track.dashed').isVisible());
-eq('в кольце ноль дней', (await page.locator('#big').innerText()).trim(), '0');
+ok('кольца нет и здесь', (await page.locator('.ring, .ring-wrap').count()) === 0);
+eq('серия начинается с нуля', (await page.locator('#big').innerText()).trim(), '0');
+eq('подпись — «дней подряд»', (await page.locator('.hero-unit').innerText()).trim(), 'дней подряд');
 await page.screenshot({ path: path.join(SHOTS, '26-sleep-home.png') });
 
 group('21в. Отметка подъёма');
@@ -1010,60 +762,6 @@ const openBounded = await page.evaluate(() => {
   return A.openDays({ startedAt: start, daily: { wakeBy: '07:00', checks: {} } }, 3).length;
 });
 ok('задним числом не спрашивает про дни до начала режима', openBounded <= 1, `дней: ${openBounded}`);
-
-group('21д. Аскеза и вехи режима');
-await dismissCel();
-await page.click('.ring-wrap');
-await page.waitForSelector('#p-vow.on');
-await page.waitForTimeout(500);
-ok('текст аскезы адаптирован под режим', (await page.locator('#p-vow .page-sub').innerText()).includes('без пропусков'));
-ok('вместо даты окончания — счёт дней подряд', (await page.locator('.vp-sub').innerText()).includes('подряд'));
-await page.click('[data-act="vowSet"][data-arg="30"]');
-await page.waitForTimeout(200);
-await page.click('[data-act="vowSave"]');
-await page.waitForTimeout(1500);
-const dv = await page.evaluate(() => {
-  const A = window.__askeza, h = A.active();
-  return { days: h.vow.days, vi: A.vowInfo(h) };
-});
-eq('обет на 30 дней создан', dv.days, 30);
-ok('прогресс считается по серии, а не по времени', dv.vi.daily && dv.vi.doneDays === 7, String(dv.vi.doneDays));
-ok('кольцо отрисовано', await page.locator('#ring').isVisible());
-eq('в центре «из 30»', (await page.locator('.ring-of').innerText()).trim(), 'из 30');
-ok('показано, сколько дней осталось подряд', (await page.locator('.hero-left').innerText()).includes('подряд'));
-await page.screenshot({ path: path.join(SHOTS, '29-sleep-vow.png') });
-
-const dms = await page.evaluate(() => {
-  const h = window.__askeza.active();
-  return h.history.filter(e => e.t === 'milestone').map(e => e.key);
-});
-ok('веха «Неделя» засчитана', dms.includes('w1'), dms.join(','));
-ok('вехи режима считаются в днях, а не в секундах', !dms.includes('h1') && !dms.includes('m1'), dms.join(','));
-
-group('21е. История и меню режима');
-await page.click('.card:has-text("История")');
-await page.waitForSelector('#p-history.on');
-await page.waitForTimeout(500);
-const hs = await page.locator('.hist-stat').innerText();
-ok('в сводке «ПРОСПАЛ» вместо «ПЕРЕЖИТЫХ ТЯГ»', hs.includes('ПРОСПАЛ'), hs.replace(/\n/g, ' '));
-eq('гистограммы тяги в режиме нет', await page.locator('.urge-chart').count(), 0);
-ok('события подъёма есть в ленте', (await page.locator('.ev').count()) > 3);
-await page.screenshot({ path: path.join(SHOTS, '30-sleep-history.png') });
-await page.click('[data-act="closeHistory"]');
-await page.waitForTimeout(450);
-
-await page.click('[data-act="habitMenu"]');
-await page.waitForTimeout(450);
-const menuTxt = await page.locator('#sheet').innerText();
-ok('в меню режима нет пункта «Записать срыв»', !menuTxt.includes('Записать срыв'), menuTxt.replace(/\n/g, ' '));
-ok('аскеза в меню показана', menuTxt.includes('Аскеза'));
-await page.click('[data-act="closeSheet"]');
-await page.waitForTimeout(400);
-
-await page.click('[data-act="backToList"]');
-await page.waitForTimeout(450);
-ok('у режима на карточке дни серии', /\d+ (день|дня|дней)/.test(await page.locator('.hdays').first().innerText()));
-
 group('21ж. Переключение между режимом и отказом');
 await page.evaluate(() => {
   const A = window.__askeza, t = A.today(), checks = {};
@@ -1247,6 +945,68 @@ eq('серия пересчиталась после перезагрузки', 
   await page.waitForTimeout(500);
   ok('стрелка вернула в список', await page.locator('#list.list').isVisible());
   
+}
+
+/* ═══════════════ 22. Убранное не возвращается ═══════════════ */
+{
+  group('22. Аскезы, фазы, «Тянет», история и экспорт убраны');
+  await setState(seed());
+  await page.waitForTimeout(700);
+
+  const api = await page.evaluate(() => Object.keys(window.__askeza));
+  ok('аскез нет в API', !api.includes('vowInfo'), api.join(','));
+  ok('фаз нет в API', !api.includes('phaseAt') && !api.includes('PHASE_SOURCE'));
+  ok('экспорта нет в API', !api.includes('exportJSON') && !api.includes('applyImport'));
+
+  eq('страницы аскезы нет', await page.locator('#p-vow').count(), 0);
+  eq('страницы фаз нет', await page.locator('#p-phases').count(), 0);
+  eq('страницы истории нет', await page.locator('#p-history').count(), 0);
+  eq('страницы данных нет', await page.locator('#p-data').count(), 0);
+  eq('экрана «Тянет» нет', await page.locator('#sos').count(), 0);
+
+  eq('кнопок обета нет', await page.locator('[data-act="vow"], .vow-cta').count(), 0);
+  eq('кнопки «Тянет» нет', await page.locator('[data-act="sos"], .sos-btn').count(), 0);
+  eq('поле vow в данные не пишется',
+     await page.evaluate(() => 'vow' in window.__askeza.S.habits[0]), false);
+
+  await page.click('[data-act="habitMenu"]');
+  await page.waitForTimeout(450);
+  const menu = (await page.locator('#sheet').innerText()).replace(/\n/g, ' | ');
+  ok('в меню нет аскезы', !/Аскеза|обет/i.test(menu), menu);
+  ok('в меню нет истории', !/История/i.test(menu), menu);
+  ok('в меню осталось изменить', /Изменить/.test(menu), menu);
+  ok('в меню осталось записать срыв', /Записать срыв/.test(menu), menu);
+  ok('в меню осталось удалить', /Удалить привычку/.test(menu), menu);
+  await page.click('[data-act="closeSheet"]');
+  await page.waitForTimeout(400);
+  await shot('32-habit-clean');
+
+  await page.click('[data-act="backToList"]');
+  await page.waitForTimeout(500);
+  ok('в списке нет кнопки «Данные и копии»',
+     !(await page.locator('#list').innerText()).includes('Данные и копии'));
+
+  // срыв больше не упоминает аскезу и по-прежнему работает
+  await page.click('.hcard');
+  await page.waitForTimeout(800);
+  await dismissCel();
+  await page.click('[data-act="habitMenu"]'); await page.waitForTimeout(420);
+  await page.click('[data-act="relapseAsk"]'); await page.waitForTimeout(500);
+  const warn = await page.locator('#sheet').innerText();
+  ok('предупреждение о срыве не говорит про аскезу', !/аскез/i.test(warn), warn.replace(/\n/g, ' '));
+  await page.click('[data-act="relapse"]'); await page.waitForTimeout(800);
+  await dismissCel();
+  eq('срыв обнулил счётчик', (await page.locator('#big').innerText()).trim(), '0');
+  eq('срыв записан в журнал',
+     await page.evaluate(() => window.__askeza.S.habits[0].history.filter(e => e.t === 'relapse').length), 1);
+
+  // запись в историю браузера появляется только после первой отрисовки,
+  // иначе Safari показывает белый снимок при свайпе назад от левого края
+  await reload();
+  await page.waitForTimeout(900);
+  const hist = await page.evaluate(() => ({ d: history.state && history.state.d, len: history.length }));
+  eq('глубина истории выставлена после отрисовки', hist.d, 1);
+  ok('в истории есть куда возвращаться', hist.len >= 2, String(hist.len));
 }
 
 group('19. Ошибки исполнения');

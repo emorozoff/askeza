@@ -49,8 +49,8 @@ body{
 button,input,textarea,select{font-family:inherit;color:inherit}
 .num{font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1}
 
-/* Фоновое свечение текущей фазы. currentColor внутри градиента
-   позволяет плавно перетекать между фазами одной transition. */
+/* Фоновое свечение цветом привычки. currentColor внутри градиента
+   позволяет плавно перетекать между цветами одной transition. */
 #glow{
   position:fixed;inset:0;z-index:0;pointer-events:none;
   color:#2aabee;opacity:.20;
@@ -100,37 +100,15 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 .h-name{font-size:27px;font-weight:800;letter-spacing:-.6px;line-height:1.15;color:#fff;word-break:break-word}
 .h-since{font-size:12.5px;color:var(--text3);margin-top:5px;font-weight:450}
 
-/* ---------------- герой: кольцо ---------------- */
-.hero{display:flex;flex-direction:column;align-items:center;padding:14px 20px 4px}
-.ring-wrap{position:relative;width:224px;height:224px;cursor:pointer;transition:transform .2s var(--ease)}
-.ring-wrap:active{transform:scale(.975)}
-.ring{width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
-.ring-track{fill:none;stroke:rgba(255,255,255,.07);stroke-width:9}
-.ring-track.dashed{stroke-dasharray:2 11;stroke-linecap:round;stroke-width:5;stroke:rgba(255,255,255,.16)}
-.ring-fill{fill:none;stroke-width:9;stroke-linecap:round;
-  transition:stroke-dashoffset 1.15s var(--ease)}
-.ring-fill.live{transition:stroke-dashoffset .35s linear}
-.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
-.ring-big{font-size:64px;font-weight:800;letter-spacing:-3px;line-height:.98;color:#fff}
-.ring-unit{font-size:14px;font-weight:600;color:var(--text2);margin-top:5px;letter-spacing:.2px}
-.ring-of{font-size:12.5px;font-weight:600;color:var(--text3);margin-top:3px}
-.hero-left{font-size:13px;color:var(--text2);margin-top:12px;font-weight:550;letter-spacing:.1px}
-.hero-left b{color:var(--text);font-weight:700}
-.vow-cta{margin-top:14px;padding:11px 26px;white-space:nowrap;border:1px solid var(--line2);background:rgba(255,255,255,.045);
-  border-radius:22px;font-size:14.5px;font-weight:650;color:var(--text);cursor:pointer;
-  transition:transform .15s,background .2s;display:flex;align-items:center;gap:7px}
-.vow-cta:active{transform:scale(.96);background:rgba(255,255,255,.09)}
+/* ---------------- герой: число дней ---------------- */
+.hero{display:flex;flex-direction:column;align-items:center;padding:22px 20px 14px}
+.hero-big{font-size:72px;font-weight:800;letter-spacing:-3.4px;line-height:.96;color:#fff}
+.hero-unit{font-size:15px;font-weight:600;color:var(--text2);margin-top:8px;letter-spacing:.2px}
 
 /* ---------------- карточки ---------------- */
 .card{margin:0 16px 10px;background:var(--surface);border-radius:20px;border:1px solid var(--line);
   cursor:pointer;transition:transform .16s var(--ease),background .2s}
 .card:active{transform:scale(.982);background:var(--surface2)}
-.card.flat{cursor:default}
-.card.flat:active{transform:none;background:var(--surface)}
-.row{display:flex;align-items:center;gap:12px;padding:14px 16px}
-.row-body{flex:1;min-width:0}
-.row-title{font-size:15px;font-weight:650;color:var(--text)}
-.row-sub{font-size:12.5px;color:var(--text3);margin-top:2px;line-height:1.4}
 .chev{color:var(--text3);flex-shrink:0;width:8px;height:14px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
 
 /* карточка тяги */
@@ -149,8 +127,6 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 .odo{padding:0 16px;margin-bottom:10px;display:flex;flex-direction:column;gap:5px}
 .obar{position:relative;height:31px;background:var(--surface);border-radius:11px;overflow:hidden;border:1px solid var(--line)}
 .obar-fill{position:absolute;left:0;top:0;bottom:0;border-radius:11px;opacity:.94}
-.obar-fill::after{content:'';position:absolute;right:0;top:0;bottom:0;width:2px;border-radius:2px;
-  background:rgba(255,255,255,.55);box-shadow:0 0 7px rgba(255,255,255,.3)}
 .obar::after{content:'';position:absolute;left:0;top:0;bottom:0;width:62%;pointer-events:none;z-index:1;
   background:linear-gradient(90deg,rgba(0,0,0,.52) 0%,rgba(0,0,0,.18) 58%,transparent 100%)}
 .obar-txt{position:absolute;inset:0;z-index:2;display:flex;align-items:center;gap:6px;padding-left:13px;pointer-events:none}
@@ -188,20 +164,6 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 .cal-d.out{opacity:.2}
 .cal-d.today{box-shadow:0 0 0 2px var(--accent)}
 .dstat{display:flex;gap:8px;padding:0 16px 10px}
-
-/* фаза */
-.phase-rank{font-size:25px;font-weight:800;font-family:'Times New Roman',Georgia,serif;min-width:40px;text-align:center;line-height:1;flex-shrink:0}
-.phase-tier{font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px}
-.phase-desc{font-size:12.5px;color:var(--text3);margin-top:3px;line-height:1.45;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-
-/* SOS */
-.sos-btn{display:flex;align-items:center;justify-content:center;gap:9px;margin:4px 16px 12px;padding:15px;
-  width:calc(100% - 32px);border-radius:18px;border:1px solid rgba(255,69,58,.35);
-  background:rgba(255,69,58,.09);color:#ff6a60;font-size:15.5px;font-weight:750;cursor:pointer;
-  transition:transform .15s,background .2s;letter-spacing:.2px}
-.sos-btn:active{transform:scale(.975);background:rgba(255,69,58,.18)}
-.sos-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
 /* цитата */
 .quote{margin:6px 30px 0;text-align:center;font-size:13px;color:var(--text2);line-height:1.62;
@@ -261,10 +223,6 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 .hseg{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.05);overflow:hidden}
 .hseg i{display:block;height:100%;border-radius:3px;transition:width .5s var(--ease)}
 
-.list-foot{padding:2px 4px 8px;text-align:center}
-.list-foot button{background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;
-  cursor:pointer;padding:11px 16px;border-radius:12px;transition:color .15s}
-.list-foot button:active{color:var(--text2)}
 .icon-btn.plus{background:var(--surface);color:#fff;border-radius:13px}
 .icon-btn.plus:active{background:var(--surface2);transform:scale(.92)}
 .icon-btn.plus svg{width:20px;height:20px;stroke-width:2.4}
@@ -310,7 +268,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 .ch-live{padding:2px 20px 6px}
 .ch-lab{font-size:11px;font-weight:650;color:var(--text3);letter-spacing:.9px;text-transform:uppercase;display:block;margin-bottom:3px}
 .ch-num{display:flex;align-items:baseline;line-height:1}
-.ch-int{font-size:50px;font-weight:800;letter-spacing:-2.4px}
+.ch-int{font-size:44px;font-weight:800;letter-spacing:-2px}
 .ch-dot{font-size:38px;font-weight:800}
 .ch-dec{font-size:25px;font-weight:700;opacity:.65}
 .ch-pct{font-size:21px;font-weight:650;opacity:.4;margin-left:4px}
@@ -320,7 +278,9 @@ button,input,textarea,select{font-family:inherit;color:inherit}
   color:var(--text2);cursor:pointer;transition:background .2s,color .2s,transform .15s}
 .rb.on{background:rgba(255,255,255,.19);color:#fff}
 .rb:active{transform:scale(.94)}
-.ch-wrap{flex:1;min-height:170px;position:relative;touch-action:none;margin:0 6px}
+/* График занимает свою долю экрана, а не весь остаток: на высоком телефоне
+   кривая растягивалась так, что первые дни превращались в отвесную стену. */
+.ch-wrap{flex:0 0 auto;height:min(46vh,360px);position:relative;touch-action:none;margin:0 6px}
 .ch-wrap canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .ch-info{padding:6px 20px 4px;font-size:11.5px;color:var(--text3);text-align:center;cursor:pointer;user-select:none;flex-shrink:0}
 .ch-arrow{display:inline-block;transition:transform .28s var(--ease)}
@@ -328,43 +288,10 @@ button,input,textarea,select{font-family:inherit;color:inherit}
   font-size:13px;color:var(--text2);line-height:1.6;padding:0 24px;flex-shrink:0}
 .ch-body.on{max-height:340px;opacity:1;padding:6px 24px 12px;overflow-y:auto}
 
-/* ---------------- лента фаз ---------------- */
-.tl{padding:0 20px 20px}
-.tl-i{display:flex}
-.tl-l{display:flex;flex-direction:column;align-items:center;width:30px;flex-shrink:0}
-.tl-v{width:2px;background:rgba(255,255,255,.16);flex:1;min-height:8px;border-radius:1px}
-.tl-d{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin:3px 0;transition:all .3s}
-.tl-d.done{background:rgba(255,255,255,.28)}
-.tl-d.now{width:15px;height:15px;margin:0;animation:haloPulse 2.8s ease-in-out infinite}
-.tl-d.next{background:transparent;border:2px solid rgba(255,255,255,.14)}
-.tl-r{flex:1;padding:0 0 22px 8px;min-width:0}
-.tl-i:last-child .tl-r{padding-bottom:6px}
-.tl-head{display:flex;align-items:center;gap:8px}
-.tl-rank{font-size:15px;font-weight:800;font-family:'Times New Roman',Georgia,serif;flex-shrink:0;min-width:22px}
-.tl-name{font-size:14.5px;font-weight:700;flex:1;min-width:0}
-.tl-badge{font-size:9.5px;font-weight:800;padding:2.5px 8px;border-radius:7px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;flex-shrink:0}
-.tl-desc{font-size:13px;color:var(--text2);line-height:1.55;margin-top:7px}
-.tl-when{font-size:11.5px;color:var(--text3);margin-top:6px;font-weight:550}
-.tl-i.done .tl-name{color:var(--text2)}
-.tl-i.done .tl-desc{opacity:.55}
-.tl-i.next .tl-name{color:var(--text2)}
-.tl-i.next .tl-desc{opacity:.72}
-.tl-i.now .tl-r{background:rgba(255,255,255,.055);border:1px solid var(--line);border-radius:14px;padding:12px 12px 14px;margin:-6px 0 16px 4px}
-
-/* ---------------- история ---------------- */
-.ev{display:flex;gap:12px;padding:11px 20px;align-items:flex-start}
-.ev-dot{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px}
-.ev-b{flex:1;min-width:0;padding-top:2px}
-.ev-t{font-size:14.5px;font-weight:650;line-height:1.3}
-.ev-s{font-size:12px;color:var(--text3);margin-top:2px}
-.hist-stat{display:flex;gap:8px;padding:4px 16px 6px}
+/* Статистика режима сна — три числа под календарём. */
 .hs{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:12px 10px;text-align:center}
 .hs-n{font-size:23px;font-weight:800;letter-spacing:-.8px}
 .hs-l{font-size:10.5px;color:var(--text3);margin-top:3px;font-weight:600;letter-spacing:.2px}
-.urge-chart{display:flex;align-items:flex-end;gap:2px;height:56px;padding:0 20px;margin-top:6px}
-.uc{flex:1;background:rgba(255,69,58,.28);border-radius:2px 2px 0 0;min-height:2px;transition:height .5s var(--ease)}
-.uc.peak{background:rgba(255,69,58,.75)}
-.uc-lab{display:flex;justify-content:space-between;padding:5px 20px 0;font-size:10px;color:var(--text3)}
 
 /* ---------------- формы ---------------- */
 .f-group{padding:0 16px 14px}
@@ -395,34 +322,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 .col:active{transform:scale(.88)}
 .col.on{transform:scale(1.14)}
 .col.on::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid currentColor;opacity:.65}
-.vow-preview{margin:0 16px 14px;padding:15px 17px;background:var(--surface);border:1px solid var(--line);border-radius:18px;text-align:center}
-.vp-days{font-size:46px;font-weight:800;letter-spacing:-2px;line-height:1;min-width:112px;text-align:center}
-.vp-sub{font-size:13px;color:var(--text2);margin-top:7px;line-height:1.5}
-.stepper{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:4px}
-.st-b{width:44px;height:44px;flex-shrink:0;border-radius:50%;background:var(--surface2);border:none;color:var(--text);
-  font-size:22px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s}
-.st-b:active{transform:scale(.88)}
 .note{font-size:12.5px;color:var(--text3);line-height:1.55;padding:0 20px 16px}
-
-/* ---------------- SOS ---------------- */
-#sos{position:fixed;inset:0;z-index:300;background:#08080a;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;padding:calc(var(--safe-top) + 20px) 26px calc(var(--safe-bottom) + 20px);
-  opacity:0;pointer-events:none;transition:opacity .4s var(--ease)}
-#sos.on{opacity:1;pointer-events:auto}
-.breath{position:relative;width:210px;height:210px;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
-.breath-c{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(42,171,238,.32) 0%,rgba(42,171,238,.05) 70%);
-  border:1.5px solid rgba(42,171,238,.4);transform:scale(.55)}
-.breath-t{position:relative;font-size:20px;font-weight:700;letter-spacing:.4px;z-index:1;color:#fff}
-.breath-n{position:relative;font-size:13px;color:var(--text2);z-index:1;margin-top:5px}
-.sos-h{font-size:22px;font-weight:800;text-align:center;margin-bottom:8px;letter-spacing:-.3px}
-.sos-p{font-size:14.5px;color:var(--text2);text-align:center;line-height:1.6;max-width:310px;margin-bottom:22px}
-.stakes{width:100%;max-width:330px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:18px;
-  padding:15px 17px;margin-bottom:22px}
-.stake{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:14px}
-.stake+.stake{border-top:1px solid rgba(255,255,255,.06)}
-.stake-k{color:var(--text3);font-size:13px}
-.stake-v{font-weight:700}
-.sos-acts{display:flex;flex-direction:column;gap:10px;width:100%;max-width:330px}
 
 /* ---------------- празднование ---------------- */
 #cel{position:fixed;inset:0;z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -464,14 +364,9 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 <div class="sheet-bd" id="sheet-bd" data-act="closeSheet"><div class="sheet" id="sheet" data-act="noop"></div></div>
 
 <div class="page" id="p-chart"></div>
-<div class="page" id="p-phases"></div>
-<div class="page" id="p-history"></div>
 <div class="page" id="p-add"></div>
-<div class="page" id="p-vow"></div>
 <div class="page" id="p-day"></div>
-<div class="page" id="p-data"></div>
 
-<div id="sos"></div>
 <div id="cel"></div>
 <div id="toast"></div>
 
@@ -482,7 +377,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
    Приложение для отказа от привычек. Один файл, без зависимостей.
    ============================================================ */
 
-const VERSION='2.3';
+const VERSION='2.4';
 const KEY='askeza2_data';
 const KEY_BACKUP='askeza2_backup';
 const KEY_V1='askeza_data';       // старое приложение — только чтение, никогда не пишем
@@ -631,81 +526,8 @@ const ZONES=[
 const zoneOf=v=>ZONES.find(z=>v>z.min)||ZONES[ZONES.length-1];
 const zoneBg=z=>z.color+'1f';
 
-const TIERS={
-  bronze:{name:'Бронза', color:'var(--bronze)',raw:'#cd7f32'},
-  silver:{name:'Серебро',color:'var(--silver)',raw:'#b6b6be'},
-  gold:  {name:'Золото', color:'var(--gold)',  raw:'#ffd60a'},
-  plat:  {name:'Платина',color:'var(--plat)',  raw:'#c4a7ff'},
-};
 
 const D=86400;
-const PHASES={
-  smoking:[
-    {from:0,     to:3*D,     rank:'VIII',tier:'bronze',name:'Острая отмена',       desc:'Никотин выводится из крови за 72 часа. Тело требует дозу каждый час. Самый трудный момент — уже позади или прямо сейчас.'},
-    {from:3*D,   to:7*D,     rank:'VII', tier:'bronze',name:'Пик ломки',            desc:'Никотин ушёл полностью, но рецепторы ещё сигналят. Раздражительность, тревога, нарушения сна — норма. Это пройдёт.'},
-    {from:7*D,   to:30*D,    rank:'VI',  tier:'bronze',name:'Тело перестраивается', desc:'Физическая зависимость слабеет. Кашель — знак того, что лёгкие начали очищаться. Обоняние и вкус возвращаются.'},
-    {from:30*D,  to:90*D,    rank:'V',   tier:'silver',name:'Сила привычки',        desc:'Тело свободно, но мозг ещё ищет старый ритуал. Кофе, стресс, скука — главные триггеры. Ты уже знаешь их в лицо.'},
-    {from:90*D,  to:180*D,   rank:'IV',  tier:'silver',name:'Триггеры слабеют',     desc:'Ситуативные желания становятся реже и слабее. Ты учишься проходить мимо. Мозг строит новые реакции.'},
-    {from:180*D, to:365*D,   rank:'III', tier:'gold',  name:'Новый ритм',           desc:'Большинство триггеров нейтрализованы. Мозг освоил жизнь без сигарет. Дыхание свободнее, выносливость выше.'},
-    {from:365*D, to:1095*D,  rank:'II',  tier:'gold',  name:'Укрепление',           desc:'Редкие вспышки желания. Ты знаешь, как с ними справляться. Риск рецидива — минимальный.'},
-    {from:1095*D,to:Infinity,rank:'I',   tier:'plat',  name:'Почти свобода',        desc:'Зависимость стала фоновым шумом. Ты управляешь ею, а не она тобой. Это — навсегда.'},
-  ],
-  alcohol:[
-    {from:0,     to:2*D,     rank:'VIII',tier:'bronze',name:'Физическая отмена',    desc:'Первые 48 часов — пик физических симптомов. Тревога, дрожь, потливость. При сильных симптомах обязательно обратись к врачу.'},
-    {from:2*D,   to:7*D,     rank:'VII', tier:'bronze',name:'Острый синдром',       desc:'Симптомы отмены ещё активны, но слабеют. Сон постепенно восстанавливается. Мозг начинает перестройку.'},
-    {from:7*D,   to:30*D,    rank:'VI',  tier:'bronze',name:'Тело восстанавливается',desc:'Печень начинает регенерацию. Кожа светлеет, отёки спадают. Давление нормализуется. Тело благодарит тебя.'},
-    {from:30*D,  to:90*D,    rank:'V',   tier:'silver',name:'Психологическая тяга',  desc:'Физика позади, но привычка пить «по поводу» ещё жива. Стресс, праздники, компания — зоны риска.'},
-    {from:90*D,  to:180*D,   rank:'IV',  tier:'silver',name:'Новые паттерны',        desc:'Мозг учится получать дофамин без алкоголя. Социальные ситуации становятся легче. Ты уже нашёл замену.'},
-    {from:180*D, to:365*D,   rank:'III', tier:'gold',  name:'Стабилизация',          desc:'Риск рецидива существенно снижается. Эмоциональный фон ровнее. Жизнь без алкоголя стала нормой.'},
-    {from:365*D, to:1095*D,  rank:'II',  tier:'gold',  name:'Новая идентичность',    desc:'«Я не пью» — это уже часть тебя. Не правило, а выбор. Год трезвости — статистически переломная точка.'},
-    {from:1095*D,to:Infinity,rank:'I',   tier:'plat',  name:'Трезвость как норма',   desc:'Жизнь без алкоголя стала привычной. Редкие мысли уходят сами. Ты доказал себе всё.'},
-  ],
-  weed:[
-    {from:0,     to:3*D,     rank:'VII', tier:'bronze',name:'Первые симптомы',      desc:'Мозг ищет привычный стимул. Раздражительность, потеря аппетита, бессонница — признаки настоящей зависимости.'},
-    {from:3*D,   to:14*D,    rank:'VI',  tier:'bronze',name:'Пик отмены',           desc:'Симптомы достигают пика к 3–5 дням. Яркие, необычные сны — признак восстановления фаз сна.'},
-    {from:14*D,  to:30*D,    rank:'V',   tier:'bronze',name:'Симптомы спадают',     desc:'Аппетит возвращается. Тревога уменьшается. Мозг начинает адаптацию к жизни без каннабиноидов.'},
-    {from:30*D,  to:90*D,    rank:'IV',  tier:'silver',name:'Психологическая привязанность',desc:'Физика позади. Но привычка расслабляться с травой ещё активна. Найди новый способ отдыхать.'},
-    {from:90*D,  to:180*D,   rank:'III', tier:'silver',name:'Когнитивное восстановление',desc:'Память и концентрация улучшаются. Мотивация возвращается. Мозг снова работает в полную силу.'},
-    {from:180*D, to:365*D,   rank:'II',  tier:'gold',  name:'Ясность',              desc:'Мозг полностью адаптировался без каннабиноидов. Тяга становится редкой гостьей.'},
-    {from:365*D, to:Infinity,rank:'I',   tier:'plat',  name:'Свобода',              desc:'Зависимость в прошлом. Когнитивные функции полностью восстановлены. Ты живёшь в полную силу.'},
-  ],
-  scroll:[
-    {from:0,     to:2*D,     rank:'VII', tier:'bronze',name:'Рука сама тянется',    desc:'Первые дни рука тянется к телефону десятки раз в день. Фантомные вибрации, пустой экран блокировки. Это не слабость — это выученный рефлекс, и он гаснет.'},
-    {from:2*D,   to:7*D,     rank:'VI',  tier:'bronze',name:'Скука накрывает',      desc:'Главный симптом не тяга, а скука. Мозг привык к новой картинке каждые пятнадцать секунд и не знает, что делать с тишиной. Скука здесь — не враг, а признак перестройки.'},
-    {from:7*D,   to:14*D,    rank:'V',   tier:'bronze',name:'Внимание возвращается',desc:'Снова получается читать дольше пары минут и не терять нить. Мысли перестают скакать. Первое, что замечают почти все, — стало легче засыпать.'},
-    {from:14*D,  to:30*D,    rank:'IV',  tier:'silver',name:'Тишина не пугает',     desc:'Очередь, лифт, дорога — без телефона. Появляется время, которого раньше «не было». Ты замечаешь, сколько его уходило.'},
-    {from:30*D,  to:90*D,    rank:'III', tier:'silver',name:'Интерес возвращается', desc:'То, что казалось скучным — книга, разговор, работа без перерывов, — снова цепляет. Медленное перестаёт быть невыносимым.'},
-    {from:90*D,  to:180*D,   rank:'II',  tier:'gold',  name:'Новая норма',          desc:'Лента больше не тянет. Телефон стал инструментом, а не средой обитания. Ты открываешь его с целью и закрываешь, когда цель выполнена.'},
-    {from:180*D, to:Infinity,rank:'I',   tier:'plat',  name:'Свобода',              desc:'Ты решаешь, на что смотреть. Не алгоритм.'},
-  ],
-  porn:[
-    {from:0,     to:7*D,     rank:'VII', tier:'bronze',name:'Пик тяги',             desc:'Старые триггеры работают на полную: скука, стресс, одиночество, поздний вечер. Первая неделя — самая громкая. Знать свои триггеры сейчас важнее, чем терпеть.'},
-    {from:7*D,   to:21*D,    rank:'VI',  tier:'bronze',name:'Первый рубеж',         desc:'Тяга приходит волнами, но между волнами появляются промежутки. Сон и концентрация обычно улучшаются первыми.'},
-    {from:21*D,  to:45*D,    rank:'V',   tier:'silver',name:'Флэтлайн',             desc:'Возможен период, когда пропадает и тяга, и влечение вообще, а настроение становится ровным до плоского. Это описанный этап, и он проходит. Многие срываются именно здесь, решив, что сломались. Ты не сломался.'},
-    {from:45*D,  to:90*D,    rank:'IV',  tier:'silver',name:'Возвращение',          desc:'Чувствительность и живой интерес возвращаются. Реальное начинает конкурировать с экраном — и выигрывать.'},
-    {from:90*D,  to:180*D,   rank:'III', tier:'gold',  name:'Перенастройка',        desc:'Мозг перестаёт искать быстрый дофамин по привычке. Триггеры остаются, но власть теряют.'},
-    {from:180*D, to:365*D,   rank:'II',  tier:'gold',  name:'Устойчивость',         desc:'Редкие всплески желания проходят мимо. Ты знаешь свои триггеры в лицо и не споришь с ними.'},
-    {from:365*D, to:Infinity,rank:'I',   tier:'plat',  name:'Свобода',              desc:'Это больше не борьба и не режим. Просто то, как ты живёшь.'},
-  ],
-};
-
-/* Честно о том, на чём стоят фазы. У курения, алкоголя и марихуаны за ними
-   клинические исследования; у скроллинга и порно таких данных нет, и делать
-   вид, что есть, — значит обесценить всё остальное. */
-const PHASE_SOURCE={
-  smoking:'Фазы опираются на клинические исследования отмены никотина и восстановления организма. Сроки усреднённые — у каждого свой темп.',
-  alcohol:'Фазы опираются на клинические данные о синдроме отмены алкоголя и восстановлении (в том числе NIAAA). При тяжёлых симптомах отмены нужен врач, а не приложение.',
-  weed:'Фазы опираются на исследования отмены каннабиса (Budney 2003, Allsop 2011) и данные о восстановлении рецепторов CB1. Отдалённые сроки — приблизительная оценка.',
-  scroll:'Данных уровня никотиновых здесь нет. Фазы собраны из исследований проблемного использования смартфонов и коротких видео и из наблюдений за периодами воздержания. Это ориентир, а не клинический прогноз.',
-  porn:'Компульсивное сексуальное поведение включено в МКБ-11, но данных о сроках восстановления мало, а часть исследований спорна. Фазы собраны из наблюдений и опыта людей, проходивших через это. Ориентир, а не медицинский прогноз.',
-};
-const phasesOf=k=>PHASES[k]||null;
-function phaseAt(k,sec){
-  const p=phasesOf(k);if(!p)return null;
-  for(let i=p.length-1;i>=0;i--)if(sec>=p[i].from)return p[i];
-  return p[0];
-}
-
 /* Вехи — датированные события, не второй ранг. */
 const MILESTONES=[
   {key:'m1',sec:60,label:'Первая минута'},
@@ -801,7 +623,6 @@ function normalize(d){
     kind:KINDS[h.kind]?h.kind:'custom',
     color:h.color||'#2aabee',
     startedAt:h.startedAt||new Date().toISOString(),
-    vow:h.vow&&h.vow.status==='active'?h.vow:null,
     history:Array.isArray(h.history)?h.history:[],
     sid:h.sid||1,
     daily:(KINDS[h.kind]&&KINDS[h.kind].mode==='daily')
@@ -859,7 +680,6 @@ function mkHabit(o){
     id:'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
     name:o.name,kind:o.kind,color:o.color,
     startedAt:o.startedAt,
-    vow:null,
     sid:1,
     daily:(KINDS[o.kind]&&KINDS[o.kind].mode==='daily')?{wakeBy:o.wakeBy||'07:00',checks:{}}:undefined,
     history:[{t:'start',at:o.startedAt}],
@@ -910,24 +730,8 @@ const streakDays=h=>isDaily(h)?streakInfo(h).days:Math.floor(elapsed(h)/D);
 const msList=h=>isDaily(h)?DAILY_MS:MILESTONES;
 function msLabel(h,key){const m=msList(h).find(x=>x.key===key);return m?m.label:'Веха'}
 
-function vowInfo(h){
-  if(!h||!h.vow)return null;
-  if(isDaily(h)){
-    const total=Math.max(1,h.vow.days),done=clamp(streakInfo(h).days,0,total);
-    return{daily:true,days:total,doneDays:done,leftDays:total-done,p:done/total,complete:done>=total};
-  }
-  const a=new Date(h.vow.startedAt).getTime(),b=new Date(h.vow.endsAt).getTime(),now=Date.now();
-  const total=Math.max(1,(b-a)/1000),done=clamp((now-a)/1000,0,total);
-  return{daily:false,days:h.vow.days,total,done,left:Math.max(0,(b-now)/1000),p:done/total,doneDays:Math.floor(done/D),complete:now>=b};
-}
 function kindOf(h){return(h&&KINDS[h.kind])?KINDS[h.kind]:KINDS.custom}
 function habitColor(h){return(h&&h.color)?h.color:kindOf(h).color}
-function phaseColorOf(h){
-  if(!h)return'#2aabee';
-  const p=phaseAt(h.kind,elapsed(h));
-  if(p)return TIERS[p.tier].raw;
-  return habitColor(h);
-}
 
 /* ------------------------------------------------------------
    Тост
@@ -956,7 +760,6 @@ const ICO={
    ------------------------------------------------------------ */
 let view='list';                // 'list' — корень, 'habit' — одна привычка целиком
 let R={};                       // ссылки на живые узлы экрана привычки
-let ringLen=0;
 
 function renderTop(){
   if(view==='list'){
@@ -991,7 +794,7 @@ function renderHabit(animate){
   el.innerHTML = isDaily(h) ? dailyHome(h) : abstainHome(h);
 
   R={
-    big:$('big'),ring:$('ring'),vowLeft:$('vow-left'),
+    big:$('big'),
     cv:$('cv'),cvZone:$('cv-zone'),
     daily:isDaily(h),
     shownKeys:isDaily(h)?'daily':shownKeysNow(h),
@@ -1008,21 +811,10 @@ function renderHabit(animate){
     updateOdometer(true);
   }
 
-  setGlow(phaseColorOf(h));
+  setGlow(habitColor(h));
   renderTop();
 
-  const vi=vowInfo(h);
-  // узел кольца держим локально: экран может перерисоваться между кадрами,
-  // и тогда R.ring уже указывает на другой элемент или на null
-  const ringNode=R.ring;
-  if(ringNode&&vi){
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      if(!ringNode.isConnected)return;
-      ringNode.style.strokeDashoffset=(ringLen*(1-vi.p)).toFixed(1);
-      setTimeout(()=>{if(ringNode.isConnected)ringNode.classList.add('live')},1250);
-    }));
-  }
-  if(animate)countUp(R.big,vi?vi.doneDays:streakDays(h));
+  if(animate)countUp(R.big,streakDays(h));
 }
 
 /* ------------------------------------------------------------
@@ -1084,8 +876,7 @@ function renderList(back){
     setGlow('#2aabee');return;
   }
   el.className='list'+(back?' view-back':'');
-  el.innerHTML=S.habits.map(habitCard).join('')+
-    `<div class="list-foot"><button data-act="data">Данные и копии</button></div>`;
+  el.innerHTML=S.habits.map(habitCard).join('');
   L=[...el.querySelectorAll('.hrow')].map(row=>({
     id:row.dataset.id,
     days:row.querySelector('.hdays'),
@@ -1111,49 +902,21 @@ function updateList(){
   });
 }
 
-/** Кольцо аскезы — общий герой обоих архетипов. */
-function heroRing(h,unitWord){
-  const col=habitColor(h),vi=vowInfo(h);
-  const RAD=98,CIRC=2*Math.PI*RAD;ringLen=CIRC;
-  const n=vi?vi.doneDays:streakDays(h);
-  let below;
-  if(vi){
-    below=isDaily(h)
-      ? `<div class="hero-left">осталось <b>${nDays(vi.leftDays)}</b> подряд</div>`
-      : `<div class="hero-left">осталось <b class="num" id="vow-left">${fmtLeft(vi.left)}</b></div>`;
-  }else{
-    below=`<button class="vow-cta" data-act="vow">${ICO.bolt}Дать обет</button>`;
-  }
+/** Герой экрана — крупное число дней. Общий для обоих архетипов. */
+function heroNum(h,unitWord){
+  const n=streakDays(h);
   return `<div class="hero">
-    <div class="ring-wrap" data-act="vow" role="button" aria-label="${vi?'Аскеза':'Дать обет'}">
-      <svg class="ring" viewBox="0 0 220 220" aria-hidden="true">
-        <defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="${col}"/><stop offset="100%" stop-color="${col}" stop-opacity=".45"/>
-        </linearGradient></defs>
-        <circle class="ring-track${vi?'':' dashed'}" cx="110" cy="110" r="${RAD}"/>
-        ${vi?`<circle class="ring-fill" id="ring" cx="110" cy="110" r="${RAD}" stroke="url(#rg)"
-               stroke-dasharray="${CIRC.toFixed(1)}" stroke-dashoffset="${CIRC.toFixed(1)}"/>`:''}
-      </svg>
-      <div class="ring-center">
-        <div class="ring-big num" id="big">${n}</div>
-        <div class="ring-unit">${plural(n,'день','дня','дней')}${unitWord?' '+unitWord:''}</div>
-        ${vi?`<div class="ring-of num">из ${vi.days}</div>`:''}
-      </div>
-    </div>
-    ${below}
+    <div class="hero-big num" id="big">${n}</div>
+    <div class="hero-unit">${plural(n,'день','дня','дней')}${unitWord?' '+unitWord:''}</div>
   </div>`;
 }
 
-const historyCard=h=>`<div class="card" data-act="history" role="button"><div class="row">
-  <div class="row-body"><div class="row-title">История</div>
-  <div class="row-sub">${historySummary(h)}</div></div>${ICO.chev}
-</div></div>`;
 const quoteBlock=()=>`<div class="quote" data-act="quote"><span>${esc(QUOTES[S.quoteIdx%QUOTES.length])}</span></div>`;
 
 /* ---------- архетип «отказ» ---------- */
 function abstainHome(h){
   const sec=elapsed(h),b=breakdown(h.startedAt,Date.now());
-  const has=hasCurve(h.kind),ph=phaseAt(h.kind,sec);
+  const has=hasCurve(h.kind);
   const units=[
     {k:'y', v:b.y, max:Math.max(10,Math.ceil((b.y+1)/5)*5), l:['год','года','лет'],           c:['#ff3b30','#c1121f']},
     {k:'mo',v:b.mo,max:12,                                  l:['месяц','месяца','месяцев'],  c:['#ff9f0a','#c76a00']},
@@ -1167,7 +930,7 @@ function abstainHome(h){
       <div class="h-name">${esc(h.name)}</div>
       <div class="h-since">свободен с ${fmtDateTime(h.startedAt)}</div>
     </div>
-    ${heroRing(h,'')}
+    ${heroNum(h,'')}
     ${has?`<div class="card craving" data-act="chart" role="button">
       <div class="craving-top"><span class="craving-label">Тяга</span>${ICO.chev}</div>
       <div class="craving-main">
@@ -1181,16 +944,6 @@ function abstainHome(h){
         <div class="obar-txt"><span class="obar-n num">${u.v}</span><span class="obar-l">${plural(u.v,u.l[0],u.l[1],u.l[2])}</span></div>
       </div>`).join('')}
     </div>
-    ${ph?`<div class="card" data-act="phases" role="button"><div class="row">
-      <div class="phase-rank" style="color:${TIERS[ph.tier].color}">${ph.rank}</div>
-      <div class="row-body">
-        <div class="phase-tier" style="color:${TIERS[ph.tier].color}">${TIERS[ph.tier].name}</div>
-        <div class="row-title">${esc(ph.name)}</div>
-        <div class="phase-desc">${esc(ph.desc)}</div>
-      </div>${ICO.chev}
-    </div></div>`:''}
-    <button class="sos-btn" data-act="sos">${ICO.bolt}Тянет</button>
-    ${historyCard(h)}
     ${quoteBlock()}`;
 }
 
@@ -1232,7 +985,7 @@ function dailyHome(h){
       <div class="h-name">${esc(h.name)}</div>
       <div class="h-since">подъём до ${target} · с ${fmtDate(h.startedAt)}</div>
     </div>
-    ${heroRing(h,'подряд')}
+    ${heroNum(h,'подряд')}
     ${ask}
     ${checkin}
     <div class="cal-h">${dows.map(d=>`<span>${d}</span>`).join('')}</div>
@@ -1243,7 +996,6 @@ function dailyHome(h){
       <div class="hs"><div class="hs-n num">${stats.miss}</div><div class="hs-l">ПРОСПАЛ</div></div>
       <div class="hs"><div class="hs-n num">${stats.avg||'—'}</div><div class="hs-l">В СРЕДНЕМ</div></div>
     </div>
-    ${historyCard(h)}
     ${quoteBlock()}`;
 }
 
@@ -1277,16 +1029,6 @@ function dailyStats(h){
   return{ok,miss:keys.length-ok,total:keys.length,avg};
 }
 
-function historySummary(h){
-  const rel=h.history.filter(e=>e.t==='relapse').length;
-  const vows=h.history.filter(e=>e.t==='vow_done').length;
-  const ms=h.history.filter(e=>e.t==='milestone').length;
-  const parts=[];
-  if(vows)parts.push(vows+' '+plural(vows,'обет','обета','обетов'));
-  if(ms)parts.push(ms+' '+plural(ms,'веха','вехи','вех'));
-  if(rel)parts.push(rel+' '+plural(rel,'срыв','срыва','срывов'));
-  return parts.length?parts.join(' · '):'Пока пусто — всё впереди';
-}
 
 let counting=false;
 function countUp(node,target){
@@ -1362,14 +1104,7 @@ function tickSecond(){
   }
   if(R.shownKeys&&shownKeysNow(h)!==R.shownKeys){renderHome(false);return}
   updateOdometer(false);
-  const vi=vowInfo(h);
-  if(vi){
-    if(R.vowLeft)R.vowLeft.textContent=fmtLeft(vi.left);
-    if(R.ring)R.ring.style.strokeDashoffset=(ringLen*(1-vi.p)).toFixed(1);
-    if(R.big&&!counting)R.big.textContent=vi.doneDays;
-  }else if(R.big&&!counting){
-    R.big.textContent=Math.floor(elapsed(h)/D);
-  }
+  if(R.big&&!counting)R.big.textContent=Math.floor(elapsed(h)/D);
   checkProgress();
 }
 
@@ -1386,7 +1121,7 @@ function loop(t){
 }
 
 /* ------------------------------------------------------------
-   Вехи и завершение аскезы
+   Вехи
    ------------------------------------------------------------ */
 function checkProgress(){
   let dirty=false;
@@ -1404,11 +1139,6 @@ function checkProgress(){
                           key:m.key,from:st.startDay,seen:false});dirty=true;
         }
       });
-      const vi=vowInfo(h);
-      if(h.vow&&h.vow.status==='active'&&vi&&vi.complete){
-        h.history.push({t:'vow_done',at:new Date().toISOString(),days:h.vow.days,from:h.vow.startedAt,seen:false});
-        h.vow=null;dirty=true;
-      }
     }else{
       const start=new Date(h.startedAt).getTime(),sec=(Date.now()-start)/1000;
       MILESTONES.forEach(m=>{
@@ -1417,11 +1147,6 @@ function checkProgress(){
           dirty=true;
         }
       });
-      // аскеза: завершение определяется сравнением времени, а не поимкой момента
-      if(h.vow&&h.vow.status==='active'&&Date.now()>=new Date(h.vow.endsAt).getTime()){
-        h.history.push({t:'vow_done',at:h.vow.endsAt,days:h.vow.days,from:h.vow.startedAt,seen:false});
-        h.vow=null;dirty=true;
-      }
     }
   });
   if(dirty){save();queueCelebrations();if(active())renderHome(false)}
@@ -1433,16 +1158,13 @@ function checkProgress(){
 let celQueue=[],celBusy=false;
 function queueCelebrations(){
   S.habits.forEach(h=>{
-    const fresh=h.history.filter(e=>e.seen===false&&(e.t==='milestone'||e.t==='vow_done'));
+    const fresh=h.history.filter(e=>e.seen===false&&e.t==='milestone');
     if(!fresh.length)return;
-    // Аскезы показываем все — их мало и каждая заслужена.
-    fresh.filter(e=>e.t==='vow_done').forEach(e=>celQueue.push({h,e}));
     // Вехи схлопываем: вернулся через две недели — получаешь одно празднование
     // самой крупной вехи, а не шесть окон подряд.
     const L=msList(h);
-    const ms=fresh.filter(e=>e.t==='milestone')
-      .sort((a,b)=>L.findIndex(m=>m.key===a.key)-L.findIndex(m=>m.key===b.key));
-    if(ms.length)celQueue.push({h,e:ms[ms.length-1]});
+    const ms=fresh.slice().sort((a,b)=>L.findIndex(m=>m.key===a.key)-L.findIndex(m=>m.key===b.key));
+    celQueue.push({h,e:ms[ms.length-1]});
     fresh.forEach(e=>e.seen=true);
   });
   if(celQueue.length){save();showNextCelebration()}
@@ -1451,22 +1173,11 @@ function showNextCelebration(){
   if(celBusy||!celQueue.length)return;
   const {h,e}=celQueue.shift();celBusy=true;
   const col=habitColor(h);
-  let kicker,title,sub,badge,acts;
-  if(e.t==='vow_done'){
-    kicker='Аскеза выполнена';
-    title=nDays(e.days);
-    sub=`${esc(h.name)} · ты обещал себе и сдержал слово.`;
-    badge='✓';
-    acts=`<button class="btn" data-act="celVowRepeat" data-id="${h.id}" data-days="${e.days}" data-at="${e.at}">Продлить на ${nDays(e.days)}</button>
-          <button class="btn ghost" data-act="celVowNew" data-id="${h.id}">Новый срок</button>
-          <button class="btn ghost" data-act="celClose">Оставить без срока</button>`;
-  }else{
-    kicker='Веха пройдена';
-    title=msLabel(h,e.key);
-    sub=`${esc(h.name)} · ${isDaily(h)?fmtDate(e.at):fmtDateTime(e.at)}`;
-    badge='★';
-    acts=`<button class="btn" data-act="celClose">Продолжаю</button>`;
-  }
+  const kicker='Веха пройдена';
+  const title=msLabel(h,e.key);
+  const sub=`${esc(h.name)} · ${isDaily(h)?fmtDate(e.at):fmtDateTime(e.at)}`;
+  const badge='★';
+  const acts=`<button class="btn" data-act="celClose">Продолжаю</button>`;
   $('cel').innerHTML=`
     <div class="cel-badge" style="background:${col}2e;color:#fff;border:1.5px solid ${col};box-shadow:0 0 42px ${col}55">${badge}</div>
     <div class="cel-kicker" style="color:${col}">${kicker}</div>
@@ -1495,20 +1206,7 @@ function markDay(h,key,timeStr,forceOk){
   const late=timeStr&&!ok?' в '+timeStr:'';
   toast(ok?(timeStr?'Засчитано, '+timeStr:'Засчитано'):'Записано'+late+'. Завтра новый шанс');
 }
-function bestStreak(h){
-  if(!isDaily(h))return Math.max(streakDays(h),...h.history.filter(e=>e.t==='relapse').map(e=>e.streakDays||0),0);
-  const c=checksOf(h),keys=Object.keys(c).sort();
-  let best=0,cur=0,prev=null;
-  keys.forEach(k=>{
-    if(c[k].ok)cur=(prev&&shiftDay(prev,1)===k)?cur+1:1;else cur=0;
-    best=Math.max(best,cur);prev=k;
-  });
-  return best;
-}
 
-/* ------------------------------------------------------------
-   Меню привычек
-   ------------------------------------------------------------ */
 /* ------------------------------------------------------------
    Жесты списка
    Свайп влево — открыть действия. Долгий тап — перетащить карточку.
@@ -1674,59 +1372,6 @@ function pageBar(title,backAct,extra){
   </div>`;
 }
 
-/* ---------------- страница: аскеза ---------------- */
-let vowDays=30;
-function openVow(){
-  const h=active();if(!h)return;
-  const vi=vowInfo(h);
-  if(vi){
-    sheet(`Аскеза на ${nDays(vi.days)} · пройдено ${vi.doneDays}`,[
-      {ico:'🔁',label:'Изменить срок',act:'vowEdit'},
-      {ico:'✕',label:'Снять обет',act:'vowCancel',cls:'warn'},
-    ]);
-    return;
-  }
-  vowDays=30;drawVowPage();
-}
-function drawVowPage(){
-  const h=active();if(!h)return;
-  const daily=isDaily(h),passed=streakDays(h);
-  const ends=new Date(new Date(h.startedAt).getTime()+vowDays*D*1000);
-  const left=Math.max(0,(ends.getTime()-Date.now())/1000);
-  const done=vowDays<=passed;
-  openPage('p-vow',
-    pageBar('Аскеза','closeVow')+
-    `<div class="page-body">
-      <div class="page-sub">${daily
-        ? 'Обет — это срок, который надо выдержать без пропусков.<br>Уже набранная серия засчитывается.'
-        : 'Обет — это отказ на конкретный срок.<br>Отсчёт идёт с даты отказа, уже пройденное засчитывается.'}</div>
-      <div class="vow-preview">
-        <div class="stepper">
-          <button class="st-b" data-act="vowMinus" aria-label="Уменьшить срок">−</button>
-          <div class="vp-days num">${vowDays}</div>
-          <button class="st-b" data-act="vowPlus" aria-label="Увеличить срок">+</button>
-        </div>
-        <div class="vp-sub">${daily?'дней подряд без пропусков':plural(vowDays,'день','дня','дней')+' без привычки'}<br>
-          ${done
-            ? `<span style="color:var(--green)">этот срок уже пройден — выбери больше</span>`
-            : daily
-              ? `осталось ${nDays(vowDays-passed)} · каждый день нужно закрыть отметкой`
-              : `закончится <b>${fmtLong(ends)}</b> · осталось ${fmtRough(left)}`}
-        </div>
-      </div>
-      <div class="f-group">
-        <div class="f-label">Готовые сроки</div>
-        <div class="chips">${VOW_PRESETS.map(d=>
-          `<div class="chip ${d===vowDays?'on':''}" data-act="vowSet" data-arg="${d}" style="${d===vowDays?'color:'+habitColor(h):''}">${d}</div>`).join('')}
-        </div>
-      </div>
-      <div class="note">Уже ${daily?'набрано':'пройдено'} ${nDays(passed)}. ${daily?'Пропущенный или проспанный день':'Срыв'} прервёт аскезу — она попадёт в историю, а отсчёт начнётся заново.</div>
-    </div>
-    <div class="page-foot">
-      <button class="btn" data-act="vowSave" style="background:${habitColor(h)}" ${done?'disabled':''}>Дать обет</button>
-    </div>`);
-}
-
 /* ---------------- страница: добавление ---------------- */
 let form={kind:null,name:'',color:'#2aabee',date:'',time:''};
 function openAdd(){
@@ -1820,157 +1465,6 @@ function openDayPage(key){
     <div class="page-foot">
       <button class="btn" data-act="saveDay" data-arg="${key}" style="background:${habitColor(h)}">Сохранить</button>
     </div>`);
-}
-
-/* ---------------- страница: фазы ---------------- */
-function openPhases(){
-  const h=active();if(!h)return;
-  const sec=elapsed(h),ps=phasesOf(h.kind);
-  if(!ps){
-    openPage('p-phases',pageBar('Путь','closePhases')+
-      `<div class="page-body"><div class="empty">
-        <div class="empty-ico">🌱</div><h2>Твой собственный путь</h2>
-        <p>Для этой привычки нет универсальных научных фаз — я не буду их выдумывать.<br><br>
-        Зато есть время, вехи и обеты. Их достаточно.</p>
-        <button class="btn inline" data-act="history">Открыть историю</button>
-      </div></div>`);
-    return;
-  }
-  const cur=phaseAt(h.kind,sec);
-  openPage('p-phases',pageBar('Фазы','closePhases')+
-    `<div class="page-body">
-      <div class="page-sub">${esc(h.name)} · ${fmtRough(sec)} без привычки</div>
-      <div class="tl">${ps.map((p,i)=>{
-        const done=sec>=p.to,now=p===cur,next=!done&&!now;
-        const T=TIERS[p.tier];
-        let when='';
-        if(now&&p.to!==Infinity)when=`<div class="tl-when">Следующая фаза через ${fmtRough(p.to-sec)}</div>`;
-        else if(next)when=`<div class="tl-when">Начнётся через ${fmtRough(p.from-sec)}</div>`;
-        else if(done)when=`<div class="tl-when">Пройдена</div>`;
-        return`<div class="tl-i ${done?'done':now?'now':'next'}">
-          <div class="tl-l">
-            <div class="tl-v" style="${i===0?'min-height:6px':''}"></div>
-            <div class="tl-d ${done?'done':now?'now':'next'}" style="${now||done?'background:'+T.raw:''};color:${T.raw}"></div>
-            ${i<ps.length-1?'<div class="tl-v"></div>':''}
-          </div>
-          <div class="tl-r">
-            <div class="tl-head">
-              <div class="tl-rank" style="color:${next?'var(--text3)':T.color}">${p.rank}</div>
-              <div class="tl-name">${esc(p.name)}</div>
-              <div class="tl-badge" style="color:${T.color};background:${T.raw}22">${T.name}</div>
-            </div>
-            <div class="tl-desc">${esc(p.desc)}</div>
-            ${when}
-          </div>
-        </div>`;
-      }).join('')}</div>
-      ${PHASE_SOURCE[h.kind]?`<div class="ch-info" data-act="phInfo">Откуда эти сроки <span class="ch-arrow" id="ph-arrow">›</span></div>
-      <div class="ch-body" id="ph-body">${PHASE_SOURCE[h.kind]}</div>`:''}
-    </div>`);
-}
-
-/* ---------------- страница: история ---------------- */
-function openHistory(){
-  const h=active();if(!h)return;
-  const evs=h.history.slice().sort((a,b)=>new Date(b.at)-new Date(a.at));
-  const urges=h.history.filter(e=>e.t==='urge');
-  const over=h.history.filter(e=>e.t==='oversleep');
-  const best=bestStreak(h);
-  const vows=h.history.filter(e=>e.t==='vow_done').length;
-  const third=isDaily(h)?{n:over.length,l:'ПРОСПАЛ'}:{n:urges.length,l:'ПЕРЕЖИТЫХ ТЯГ'};
-
-  let hist='';
-  if(!isDaily(h)&&urges.length>=5){
-    const byHour=new Array(24).fill(0);
-    urges.forEach(e=>byHour[new Date(e.at).getHours()]++);
-    const mx=Math.max(...byHour);
-    hist=`<div class="sec-h">Когда тянет</div>
-      <div class="urge-chart">${byHour.map(v=>
-        `<div class="uc ${v===mx&&v>0?'peak':''}" style="height:${v?clamp(v/mx*100,10,100):3}%"></div>`).join('')}</div>
-      <div class="uc-lab"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div>`;
-  }
-
-  openPage('p-history',pageBar('История','closeHistory')+
-    `<div class="page-body">
-      <div class="page-sub">${esc(h.name)}</div>
-      <div class="hist-stat">
-        <div class="hs"><div class="hs-n num" style="color:${habitColor(h)}">${best}</div><div class="hs-l">ЛУЧШАЯ СЕРИЯ</div></div>
-        <div class="hs"><div class="hs-n num">${vows}</div><div class="hs-l">ОБЕТОВ</div></div>
-        <div class="hs"><div class="hs-n num">${third.n}</div><div class="hs-l">${third.l}</div></div>
-      </div>
-      ${hist}
-      <div class="sec-h">События</div>
-      ${evs.length?evs.map(e=>evRow(e,h)).join(''):'<div class="note">Пока ничего не произошло.</div>'}
-    </div>`);
-}
-function evRow(e,h){
-  const M={
-    start:    {i:'🚩',c:'#2aabee',t:'Начало отсчёта',s:()=>fmtDateTime(e.at)},
-    relapse:  {i:'↩︎',c:'#ff453a',t:'Срыв',s:()=>fmtDateTime(e.at)+' · серия '+nDays(e.streakDays||0)+(e.note?' · '+esc(e.note):'')},
-    milestone:{i:'★', c:'#ffd60a',t:()=>msLabel(h,e.key),s:()=>isDaily(h)?fmtDate(e.at):fmtDateTime(e.at)},
-    wake:     {i:'☀️',c:'#30d158',t:'Встал вовремя',s:()=>fmtDayName(e.day)+(e.time?' · '+e.time:'')+' · цель '+wakeBy(h)},
-    oversleep:{i:'😴',c:'#ff9f0a',t:'Проспал',      s:()=>fmtDayName(e.day)+(e.time?' · '+e.time:'')},
-    vow_done: {i:'✓', c:'#30d158',t:()=>'Аскеза выполнена · '+nDays(e.days),s:()=>fmtDate(e.at)},
-    vow_fail: {i:'✕', c:'#ff9f0a',t:()=>'Аскеза прервана · '+nDays(e.days),s:()=>fmtDateTime(e.at)+' · на '+nDays(e.onDay||0)},
-    urge:     {i:'⚡',c:'#ff6a30',t:'Пережил тягу',s:()=>fmtDateTime(e.at)},
-    legacy:   {i:'📦',c:'#6e6e76',t:()=>'Из askeza 1 · '+esc(e.label),s:()=>e.note?'сброс '+esc(e.note):'перенесено'},
-  }[e.t];
-  if(!M)return'';
-  const title=typeof M.t==='function'?M.t():M.t;
-  const sub=typeof M.s==='function'?M.s():M.s;
-  return`<div class="ev">
-    <div class="ev-dot" style="background:${M.c}1f;color:${M.c}">${M.i}</div>
-    <div class="ev-b"><div class="ev-t">${title}</div><div class="ev-s">${sub}</div></div>
-  </div>`;
-}
-
-/* ---------------- страница: данные ---------------- */
-function openData(){
-  let size=0;try{size=(localStorage.getItem(KEY)||'').length}catch(e){}
-  const v1=v1Available();
-  openPage('p-data',pageBar('Данные','closeData')+
-    `<div class="page-body">
-      <div class="page-sub">Всё хранится только на этом устройстве.<br>Никуда не отправляется — и никем не восстанавливается, если пропадёт.</div>
-      <div class="f-group">
-        <button class="btn" data-act="exportData">Сохранить копию</button>
-      </div>
-      <div class="f-group">
-        <button class="btn ghost" data-act="copyData">Скопировать как текст</button>
-      </div>
-      <div class="f-group">
-        <div class="f-label">Восстановить из копии</div>
-        <input class="f-input" type="file" id="imp-file" accept="application/json,.json">
-        <textarea class="f-input" id="imp-text" placeholder="…или вставь сюда текст копии" rows="3" style="margin-top:9px;resize:vertical"></textarea>
-        <button class="btn ghost" data-act="importText" style="margin-top:9px">Восстановить из текста</button>
-      </div>
-      ${v1?`<div class="f-group">
-        <div class="f-label">Старое приложение</div>
-        <button class="btn ghost" data-act="importV1">Перенести ${v1} ${plural(v1,'привычку','привычки','привычек')} из askeza 1</button>
-        <div class="note" style="padding:10px 4px 0">Старые данные останутся нетронутыми.</div>
-      </div>`:''}
-      <div class="sec-h">Хранилище</div>
-      <div class="note">${S.habits.length} ${plural(S.habits.length,'привычка','привычки','привычек')} · ${(size/1024).toFixed(1)} КБ · резервная копия ${localStorage.getItem(KEY_BACKUP)?'есть':'нет'}</div>
-      <div class="f-group" style="padding-top:20px">
-        <button class="btn danger" data-act="wipeAsk">Удалить все данные</button>
-      </div>
-    </div>`);
-  const f=$('imp-file');
-  if(f)f.onchange=e=>{
-    const file=e.target.files[0];if(!file)return;
-    const r=new FileReader();
-    r.onload=()=>applyImport(r.result);
-    r.readAsText(file);
-  };
-}
-function exportJSON(){return JSON.stringify({app:'askeza',v:2,exportedAt:new Date().toISOString(),data:S},null,2)}
-function applyImport(text){
-  let d;
-  try{d=JSON.parse(text)}catch(e){return toast('Не похоже на копию askeza')}
-  const payload=d&&d.data&&Array.isArray(d.data.habits)?d.data:(d&&Array.isArray(d.habits)?d:null);
-  if(!payload)return toast('В копии нет привычек');
-  S=normalize(payload);saveNow();
-  closePage('p-data');view='list';renderHome(true);
-  toast('Восстановлено: '+S.habits.length+' '+plural(S.habits.length,'привычка','привычки','привычек'));
 }
 
 /* ---------------- страница: график ---------------- */
@@ -2144,64 +1638,6 @@ function setupChartTouch(){
   wrap.addEventListener('mouseleave',()=>chartTouchDay=null);
 }
 
-/* ---------------- SOS ---------------- */
-let sosTimer=null,sosCycle=0,sosAnim=null;
-function openSOS(){
-  const h=active();if(!h)return;
-  const sec=elapsed(h),vi=vowInfo(h),ph=phaseAt(h.kind,sec);
-  $('sos').innerHTML=`
-    <div class="breath"><div class="breath-c" id="br-c"></div>
-      <div style="position:relative;z-index:1;text-align:center">
-        <div class="breath-t" id="br-t">Вдох</div>
-        <div class="breath-n" id="br-n">4 · 7 · 8</div>
-      </div>
-    </div>
-    <div class="sos-h">Тяга живёт 3–5 минут</div>
-    <div class="sos-p">Она уже началась и уже заканчивается. Ничего не нужно делать — просто дыши вместе с кругом, пока она проходит.</div>
-    <div class="stakes">
-      <div class="stake"><span class="stake-k">Серия</span><span class="stake-v num" style="color:${habitColor(h)}">${nDays(Math.floor(sec/D))}</span></div>
-      ${ph?`<div class="stake"><span class="stake-k">Фаза</span><span class="stake-v" style="color:${TIERS[ph.tier].color}">${ph.rank} · ${esc(ph.name)}</span></div>`:''}
-      ${vi?`<div class="stake"><span class="stake-k">Аскеза</span><span class="stake-v num">${vi.doneDays} из ${vi.days}</span></div>`:''}
-    </div>
-    <div class="sos-acts">
-      <button class="btn" data-act="sosDone">Отпустило</button>
-      <button class="btn ghost" data-act="sosClose">Закрыть</button>
-    </div>`;
-  $('sos').classList.add('on');
-  sosCycle=0;runBreath();
-}
-function runBreath(){
-  const c=$('br-c'),t=$('br-t'),n=$('br-n');
-  if(!c)return;
-  const steps=[['Вдох',4000,1.0],['Задержи',7000,1.0],['Выдох',8000,.55]];
-  let i=0;
-  clearTimeout(sosTimer);
-  const go=()=>{
-    if(!$('sos').classList.contains('on'))return;
-    const [label,dur,scale]=steps[i];
-    t.textContent=label;
-    let left=Math.round(dur/1000);
-    n.textContent=left;
-    if(sosAnim)sosAnim.cancel();
-    if(i!==1&&!prefersReduced()){
-      sosAnim=c.animate([{transform:`scale(${i===0?.55:1})`},{transform:`scale(${scale})`}],
-        {duration:dur,easing:'cubic-bezier(.4,0,.3,1)',fill:'forwards'});
-    }else{c.style.transform=`scale(${scale})`}
-    const cd=setInterval(()=>{left--;if(left>=0&&n)n.textContent=left;if(left<=0)clearInterval(cd)},1000);
-    sosTimer=setTimeout(()=>{clearInterval(cd);i=(i+1)%3;if(i===0)sosCycle++;go()},dur);
-  };
-  go();
-}
-function closeSOS(logIt){
-  const h=active();
-  if(logIt&&h){h.history.push({t:'urge',at:new Date().toISOString()});save();renderHome(false);toast('Записано. Ты справился')}
-  $('sos').classList.remove('on');
-  clearTimeout(sosTimer);if(sosAnim){sosAnim.cancel();sosAnim=null}
-}
-
-/* ------------------------------------------------------------
-   Действия
-   ------------------------------------------------------------ */
 const ACT={
   closeSheet,
   noop(){},
@@ -2223,11 +1659,8 @@ const ACT={
   },
   habitMenu(){
     const h=active();if(!h)return;
-    const vi=vowInfo(h);
     sheet(esc(h.name),[
       {ico:'✏️',label:'Изменить',act:'edit'},
-      vi?{ico:'⚡',label:'Аскеза: '+vi.doneDays+' из '+vi.days,act:'vow'}:{ico:'⚡',label:'Дать обет',act:'vow'},
-      {ico:'🕘',label:'История',act:'history'},
       ...(isDaily(h)?[]:[{ico:'↩︎',label:'Записать срыв',act:'relapseAsk',cls:'warn'}]),
       {ico:'🗑',label:'Удалить привычку',act:'deleteAsk',cls:'danger'},
     ]);
@@ -2329,63 +1762,18 @@ const ACT={
         // вехи текущей серии пересобираем под новую дату, прошлые серии не трогаем
         h.history=h.history.filter(e=>!(e.t==='milestone'&&(e.sid||1)===(h.sid||1)));
         seedMilestones(h);
-        if(h.vow){h.vow.startedAt=h.startedAt;h.vow.endsAt=new Date(t.getTime()+h.vow.days*D*1000).toISOString()}
       }
     }
     save();closePage('p-add');renderHome(true);toast('Сохранено');
   },
 
-  /* аскеза */
-  vow(){closeSheet();openVow()},
-  closeVow(){closePage('p-vow')},
-  vowSet(_id,el){vowDays=parseInt(el.dataset.arg,10);drawVowPage()},
-  vowPlus(){vowDays=clamp(vowDays+(vowDays>=100?10:vowDays>=30?5:1),1,999);drawVowPage()},
-  vowMinus(){vowDays=clamp(vowDays-(vowDays>100?10:vowDays>30?5:1),1,999);drawVowPage()},
-  vowSave(){
-    const h=active();if(!h)return;
-    if(isDaily(h)){
-      if(vowDays<=streakDays(h))return toast('Этот срок уже пройден');
-      h.vow={days:vowDays,startedAt:new Date().toISOString(),endsAt:null,status:'active'};
-      save();closePage('p-vow');renderHome(true);
-      return toast('Обет дан: '+nDays(vowDays)+' подряд');
-    }
-    const start=new Date(h.startedAt);
-    const ends=new Date(start.getTime()+vowDays*D*1000);
-    if(ends.getTime()<=Date.now())return toast('Этот срок уже прошёл');
-    h.vow={days:vowDays,startedAt:h.startedAt,endsAt:ends.toISOString(),status:'active'};
-    save();closePage('p-vow');renderHome(true);
-    toast('Обет дан: '+nDays(vowDays));
-  },
-  vowEdit(){closeSheet();const h=active();vowDays=h&&h.vow?h.vow.days:30;setTimeout(drawVowPage,120)},
-  vowCancel(){
-    const h=active();if(!h||!h.vow)return;closeSheet();
-    const vi=vowInfo(h);
-    h.history.push({t:'vow_fail',at:new Date().toISOString(),days:h.vow.days,from:h.vow.startedAt,onDay:vi?vi.doneDays:0});
-    h.vow=null;save();renderHome(true);toast('Обет снят');
-  },
-  celVowRepeat(id,el){
-    const h=S.habits.find(x=>x.id===id);const d=parseInt(el.dataset.days,10);
-    if(h&&isDaily(h)){
-      h.vow={days:d,startedAt:new Date().toISOString(),endsAt:null,status:'active'};save();
-      closeCelebration();renderHome(true);return toast('Новый обет: '+nDays(d)+' подряд');
-    }
-    if(h){
-      // новый срок продолжает предыдущий с момента его окончания:
-      // дни, прожитые между финишем и открытием приложения, честно засчитываются
-      const from=new Date(el.dataset.at||Date.now());
-      h.vow={days:d,startedAt:from.toISOString(),endsAt:new Date(from.getTime()+d*D*1000).toISOString(),status:'active'};
-      save();
-    }
-    closeCelebration();renderHome(true);toast('Новый обет: '+nDays(d));
-  },
-  celVowNew(id){S.activeId=id;closeCelebration();renderHome(false);setTimeout(()=>{vowDays=30;drawVowPage()},400)},
   celClose(){closeCelebration();renderHome(false)},
 
   /* срыв и удаление */
   relapseAsk(){
     closeSheet();
     const h=active();if(!h)return;
-    setTimeout(()=>sheet('Отсчёт начнётся заново. Серия и текущая аскеза уйдут в историю — это не поражение, это данные.',[
+    setTimeout(()=>sheet('Отсчёт начнётся заново. Серия уйдёт в историю — это не поражение, это данные.',[
       {ico:'↩︎',label:'Да, записать срыв',act:'relapse',cls:'danger'},
     ]),140);
   },
@@ -2393,11 +1781,6 @@ const ACT={
     const h=active();if(!h)return;closeSheet();
     const days=Math.floor(elapsed(h)/D);
     const now=new Date().toISOString();
-    if(h.vow){
-      const vi=vowInfo(h);
-      h.history.push({t:'vow_fail',at:now,days:h.vow.days,from:h.vow.startedAt,onDay:vi?vi.doneDays:0});
-      h.vow=null;
-    }
     h.history.push({t:'relapse',at:now,streakDays:days});
     h.startedAt=now;
     h.sid=(h.sid||1)+1;                       // новая серия: прошлые вехи остаются в истории
@@ -2420,9 +1803,6 @@ const ACT={
 
   /* страницы */
   chart(){openChart()},closeChart,
-  phases(){openPhases()},closePhases(){closePage('p-phases')},
-  history(){closeSheet();closePage('p-phases');openHistory()},closeHistory(){closePage('p-history')},
-  data(){closeSheet();openData()},closeData(){closePage('p-data')},
   chRange(_id,el){
     chartRange=parseInt(el.dataset.arg,10);chartTouchDay=null;
     document.querySelectorAll('#p-chart .rb').forEach(b=>b.classList.toggle('on',+b.dataset.arg===chartRange));
@@ -2433,10 +1813,12 @@ const ACT={
     const on=b.classList.toggle('on');
     if(a)a.style.transform=on?'rotate(90deg)':'';
   },
-  phInfo(){
-    const b=$('ph-body'),a=$('ph-arrow');if(!b)return;
-    const on=b.classList.toggle('on');
-    if(a)a.style.transform=on?'rotate(90deg)':'';
+
+  /* перенос из askeza 1 — единственное, что осталось от экрана данных */
+  importV1(){
+    const n=importFromV1();
+    view='list';renderHome(true);
+    toast(n?('Перенесено: '+n+' '+plural(n,'привычка','привычки','привычек')):'Нечего переносить');
   },
 
   /* режим */
@@ -2468,52 +1850,6 @@ const ACT={
     closePage('p-day');markDay(h,el.dataset.arg,t.value);
   },
 
-  /* SOS */
-  sos(){const h=active();if(h&&!isDaily(h))openSOS()},
-  sosDone(){closeSOS(true)},
-  sosClose(){closeSOS(false)},
-
-  /* данные */
-  exportData(){
-    const json=exportJSON();
-    const name='askeza-'+localDate(new Date())+'.json';
-    const blob=new Blob([json],{type:'application/json'});
-    const file=new File([blob],name,{type:'application/json'});
-    if(navigator.canShare&&navigator.canShare({files:[file]})){
-      navigator.share({files:[file],title:'Копия askeza'}).catch(()=>{});
-      return;
-    }
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);a.download=name;a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href),4000);
-    toast('Файл сохранён');
-  },
-  async copyData(){
-    const json=exportJSON();
-    try{await navigator.clipboard.writeText(json);toast('Скопировано в буфер')}
-    catch(e){
-      const ta=$('imp-text');if(ta){ta.value=json;ta.select();toast('Скопируй текст из поля ниже')}
-    }
-  },
-  importText(){
-    const ta=$('imp-text');if(!ta||!ta.value.trim())return toast('Вставь текст копии');
-    applyImport(ta.value);
-  },
-  importV1(){
-    const n=importFromV1();
-    closePage('p-data');
-    view='list';renderHome(true);
-    toast(n?('Перенесено: '+n+' '+plural(n,'привычка','привычки','привычек')):'Нечего переносить');
-  },
-  wipeAsk(){
-    sheet('Все привычки, вехи и обеты будут удалены. Восстановить будет невозможно — если не сохранил копию.',[
-      {ico:'🗑',label:'Удалить всё',act:'wipe',cls:'danger'},
-    ]);
-  },
-  wipe(){
-    closeSheet();S=blank();saveNow();
-    closePage('p-data');view='list';renderHome(true);toast('Всё удалено');
-  },
 };
 
 /* Делегирование: никаких inline-обработчиков и подстановки id в HTML. */
@@ -2526,17 +1862,14 @@ document.addEventListener('click',e=>{
 });
 
 /* Аппаратная и жестовая навигация «назад» */
-history.replaceState({d:0},'');
 window.addEventListener('popstate',()=>{
   if($('cel').classList.contains('on')){closeCelebration();pushDepth();return}
-  if($('sos').classList.contains('on')){closeSOS(false);pushDepth();return}
   if($('sheet-bd').classList.contains('on')){closeSheet();pushDepth();return}
   if(openPages.length){closePage(openPages[openPages.length-1]);pushDepth();return}
   if(SW.open){closeRow(SW.open);pushDepth();return}
   if(view==='habit'){goList();pushDepth();return}
 });
 function pushDepth(){history.pushState({d:1},'')}
-pushDepth();
 
 /* Пауза при сворачивании — не жечь батарею в фоне */
 document.addEventListener('visibilitychange',()=>{
@@ -2544,7 +1877,7 @@ document.addEventListener('visibilitychange',()=>{
   if(running){
     checkProgress();
     updateCraving(true);updateOdometer(true);
-    const h=active();if(h)setGlow(phaseColorOf(h));
+    const h=active();if(h)setGlow(habitColor(h));
   }else saveNow();
 });
 window.addEventListener('pagehide',saveNow);
@@ -2565,6 +1898,10 @@ S.habits.forEach(h=>{if(!h.history.length)h.history.push({t:'start',at:h.started
 checkProgress();
 bindList();
 renderHome(true);
+/* Запись в историю добавляем только после первой отрисовки: если сделать это
+   раньше, Safari сохранит снимок ещё пустой страницы и покажет его белым
+   прямоугольником, когда потянешь экран от левого края назад. */
+requestAnimationFrame(()=>requestAnimationFrame(()=>{history.replaceState({d:0},'');pushDepth()}));
 requestAnimationFrame(loop);
 setTimeout(queueCelebrations,900);
 
@@ -2575,10 +1912,10 @@ if('serviceWorker'in navigator&&location.protocol!=='blob:'){
 /* Точка входа для автотестов */
 window.__askeza={
   get S(){return S},
-  plural,breakdown,localDate,craving,cravingDigits,zoneOf,phaseAt,buildCurve,CRAVING,CURVES,
-  MILESTONES,vowInfo,elapsed,active,renderHome,checkProgress,guessKind,exportJSON,applyImport,
-  esc,fmtLeft,fmtRough,nDays,KINDS,PHASE_SOURCE,
-  isDaily,today,shiftDay,streakInfo,openDays,streakDays,bestStreak,calendarCells,dailyStats,
+  plural,breakdown,localDate,craving,cravingDigits,zoneOf,buildCurve,CRAVING,CURVES,
+  MILESTONES,elapsed,active,renderHome,checkProgress,guessKind,
+  esc,fmtLeft,fmtRough,nDays,KINDS,
+  isDaily,today,shiftDay,streakInfo,openDays,streakDays,calendarCells,dailyStats,
   markDay,wakeBy,checksOf,DAILY_MS,hasCurve,
   segFills,cardDays,SEG_STOPS,goList,
   get view(){return view},
