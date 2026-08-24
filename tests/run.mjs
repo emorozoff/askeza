@@ -1009,6 +1009,70 @@ eq('серия пересчиталась после перезагрузки', 
   ok('в истории есть куда возвращаться', hist.len >= 2, String(hist.len));
 }
 
+/* ═══════════════ 23. Загрузка по ссылке ═══════════════ */
+{
+  group('23. Ссылка #seed=');
+
+  const mkSeed = obj => Buffer.from(JSON.stringify(obj), 'utf8')
+    .toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+  const link = mkSeed({ habits: [
+    { name: 'Алкоголь', kind: 'alcohol', startedAt: '2026-08-22T02:00:00' },
+    { name: 'NoFap', kind: 'porn', startedAt: '2026-08-17T02:20:00' },
+  ] });
+
+  // разбор полезной нагрузки
+  const parsed = await page.evaluate(h => {
+    const hs = window.__askeza.parseSeed('#seed=' + h);
+    return hs && hs.map(x => ({ name: x.name, kind: x.kind, color: x.color, at: x.startedAt }));
+  }, link);
+  eq('в ссылке две привычки', parsed.length, 2);
+  eq('имя прочитано', parsed[0].name, 'Алкоголь');
+  eq('тип прочитан', parsed[1].kind, 'porn');
+  ok('цвет подставлен по типу', parsed[0].color === '#ff9f0a', parsed[0].color);
+  ok('время без пояса прочитано как местное',
+     new Date(parsed[0].at).getHours() === 2, parsed[0].at);
+
+  ok('битая ссылка не разбирается', await page.evaluate(() => window.__askeza.parseSeed('#seed=%%%') === null));
+  ok('пустой список не принимается',
+     await page.evaluate(() => window.__askeza.parseSeed('#seed=' + btoa('{"habits":[]}')) === null));
+  ok('обычный хеш игнорируется', await page.evaluate(() => window.__askeza.parseSeed('#chart') === null));
+
+  // сценарий целиком: открыли ссылку, подтвердили, привычки встали
+  await setState(seed());
+  await page.waitForTimeout(500);
+  await page.evaluate(h => { location.hash = '#seed=' + h; window.__askeza.seedFromLink(); }, link);
+  await page.waitForTimeout(500);
+  ok('спрошено подтверждение', await page.locator('#sheet-bd.on').isVisible());
+  ok('сказано, сколько привычек и что заменится',
+     /2 привычки .*заменят/i.test(await page.locator('#sheet').innerText()),
+     (await page.locator('#sheet').innerText()).replace(/\n/g, ' '));
+  eq('до подтверждения данные не тронуты',
+     await page.evaluate(() => window.__askeza.S.habits.length), 1);
+  eq('хеш из адреса убран сразу', await page.evaluate(() => location.hash), '');
+
+  await page.click('[data-act="seedApply"]');
+  await page.waitForTimeout(900);
+  await dismissCel();
+  const after = await page.evaluate(() => window.__askeza.S.habits.map(h => h.name));
+  eq('загрузились обе привычки', after.join(','), 'Алкоголь,NoFap');
+  eq('старое заменено, а не добавлено', after.length, 2);
+  eq('после загрузки открыт список', await page.evaluate(() => window.__askeza.view), 'list');
+  eq('в списке две карточки', await page.locator('.hcard').count(), 2);
+  ok('вехи прошлого не сыплют празднованиями', (await page.locator('#cel.on').count()) === 0);
+  ok('дата пережила перезагрузку', await page.evaluate(() =>
+    new Date(window.__askeza.S.habits[0].startedAt).getHours() === 2));
+
+  // отмена оставляет всё как было
+  await setState(seed());
+  await page.waitForTimeout(500);
+  await page.evaluate(h => { location.hash = '#seed=' + h; window.__askeza.seedFromLink(); }, link);
+  await page.waitForTimeout(500);
+  await page.click('[data-act="closeSheet"]');
+  await page.waitForTimeout(500);
+  eq('отказ ничего не меняет', await page.evaluate(() => window.__askeza.S.habits.length), 1);
+}
+
 group('19. Ошибки исполнения');
 ok('за весь прогон не было ошибок JS', errors.length === 0, errors.slice(0, 5).join('  ;;  '));
 

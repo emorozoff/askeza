@@ -377,7 +377,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
    Приложение для отказа от привычек. Один файл, без зависимостей.
    ============================================================ */
 
-const VERSION='2.4';
+const VERSION='2.5';
 const KEY='askeza2_data';
 const KEY_BACKUP='askeza2_backup';
 const KEY_V1='askeza_data';       // старое приложение — только чтение, никогда не пишем
@@ -1208,6 +1208,54 @@ function markDay(h,key,timeStr,forceOk){
 }
 
 /* ------------------------------------------------------------
+   Загрузка по ссылке
+   Экрана импорта у приложения нет, а разложить привычки на новом устройстве
+   или с самого начала иногда надо. Для этого ссылка вида
+   .../askeza/#seed=<base64url JSON>: она несёт данные в себе, поэтому в коде
+   приложения ничего личного не лежит. Замена полная и необратимая, так что
+   спрашиваем подтверждение — по старой ссылке, открытой через полгода,
+   иначе молча улетел бы весь прогресс.
+   ------------------------------------------------------------ */
+function b64urlDecode(t){
+  const b=atob(t.replace(/-/g,'+').replace(/_/g,'/'));
+  const u=new Uint8Array(b.length);
+  for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);
+  return new TextDecoder().decode(u);
+}
+/** Разбирает полезную нагрузку ссылки. Даты без часового пояса
+    (`2026-08-22T02:00`) читаются как местное время — так и задумано:
+    «02:00» должно остаться двумя часами ночи на том телефоне, где открыли. */
+function parseSeed(hash){
+  const m=/^#seed=([A-Za-z0-9\-_=]+)$/.exec(hash||'');
+  if(!m)return null;
+  let d;
+  try{d=JSON.parse(b64urlDecode(m[1]))}catch(e){return null}
+  if(!d||!Array.isArray(d.habits)||!d.habits.length)return null;
+  const habits=d.habits.map((h,i)=>{
+    const kind=KINDS[h.kind]?h.kind:'custom';
+    const t=new Date(h.startedAt);
+    if(isNaN(t))return null;
+    return mkHabit({name:String(h.name||KINDS[kind].title),kind,
+                    color:h.color||KINDS[kind].color,startedAt:t.toISOString(),
+                    wakeBy:h.wakeBy||'07:00'});
+  });
+  return habits.every(Boolean)?habits:null;
+}
+function seedFromLink(){
+  const habits=parseSeed(location.hash);
+  const had=location.hash.indexOf('#seed=')===0;
+  if(had)history.replaceState(null,'',location.pathname+location.search);  // второй раз не спросим
+  if(!had)return;
+  if(!habits)return toast('Ссылка повреждена');
+  const n=habits.length;
+  sheet(n+' '+plural(n,'привычка','привычки','привычек')+' из ссылки заменят всё, что сейчас в приложении.',[
+    {ico:'⬇︎',label:'Загрузить',act:'seedApply',cls:'danger'},
+  ]);
+  pendingSeed=habits;
+}
+let pendingSeed=null;
+
+/* ------------------------------------------------------------
    Жесты списка
    Свайп влево — открыть действия. Долгий тап — перетащить карточку.
    Оба жеста живут на одном касании и расходятся по первому движению:
@@ -1814,6 +1862,17 @@ const ACT={
     if(a)a.style.transform=on?'rotate(90deg)':'';
   },
 
+  seedApply(){
+    if(!pendingSeed)return closeSheet();
+    closeSheet();
+    // вехи прошлого помечаем увиденными, иначе на старте прилетит очередь празднований
+    pendingSeed.forEach(seedMilestones);
+    S={v:2,habits:pendingSeed,activeId:pendingSeed[0].id,quoteIdx:S.quoteIdx||0};
+    pendingSeed=null;
+    saveNow();view='list';renderHome(true);
+    toast('Загружено');
+  },
+
   /* перенос из askeza 1 — единственное, что осталось от экрана данных */
   importV1(){
     const n=importFromV1();
@@ -1904,6 +1963,7 @@ renderHome(true);
 requestAnimationFrame(()=>requestAnimationFrame(()=>{history.replaceState({d:0},'');pushDepth()}));
 requestAnimationFrame(loop);
 setTimeout(queueCelebrations,900);
+setTimeout(seedFromLink,500);
 
 if('serviceWorker'in navigator&&location.protocol!=='blob:'){
   navigator.serviceWorker.register('sw.js').catch(()=>{});
@@ -1917,7 +1977,7 @@ window.__askeza={
   esc,fmtLeft,fmtRough,nDays,KINDS,
   isDaily,today,shiftDay,streakInfo,openDays,streakDays,calendarCells,dailyStats,
   markDay,wakeBy,checksOf,DAILY_MS,hasCurve,
-  segFills,cardDays,SEG_STOPS,goList,
+  segFills,cardDays,SEG_STOPS,goList,parseSeed,seedFromLink,
   get view(){return view},
   openHabit(id){ACT.openHabit(id)},
   set(next){S=normalize(next);saveNow();view='list';renderHome(true)},
