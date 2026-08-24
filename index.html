@@ -119,11 +119,14 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 
 /* одометр */
 .odo{padding:0 16px;margin-bottom:10px;display:flex;flex-direction:column;gap:5px}
-.obar{position:relative;height:31px;background:var(--surface);border-radius:11px;overflow:hidden;border:1px solid var(--line)}
-.obar-fill{position:absolute;left:0;top:0;bottom:0;border-radius:11px;opacity:.94}
-.obar::after{content:'';position:absolute;left:0;top:0;bottom:0;width:62%;pointer-events:none;z-index:1;
-  background:linear-gradient(90deg,rgba(0,0,0,.52) 0%,rgba(0,0,0,.18) 58%,transparent 100%)}
-.obar-txt{position:absolute;inset:0;z-index:2;display:flex;align-items:center;gap:6px;padding-left:13px;pointer-events:none}
+/* Подложка полос светлее остальных поверхностей приложения: так было в
+   askeza 1, откуда взята палитра, и без неё цвета читаются иначе. */
+.obar{position:relative;height:31px;background:#2c2c2e;border-radius:11px;overflow:hidden}
+.obar-fill{position:absolute;left:0;top:0;bottom:0;border-radius:11px}
+/* Затемнения слева нет: оно съедало цвет заливки. Белый текст держится на
+   тени — так же, как в askeza 1, откуда взята вся палитра полос. */
+.obar-txt{position:absolute;inset:0;z-index:2;display:flex;align-items:center;gap:6px;padding-left:13px;
+  pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.4)}
 .obar-n{font-size:18px;font-weight:750;color:#fff;letter-spacing:-.3px}
 .obar-l{font-size:11.5px;font-weight:550;color:rgba(255,255,255,.82)}
 
@@ -350,7 +353,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
    Приложение для отказа от привычек. Один файл, без зависимостей.
    ============================================================ */
 
-const VERSION='2.6';
+const VERSION='2.7';
 const KEY='askeza2_data';
 const KEY_BACKUP='askeza2_backup';
 const KEY_V1='askeza_data';       // старое приложение — только чтение, никогда не пишем
@@ -840,13 +843,16 @@ const quoteBlock=()=>`<div class="quote" data-act="quote"><span>${esc(QUOTES[S.q
 function abstainHome(h){
   const sec=elapsed(h),b=breakdown(h.startedAt,Date.now());
   const has=hasCurve(h.kind);
+  /* Палитра и лесенка прозрачности перенесены из askeza 1 без изменений:
+     от насыщенного красного у лет до почти серого у секунд — крупные единицы
+     весомее мелких, и это видно цветом, а не только длиной. */
   const units=[
-    {k:'y', v:b.y, max:Math.max(10,Math.ceil((b.y+1)/5)*5), l:['год','года','лет'],           c:['#ff3b30','#c1121f']},
-    {k:'mo',v:b.mo,max:12,                                  l:['месяц','месяца','месяцев'],  c:['#ff9f0a','#c76a00']},
-    {k:'d', v:b.d, max:daysInMonthBefore(Date.now()),       l:['день','дня','дней'],         c:['#30a8e0','#0f6ea6']},
-    {k:'h', v:b.h, max:24,                                  l:['час','часа','часов'],        c:['#5b5bd6','#3a3a9e']},
-    {k:'mi',v:b.mi,max:60,                                  l:['минута','минуты','минут'],   c:['#8a6fa8','#5d4a74']},
-    {k:'s', v:b.s, max:60,                                  l:['секунда','секунды','секунд'],c:['#9a9aa2','#6b6b72']},
+    {k:'y', v:b.y, max:Math.max(10,Math.ceil((b.y+1)/5)*5), l:['год','года','лет'],           c:['#ff3830','#cc0808'],op:1},
+    {k:'mo',v:b.mo,max:12,                                  l:['месяц','месяца','месяцев'],  c:['#f07810','#c05000'],op:.92},
+    {k:'d', v:b.d, max:daysInMonthBefore(Date.now()),       l:['день','дня','дней'],         c:['#30a8e0','#1080c0'],op:.82},
+    {k:'h', v:b.h, max:24,                                  l:['час','часа','часов'],        c:['#5050c8','#3535a0'],op:.65},
+    {k:'mi',v:b.mi,max:60,                                  l:['минута','минуты','минут'],   c:['#7a6090','#5a4070'],op:.5},
+    {k:'s', v:b.s, max:60,                                  l:['секунда','секунды','секунд'],c:['#a0a0a8','#787880'],op:.35},
   ].filter((u,i)=>u.v>0||i>=3);
 
   return `<div class="h-head">
@@ -863,7 +869,7 @@ function abstainHome(h){
     </div>`:''}
     <div class="odo" id="odo">
       ${units.map(u=>`<div class="obar" data-u="${u.k}" data-max="${u.max}" data-l="${u.l.join('|')}">
-        <div class="obar-fill" style="width:${clamp(u.v/u.max*100,0,100)}%;background:linear-gradient(90deg,${u.c[0]},${u.c[1]})"></div>
+        <div class="obar-fill" style="width:${clamp(u.v/u.max*100,0,100)}%;opacity:${u.op};background:linear-gradient(90deg,${u.c[0]},${u.c[1]})"></div>
         <div class="obar-txt"><span class="obar-n num">${u.v}</span><span class="obar-l">${plural(u.v,u.l[0],u.l[1],u.l[2])}</span></div>
       </div>`).join('')}
     </div>

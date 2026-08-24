@@ -237,6 +237,19 @@ ok('карточка тяги видна', await page.locator('.craving').isVisi
 ok('одометр отрисован', (await page.locator('.obar').count()) >= 3);
 ok('полосок на концах баров нет',
    await page.evaluate(() => getComputedStyle(document.querySelector('.obar-fill'), '::after').content) === 'none');
+ok('затемнения слева на барах нет',
+   await page.evaluate(() => getComputedStyle(document.querySelector('.obar'), '::after').content) === 'none');
+// палитра и лесенка прозрачности перенесены из askeza 1 — цвета должны совпадать
+const barPaint = await page.locator('.obar-fill').evaluateAll(els => els.map(e => ({
+  bg: e.style.background, op: e.style.opacity })));
+ok('у каждой полосы свой градиент', barPaint.every(b => /linear-gradient\(90deg/.test(b.bg)), JSON.stringify(barPaint[0]));
+ok('прозрачность убывает от крупных единиц к мелким',
+   barPaint.every((b, i) => i === 0 || +b.op <= +barPaint[i - 1].op),
+   barPaint.map(b => b.op).join(' > '));
+ok('секундная полоса самая бледная', +barPaint[barPaint.length - 1].op === 0.35, barPaint[barPaint.length - 1].op);
+ok('дни красятся голубым из askeza 1',
+   barPaint.some(b => b.bg.includes('rgb(48, 168, 224)') && b.bg.includes('rgb(16, 128, 192)')),
+   barPaint.map(b => b.bg).join(' | '));
 ok('карточки фазы нет', (await page.locator('.phase-rank').count()) === 0);
 ok('кнопки «Тянет» нет', (await page.locator('.sos-btn').count()) === 0);
 ok('карточки истории нет', !(await page.locator('.row-title').allInnerTexts()).includes('История'));
