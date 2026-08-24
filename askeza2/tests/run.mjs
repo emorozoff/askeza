@@ -83,12 +83,16 @@ async function setState(s) {
   await page.evaluate(st => {
     window.__askeza.set(st);
     window.__askeza.checkProgress();
+    if (st.activeId) window.__askeza.openHabit(st.activeId);   // корень — список, тесту нужна привычка
   }, s);
   await page.waitForTimeout(600);
   await dismissCel();
 }
 /** То же, но без гашения — когда тест как раз проверяет празднование. */
-const setStateRaw = s => page.evaluate(st => window.__askeza.set(st), s);
+const setStateRaw = s => page.evaluate(st => {
+  window.__askeza.set(st);
+  if (st.activeId) window.__askeza.openHabit(st.activeId);
+}, s);
 
 try {
 
@@ -453,12 +457,15 @@ ok('в DOM не появился инъектированный <img>', (await p
 ok('в DOM не появился инъектированный <b>', (await page.locator('.h-name b').count()) === 0);
 const shownName = await page.locator('.h-name').innerText();
 ok('название показано как текст', shownName.includes('<img') && shownName.includes('"кавычки"'), shownName);
-await page.click('[data-act="toggleMenu"]');
+await page.click('[data-act="backToList"]');
 await page.waitForTimeout(400);
-ok('в меню тоже нет инъекции', (await page.locator('#menu img').count()) === 0);
-await page.click('[data-act="closeMenu"]');
-await page.waitForTimeout(300);
+ok('в списке тоже нет инъекции', (await page.locator('#list img').count()) === 0);
+ok('в подписи карточки нет инъекции', (await page.locator('.hcard[aria-label] img').count()) === 0);
+const cardName = await page.locator('.hname').first().innerText();
+ok('название на карточке — текст', cardName.includes('<img'), cardName);
 await shot('09-xss-safe');
+await page.click('.hcard');
+await page.waitForTimeout(500);
 
 /* ═══════════════ 8. Своя привычка ═══════════════ */
 group('8. Своя привычка');
@@ -645,30 +652,35 @@ await setState({
   ],
 });
 await page.waitForTimeout(900);
-await page.click('[data-act="toggleMenu"]');
+await page.click('[data-act="backToList"]');
 await page.waitForTimeout(500);
-ok('меню открылось', await page.locator('#menu.on').isVisible());
-eq('в меню три привычки', await page.locator('.m-item').count(), 3);
-const subs = await page.locator('.m-sub').allInnerTexts();
-ok('у привычки с обетом показан прогресс аскезы', subs.some(s => s.includes('обет')), subs.join(' | '));
-ok('нет ошибок плюрализации в меню', !subs.some(s => /\b1 (дней|часов|месяцев)\b/.test(s)), subs.join(' | '));
-await shot('16-menu');
-await page.click('[data-act="pick"][data-id="h2"]');
+ok('список — корневой экран', await page.locator('#list.list').isVisible());
+ok('экран привычки спрятан', !(await page.locator('#home').isVisible()));
+eq('в списке три карточки', await page.locator('.hcard').count(), 3);
+const names = await page.locator('.hname').allInnerTexts();
+eq('порядок карточек — как в данных', names.join('|'), 'Курение|Алкоголь|Соцсети');
+const nums = await page.locator('.hdays').allInnerTexts();
+eq('на карточке дни серии', nums[0].trim(), '40 дней');
+eq('привычке младше суток показан 0 дней', nums[2].trim(), '0 дней');
+ok('нет ошибок плюрализации в списке', !nums.some(s => /\b1 (дней|дня)\b/.test(s)), nums.join(' | '));
+eq('у карточки восемь делений', await page.locator('.hrow').first().locator('.hseg').count(), 8);
+await shot('16-list');
+await page.click('.hcard[data-id="h2"]');
 await page.waitForTimeout(1300);
 eq('переключение на другую привычку сработало', (await page.locator('.h-name').innerText()).trim(), 'Алкоголь');
 ok('у алкоголя своя кривая тяги', await page.locator('.craving').isVisible());
 ok('кольцо аскезы показано', await page.locator('#ring').isVisible());
 await shot('17-alcohol-vow');
 
-await page.click('[data-act="toggleMenu"]'); await page.waitForTimeout(400);
-await page.click('[data-act="pick"][data-id="h3"]');
+await page.click('[data-act="backToList"]'); await page.waitForTimeout(400);
+await page.click('.hcard[data-id="h3"]');
 await page.waitForTimeout(1000);
 eq('переключение на свою привычку', (await page.locator('.h-name').innerText()).trim(), 'Соцсети');
 ok('у своей привычки одометр без графика', (await page.locator('.craving').count()) === 0 && (await page.locator('.obar').count()) > 0);
 
 /* ═══════════════ 14. Данные ═══════════════ */
 group('14. Экспорт, импорт, копия');
-await page.click('[data-act="toggleMenu"]'); await page.waitForTimeout(400);
+await page.click('[data-act="backToList"]'); await page.waitForTimeout(400);
 await page.click('[data-act="data"]');
 await page.waitForSelector('#p-data.on');
 await page.waitForTimeout(400);
@@ -695,7 +707,7 @@ await page.evaluate(d => window.__askeza.applyImport(d), dump);
 await page.waitForTimeout(900);
 const restored = await page.evaluate(() => window.__askeza.S.habits.length);
 eq('импорт восстановил все привычки', restored, 3);
-ok('после импорта главный экран работает', await page.locator('.h-name').isVisible());
+ok('после импорта показан список привычек', await page.locator('#list .hcard').first().isVisible());
 
 // порча основного ключа — приложение должно подняться из копии
 await page.evaluate(() => localStorage.setItem('askeza2_data', '{битый'));
@@ -778,7 +790,7 @@ const err2 = [];
 p2.on('pageerror', e => err2.push(String(e)));
 await p2.goto(BASE);
 await p2.waitForFunction(() => !!window.__askeza);
-await p2.evaluate(st => window.__askeza.set(st), seed());
+await p2.evaluate(st => { window.__askeza.set(st); window.__askeza.openHabit(st.activeId); }, seed());
 await p2.waitForTimeout(1200);
 ok('при reduced-motion приложение работает', await p2.locator('.h-name').isVisible());
 eq('при reduced-motion нет ошибок', err2.length, 0, err2.join('; '));
@@ -790,13 +802,12 @@ group('18. Устойчивость');
 await reload();
 await page.evaluate(() => window.__askeza.set({ v: 2, activeId: 'zzz', habits: [{ id: 'a', name: 'Тест' }] }));
 await page.waitForTimeout(700);
-ok('битая привычка без полей не роняет приложение', await page.locator('.h-name, .empty h2').first().isVisible());
+ok('битая привычка без полей не роняет приложение', await page.locator('.hcard, .empty h2').first().isVisible());
 const repaired = await page.evaluate(() => window.__askeza.S.habits[0]);
 eq('битой привычке проставлен тип', repaired.kind, 'custom');
 ok('битой привычке проставлена дата старта', !!repaired.startedAt);
-await page.click('[data-act="toggleMenu"]'); await page.waitForTimeout(400);
-ok('меню не падает на битой привычке', await page.locator('#menu.on').isVisible());
-await page.click('[data-act="closeMenu"]'); await page.waitForTimeout(300);
+ok('список не падает на битой привычке', await page.locator('#list .hcard').isVisible());
+ok('у битой привычки есть полоса делений', (await page.locator('#list .hseg').count()) === 8);
 await page.evaluate(() => window.__askeza.set({ v: 2, habits: [], activeId: null }));
 await page.waitForTimeout(500);
 ok('пустое состояние показывает экран приветствия', await page.locator('.empty h2').isVisible());
@@ -965,6 +976,7 @@ await page.evaluate(() => {
   const start = new Date(Date.now() - 30 * 86400e3).toISOString();
   A.set({ v: 2, activeId: 's1', habits: [{ id: 's1', name: 'Режим сна', kind: 'sleep', color: '#7c8cff',
     startedAt: start, vow: null, daily: { wakeBy: '07:00', checks }, history: [{ t: 'start', at: start }] }] });
+  A.openHabit('s1');
 });
 await page.waitForTimeout(900);
 await dismissCel();
@@ -1048,11 +1060,9 @@ ok('аскеза в меню показана', menuTxt.includes('Аскеза')
 await page.click('[data-act="closeSheet"]');
 await page.waitForTimeout(400);
 
-await page.click('[data-act="toggleMenu"]');
+await page.click('[data-act="backToList"]');
 await page.waitForTimeout(450);
-ok('в списке привычек серия подписана «подряд»', (await page.locator('.m-sub').first().innerText()).includes('подряд'));
-await page.click('[data-act="closeMenu"]');
-await page.waitForTimeout(350);
+ok('у режима на карточке дни серии', /\d+ (день|дня|дней)/.test(await page.locator('.hdays').first().innerText()));
 
 group('21ж. Переключение между режимом и отказом');
 await page.evaluate(() => {
@@ -1065,17 +1075,18 @@ await page.evaluate(() => {
     { id: 'k1', name: 'Курение', kind: 'smoking', color: '#ff453a', startedAt: s0, vow: null,
       history: [{ t: 'start', at: s0 }] },
   ] });
+  A.openHabit('s1');
 });
 await page.waitForTimeout(900);
 await dismissCel();
 for (let i = 0; i < 3; i++) {
-  await tap('[data-act="toggleMenu"]'); await page.waitForTimeout(400);
-  await tap('[data-act="pick"][data-id="k1"]'); await page.waitForTimeout(900);
+  await tap('[data-act="backToList"]'); await page.waitForTimeout(400);
+  await tap('.hcard[data-id="k1"]'); await page.waitForTimeout(900);
   await dismissCel();
   ok(`переключение на отказ (${i + 1}): одометр вернулся`, (await page.locator('.obar').count()) > 0);
   ok(`переключение на отказ (${i + 1}): тяга вернулась`, await page.locator('.craving').isVisible());
-  await tap('[data-act="toggleMenu"]'); await page.waitForTimeout(400);
-  await tap('[data-act="pick"][data-id="s1"]'); await page.waitForTimeout(900);
+  await tap('[data-act="backToList"]'); await page.waitForTimeout(400);
+  await tap('.hcard[data-id="s1"]'); await page.waitForTimeout(900);
   await dismissCel();
   ok(`переключение на режим (${i + 1}): календарь вернулся`, (await page.locator('.cal-d').count()) === 35);
   ok(`переключение на режим (${i + 1}): одометра нет`, (await page.locator('.obar').count()) === 0);
@@ -1097,6 +1108,147 @@ eq('серия пересчиталась после перезагрузки', 
 
 
 /* ═══════════════ 19. Ошибки на консоли ═══════════════ */
+{   // отдельная область: имена не конфликтуют с остальным прогоном
+  /* ═══════════════ 22. Список привычек ═══════════════ */
+  group('22. Список: полоса прогресса');
+  
+  const segAt = d => page.evaluate(days => {
+    const A = window.__askeza;
+    return A.segFills({ id: 'x', kind: 'smoking', startedAt: new Date(Date.now() - days * 86400e3).toISOString() });
+  }, d);
+  
+  const g2 = await segAt(2);
+  eq('2 дня: первое деление взято', g2[0], 1);
+  ok('2 дня: второе деление наполовину', Math.abs(g2[1] - 0.5) < 0.01, String(g2[1]));
+  eq('2 дня: третье деление пустое', g2[2], 0);
+  const g86 = await segAt(86);
+  eq('86 дней: пять делений взяты', g86.filter(x => x === 1).length, 5);
+  ok('86 дней: шестое почти дошло', g86[5] > 0.9 && g86[5] < 1, String(g86[5]));
+  const g400 = await segAt(400);
+  ok('после года полоса полная', g400.every(x => x === 1), g400.join(','));
+  const g0 = await segAt(1 / 24);
+  ok('через час первое деление тронулось', g0[0] > 0.03 && g0[0] < 0.06, String(g0[0]));
+  
+  const labels = await page.evaluate(() => {
+    const A = window.__askeza, mk = d => ({ id: 'x', kind: 'smoking', startedAt: new Date(Date.now() - d * 86400e3 - 3600e3).toISOString() });
+    return [40, 365, 405, 730].map(d => A.cardDays(mk(d)));
+  });
+  eq('до года — дни', labels[0], '40 дней');
+  eq('ровно год — «1 год»', labels[1], '1 год');
+  eq('год с хвостом', labels[2], '1 год 40 дней');
+  eq('два года', labels[3], '2 года');
+  
+  group('22б. Список: свайп, действия, порядок');
+  
+  /** Синтетический жест: касание, пауза, серия сдвигов, отпускание. */
+  async function gesture(sel, moves, holdMs = 0) {
+    await page.evaluate(async ({ sel, moves, holdMs }) => {
+      const el = document.querySelector(sel);
+      const r = el.getBoundingClientRect();
+      const x0 = Math.round(r.left + r.width / 2), y0 = Math.round(r.top + r.height / 2);
+      const fire = (type, x, y) => {
+        const t = new Touch({ identifier: 1, target: el, clientX: x, clientY: y });
+        const list = type === 'touchend' ? [] : [t];
+        el.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches: list, targetTouches: list, changedTouches: [t] }));
+      };
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      fire('touchstart', x0, y0);
+      if (holdMs) await wait(holdMs);
+      let last = [0, 0];
+      for (const m of moves) { fire('touchmove', x0 + m[0], y0 + m[1]); last = m; await wait(20); }
+      fire('touchend', x0 + last[0], y0 + last[1]);
+    }, { sel, moves, holdMs });
+  }
+  const swipeLeft = sel => gesture(sel, [[-12, 0], [-45, 0], [-90, 0], [-130, 2], [-150, 2]]);
+  
+  await setState({
+    v: 2, quoteIdx: 0, activeId: 'a1',
+    habits: [
+      { id: 'a1', name: 'Алкоголь', kind: 'alcohol', color: '#ff9f0a', startedAt: ISO(2 * DAY), vow: null, history: [{ t: 'start', at: ISO(2 * DAY) }] },
+      { id: 'a2', name: 'Марихуана', kind: 'weed', color: '#4cd964', startedAt: ISO(86 * DAY), vow: null, history: [{ t: 'start', at: ISO(86 * DAY) }] },
+      { id: 'a3', name: 'Курение', kind: 'smoking', color: '#ff453a', startedAt: ISO(242 * DAY), vow: null, history: [{ t: 'start', at: ISO(242 * DAY) }] },
+    ],
+  });
+  await page.evaluate(() => window.__askeza.goList());
+  await page.waitForTimeout(500);
+  eq('открыт список', await page.evaluate(() => window.__askeza.view), 'list');
+  const sliver = await page.evaluate(() => {
+    const A = window.__askeza;
+    A.S.habits[0].startedAt = new Date(Date.now() - 90e3).toISOString();
+    A.goList();
+    return document.querySelector('.hrow .hseg i').style.width;
+  });
+  ok('через полторы минуты полоска уже видна', parseFloat(sliver) >= 4, sliver);
+  await setState({ v: 2, quoteIdx: 0, activeId: 'a1', habits: await page.evaluate(() => window.__askeza.S.habits) });
+  await page.evaluate(() => window.__askeza.goList());
+  await page.waitForTimeout(400);
+  eq('кнопок-ручек на карточке больше нет', await page.locator('.hcard .grip, .hcard .chev').count(), 0);
+  
+  await swipeLeft('.hrow[data-id="a2"] .hcard');
+  await page.waitForTimeout(500);
+  ok('свайп влево открыл действия', await page.locator('.hrow[data-id="a2"].open').count() === 1);
+  const shift = await page.evaluate(() => {
+    const c = document.querySelector('.hrow[data-id="a2"] .hcard');
+    return new DOMMatrix(getComputedStyle(c).transform).m41;
+  });
+  ok('карточка уехала влево', shift < -100, String(shift));
+  ok('соседняя карточка на месте', await page.locator('.hrow[data-id="a1"].open').count() === 0);
+  ok('кнопка «Удалить» видна', await page.locator('.hrow[data-id="a2"] .hact.del').isVisible());
+  await shot('31-list-swipe');
+  
+  // тап по другой карточке только закрывает открытую — и никуда не ведёт
+  await gesture('.hrow[data-id="a1"] .hcard', []);
+  await page.click('.hrow[data-id="a1"] .hcard');
+  await page.waitForTimeout(500);
+  eq('тап мимо закрыл действия', await page.locator('.hrow.open').count(), 0);
+  eq('и не увёл с экрана списка', await page.evaluate(() => window.__askeza.view), 'list');
+  
+  // свайп → «Изменить» открывает нужную привычку
+  await swipeLeft('.hrow[data-id="a3"] .hcard');
+  await page.waitForTimeout(450);
+  await page.locator('.hrow[data-id="a3"] .hact:not(.del)').tap();
+  await page.waitForSelector('#p-add.on');
+  await page.waitForTimeout(400);
+  eq('«Изменить» открыл именно эту привычку', await page.locator('#e-name').inputValue(), 'Курение');
+  await page.click('[data-act="closeAdd"]');
+  await page.waitForTimeout(450);
+  
+  // свайп → «Удалить» спрашивает и удаляет
+  await swipeLeft('.hrow[data-id="a3"] .hcard');
+  await page.waitForTimeout(450);
+  await page.locator('.hrow[data-id="a3"] .hact.del').tap();
+  await page.waitForTimeout(450);
+  ok('удаление спрашивает подтверждение', (await page.locator('#sheet').innerText()).includes('безвозвратно'));
+  await page.click('[data-act="del"]');
+  await page.waitForTimeout(600);
+  eq('привычка удалена', await page.evaluate(() => window.__askeza.S.habits.length), 2);
+  eq('после удаления остались в списке', await page.evaluate(() => window.__askeza.view), 'list');
+  
+  // долгий тап и перетаскивание меняют порядок
+  const step = await page.evaluate(() => document.querySelector('.hrow').offsetHeight + 10);
+  await gesture('.hrow[data-id="a1"] .hcard', [[0, step * 0.4], [0, step * 0.8], [2, step], [2, step]], 520);
+  await page.waitForTimeout(700);
+  const order = await page.evaluate(() => window.__askeza.S.habits.map(h => h.id));
+  eq('перетаскивание переставило карточку', order.join(','), 'a2,a1');
+  const shownOrder = await page.locator('.hname').allInnerTexts();
+  eq('список перерисован в новом порядке', shownOrder.join(','), 'Марихуана,Алкоголь');
+  await page.reload();
+  await page.waitForFunction(() => !!window.__askeza);
+  await page.waitForTimeout(600);
+  eq('новый порядок пережил перезагрузку',
+     (await page.evaluate(() => window.__askeza.S.habits.map(h => h.id))).join(','), 'a2,a1');
+  
+  // карточка ведёт на экран привычки, стрелка возвращает
+  await page.click('.hcard[data-id="a1"]');
+  await page.waitForTimeout(900);
+  await dismissCel();
+  eq('тап по карточке открыл привычку', (await page.locator('.h-name').innerText()).trim(), 'Алкоголь');
+  await page.click('[data-act="backToList"]');
+  await page.waitForTimeout(500);
+  ok('стрелка вернула в список', await page.locator('#list.list').isVisible());
+  
+}
+
 group('19. Ошибки исполнения');
 ok('за весь прогон не было ошибок JS', errors.length === 0, errors.slice(0, 5).join('  ;;  '));
 

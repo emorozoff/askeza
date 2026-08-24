@@ -223,27 +223,51 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 .btn.inline{width:auto;padding:14px 32px;display:inline-block}
 .btn.danger{background:rgba(255,69,58,.14);color:var(--red)}
 
-/* ---------------- меню привычек ---------------- */
-.backdrop{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .25s}
-.backdrop.on{opacity:1;pointer-events:auto}
-.menu{position:fixed;top:calc(var(--safe-top) + 50px);right:10px;width:min(300px,calc(100vw - 20px));
-  background:#1a1a1d;border-radius:17px;z-index:61;overflow:hidden;
-  box-shadow:0 12px 44px rgba(0,0,0,.66),0 0 0 .5px rgba(255,255,255,.1);
-  transform:translateY(-10px) scale(.94);transform-origin:top right;opacity:0;pointer-events:none;
-  transition:transform .26s var(--spring),opacity .18s ease}
-.menu.on{transform:none;opacity:1;pointer-events:auto}
-.menu-h{font-size:10.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.9px;padding:12px 15px 7px}
-.m-item{display:flex;align-items:center;gap:11px;padding:11px 15px;cursor:pointer;border-top:1px solid rgba(255,255,255,.05);
-  background:#1a1a1d;transition:background .15s}
-.m-item:active{background:#242428}
-.m-bar{width:3.5px;height:34px;border-radius:2px;flex-shrink:0}
-.m-info{flex:1;min-width:0}
-.m-name{font-size:15px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.m-sub{font-size:11.5px;color:var(--text3);margin-top:1px}
-.m-check{color:var(--accent);width:16px;height:16px;stroke:currentColor;stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
-.m-add{width:100%;padding:13px 15px;background:none;border:none;border-top:1px solid rgba(255,255,255,.08);
-  color:var(--accent);font-size:15px;font-weight:650;cursor:pointer;text-align:left;transition:background .15s}
-.m-add:active{background:#242428}
+/* ---------------- список привычек: корневой экран ---------------- */
+#app[data-view="list"] #home{display:none}
+#app[data-view="habit"] #list{display:none}
+@keyframes viewBack{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:none}}
+.view-back{animation:viewBack .28s var(--ease) both}
+
+.list{padding:4px 14px 0}
+/* Ряд = карточка поверх кнопок. Кнопки лежат под карточкой у правого края
+   и открываются, когда карточка уезжает влево. */
+.hrow{position:relative;margin-bottom:10px}
+.hrow.lift{z-index:5}
+.hrow-acts{position:absolute;top:0;right:0;bottom:0;z-index:0;display:flex;gap:8px;padding-left:8px}
+.hact{width:62px;border:none;border-radius:18px;background:var(--surface2);color:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  font-size:11px;font-weight:600;cursor:pointer;transition:filter .15s,transform .15s}
+.hact:active{filter:brightness(1.3);transform:scale(.95)}
+.hact.del{background:var(--red)}
+.hact svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+.hcard{position:relative;z-index:1;background:var(--surface);border-radius:18px;
+  padding:13px 16px 13px 18px;overflow:hidden;cursor:pointer;
+  touch-action:pan-y;transition:transform .34s var(--ease),box-shadow .22s,background .15s}
+.hcard.raw{transition:box-shadow .22s,background .15s}
+/* Уезжая под кнопки, карточка гасит содержимое: обрезок полосы у края
+   выглядел бы мусором, а пустая плашка — намеренным состоянием. */
+.hcard-in{opacity:var(--fade,1);transition:opacity .3s var(--ease)}
+.hcard.raw .hcard-in{transition:none}
+.hrow.lift .hcard{background:#1e1e22;box-shadow:0 14px 34px rgba(0,0,0,.55)}
+.hstripe{position:absolute;left:0;top:0;bottom:0;width:4px;z-index:2;border-radius:2px 0 0 2px;pointer-events:none}
+.hname{font-size:13px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdays{font-size:23px;font-weight:800;letter-spacing:-.4px;line-height:1.2;color:#fff;margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Восемь ступеней до года. Деления одинаковой ширины, хотя стоят за разный
+   срок: первые дни самые трудные и должны давать самое заметное движение. */
+.hbar{display:flex;gap:3.5px;margin-top:11px}
+.hseg{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.05);overflow:hidden}
+.hseg i{display:block;height:100%;border-radius:3px;transition:width .5s var(--ease)}
+
+.list-foot{padding:2px 4px 8px;text-align:center}
+.list-foot button{background:none;border:none;color:var(--text3);font-size:13px;font-weight:600;
+  cursor:pointer;padding:11px 16px;border-radius:12px;transition:color .15s}
+.list-foot button:active{color:var(--text2)}
+.icon-btn.plus{background:var(--surface);color:#fff;border-radius:13px}
+.icon-btn.plus:active{background:var(--surface2);transform:scale(.92)}
+.icon-btn.plus svg{width:20px;height:20px;stroke-width:2.4}
 
 /* ---------------- нижний шит ---------------- */
 .sheet-bd{position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .28s;
@@ -431,13 +455,11 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 </head>
 <body>
 <div id="glow"></div>
-<div id="app">
+<div id="app" data-view="list">
   <div class="topbar" id="topbar"></div>
+  <div id="list"></div>
   <div id="home"></div>
 </div>
-
-<div class="backdrop" id="menu-bd" data-act="closeMenu"></div>
-<div class="menu" id="menu"></div>
 
 <div class="sheet-bd" id="sheet-bd" data-act="closeSheet"><div class="sheet" id="sheet" data-act="noop"></div></div>
 
@@ -460,7 +482,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
    Приложение для отказа от привычек. Один файл, без зависимостей.
    ============================================================ */
 
-const VERSION='2.1';
+const VERSION='2.2';
 const KEY='askeza2_data';
 const KEY_BACKUP='askeza2_backup';
 const KEY_V1='askeza_data';       // старое приложение — только чтение, никогда не пишем
@@ -920,44 +942,51 @@ function toast(msg){
    Иконки
    ------------------------------------------------------------ */
 const ICO={
-  menu:'<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+  plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  pencil:'<svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>',
+  trash:'<svg viewBox="0 0 24 24"><path d="M4 7h16M10 7V4.5h4V7M6 7l1 13h10l1-13"/></svg>',
   dots:'<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></svg>',
   back:'<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
   chev:'<svg class="chev" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6"/></svg>',
-  check:'<svg class="m-check" viewBox="0 0 16 16"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg>',
   bolt:'<svg viewBox="0 0 24 24"><path d="M13 2L4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5z"/></svg>',
 };
 
 /* ------------------------------------------------------------
    Топбар и главный экран
    ------------------------------------------------------------ */
-let R={};                       // ссылки на живые узлы главного экрана
+let view='list';                // 'list' — корень, 'habit' — одна привычка целиком
+let R={};                       // ссылки на живые узлы экрана привычки
 let ringLen=0;
 
 function renderTop(){
+  if(view==='list'){
+    $('topbar').innerHTML=
+      `<div class="brand"><h1>askeza</h1><span class="ver">v${VERSION}</span></div>
+       <div class="tb-actions">
+         <button class="icon-btn plus" data-act="add" aria-label="Добавить привычку">${ICO.plus}</button>
+       </div>`;
+    return;
+  }
   const h=active();
   $('topbar').innerHTML=
-    `<div class="brand"><h1>askeza</h1><span class="ver">v${VERSION}</span></div>
+    `<button class="icon-btn" data-act="backToList" aria-label="К списку привычек">${ICO.back}</button>
      <div class="tb-actions">
        ${h?`<button class="icon-btn" data-act="habitMenu" aria-label="Действия с привычкой">${ICO.dots}</button>`:''}
-       <button class="icon-btn" data-act="toggleMenu" aria-label="Список привычек">${ICO.menu}</button>
      </div>`;
 }
 
+/* Экранов два: список привычек (корень) и одна привычка целиком.
+   renderHome — единая точка входа, куда бы ни позвали. */
 function renderHome(animate){
+  if(!S.habits.length||!active())view='list';
+  $('app').dataset.view=view;
+  if(view==='list'){renderList();renderTop();return}
+  renderHabit(animate);
+}
+
+function renderHabit(animate){
   const h=active();
   const el=$('home');
-  if(!h){
-    el.className='';
-    el.innerHTML=`<div class="empty">
-      <div class="empty-ico">🔥</div>
-      <h2>Начни свой путь</h2>
-      <p>Добавь привычку, от которой хочешь отказаться, — и увидишь, как время работает на тебя.</p>
-      <button class="btn inline" data-act="add">Добавить привычку</button>
-      ${v1Available()?`<button class="btn ghost inline" style="margin-top:12px" data-act="importV1">Перенести из askeza 1</button>`:''}
-    </div>`;
-    R={};setGlow('#2aabee');renderTop();return;
-  }
   el.className=animate?'stagger':'';
   el.innerHTML = isDaily(h) ? dailyHome(h) : abstainHome(h);
 
@@ -994,6 +1023,92 @@ function renderHome(animate){
     }));
   }
   if(animate)countUp(R.big,vi?vi.doneDays:streakDays(h));
+}
+
+/* ------------------------------------------------------------
+   Экран списка
+   ------------------------------------------------------------ */
+/* Полоса прогресса: восемь ступеней до года. Год считаем победой —
+   дальше полоса полная и меняется только число дней. */
+const SEG_STOPS=[0,1,3,7,14,30,90,180,365];
+function segFills(h){
+  const d=isDaily(h)?streakDays(h):elapsed(h)/D,out=[];
+  for(let i=0;i<SEG_STOPS.length-1;i++)
+    out.push(clamp((d-SEG_STOPS[i])/(SEG_STOPS[i+1]-SEG_STOPS[i]),0,1));
+  return out;
+}
+/** Крупное число карточки: до года — дни, дальше «1 год 40 дней». */
+function cardDays(h){
+  const d=streakDays(h);
+  if(d<365)return nDays(d);
+  const y=Math.floor(d/365),r=d-y*365;
+  return y+' '+plural(y,'год','года','лет')+(r?' '+nDays(r):'');
+}
+/* Едва начатое деление всё равно показываем полоской: отсчёт пошёл,
+   и это должно быть видно с первой минуты. */
+const segStyle=(f,c)=>`width:${(f>0?Math.max(f,.045)*100:0).toFixed(1)}%;background:${c};opacity:${f>=1?1:.5}`;
+
+function habitCard(h){
+  const c=habitColor(h),name=esc(h.name);
+  return`<div class="hrow" data-id="${h.id}">
+    <div class="hrow-acts">
+      <button class="hact" data-act="cardEdit" data-id="${h.id}" aria-label="Изменить «${name}»">${ICO.pencil}<span>Изменить</span></button>
+      <button class="hact del" data-act="cardDelete" data-id="${h.id}" aria-label="Удалить «${name}»">${ICO.trash}<span>Удалить</span></button>
+    </div>
+    <div class="hstripe" style="background:${c}"></div>
+    <div class="hcard" data-act="openHabit" data-id="${h.id}" role="button" tabindex="0"
+         aria-label="${name}, ${cardDays(h)}">
+      <div class="hcard-in">
+        <div class="hname">${name}</div>
+        <div class="hdays num">${cardDays(h)}</div>
+        <div class="hbar" aria-hidden="true">${segFills(h).map(f=>
+          `<div class="hseg"><i style="${segStyle(f,c)}"></i></div>`).join('')}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+let L=null;                     // живые узлы карточек
+function renderList(back){
+  const el=$('list');
+  closeRow(SW.open,true);
+  if(!S.habits.length){
+    el.className='';L=null;
+    el.innerHTML=`<div class="empty">
+      <div class="empty-ico">🔥</div>
+      <h2>Начни свой путь</h2>
+      <p>Добавь привычку, от которой хочешь отказаться, — и увидишь, как время работает на тебя.</p>
+      <button class="btn inline" data-act="add">Добавить привычку</button>
+      ${v1Available()?`<button class="btn ghost inline" style="margin-top:12px" data-act="importV1">Перенести из askeza 1</button>`:''}
+    </div>`;
+    setGlow('#2aabee');return;
+  }
+  el.className='list'+(back?' view-back':'');
+  el.innerHTML=S.habits.map(habitCard).join('')+
+    `<div class="list-foot"><button data-act="data">Данные и копии</button></div>`;
+  L=[...el.querySelectorAll('.hrow')].map(row=>({
+    id:row.dataset.id,
+    days:row.querySelector('.hdays'),
+    segs:[...row.querySelectorAll('.hseg i')],
+    lastDays:row.querySelector('.hdays').textContent,
+    lastSegs:[],
+  }));
+  setGlow(habitColor(S.habits[0]));
+}
+
+/** Раз в секунду: пишем только то, что изменилось. */
+function updateList(){
+  if(!L)return;
+  L.forEach(c=>{
+    const h=S.habits.find(x=>x.id===c.id);if(!h)return;
+    const t=cardDays(h);
+    if(t!==c.lastDays){c.lastDays=t;c.days.textContent=t}
+    const col=habitColor(h);
+    segFills(h).forEach((f,i)=>{
+      const st=segStyle(f,col),node=c.segs[i];
+      if(node&&st!==c.lastSegs[i]){c.lastSegs[i]=st;node.style.cssText=st}
+    });
+  });
 }
 
 /** Кольцо аскезы — общий герой обоих архетипов. */
@@ -1239,6 +1354,7 @@ function updateOdometer(force){
 }
 
 function tickSecond(){
+  if(view==='list'){updateList();checkProgress();return}
   const h=active();if(!h)return;
   if(R.daily){                                  // серия растёт отметками, а не секундами
     if(R.day&&R.day!==today()){renderHome(false);return}
@@ -1393,24 +1509,136 @@ function bestStreak(h){
 /* ------------------------------------------------------------
    Меню привычек
    ------------------------------------------------------------ */
-let menuOpen=false;
-function renderMenu(){
-  $('menu').innerHTML=`<div class="menu-h">Мои привычки</div>
-    ${S.habits.map(h=>{
-      const on=h.id===S.activeId,vi=vowInfo(h);
-      return`<div class="m-item" data-act="pick" data-id="${h.id}" role="button">
-        <div class="m-bar" style="background:${habitColor(h)}"></div>
-        <div class="m-info">
-          <div class="m-name">${esc(h.name)}</div>
-          <div class="m-sub">${isDaily(h)?nDays(streakDays(h))+' подряд':fmtRough(elapsed(h))}${vi?` · обет ${vi.doneDays}/${vi.days}`:''}</div>
-        </div>${on?ICO.check:''}
-      </div>`;
-    }).join('')}
-    <button class="m-add" data-act="add">+ Добавить привычку</button>
-    <button class="m-add" data-act="data" style="color:var(--text2)">Данные и копии</button>`;
+/* ------------------------------------------------------------
+   Жесты списка
+   Свайп влево — открыть действия. Долгий тап — перетащить карточку.
+   Оба жеста живут на одном касании и расходятся по первому движению:
+   ушёл вбок — свайп, вниз — обычная прокрутка, не двинулся — перетаскивание.
+   ------------------------------------------------------------ */
+const LP_MS=420;                // сколько держать, чтобы карточка поднялась
+const SW={row:null,open:null,x0:0,y0:0,dx:0,base:0,mode:null,lp:0,moved:false,
+          rows:null,step:0,from:0,to:0};
+let swipeGuard=false;           // клик после жеста глотаем: это не тап
+
+const actsW=row=>{const a=row.querySelector('.hrow-acts');return a?a.offsetWidth:140};
+
+function closeRow(row,instant){
+  if(!row)return;
+  const c=row.querySelector('.hcard');
+  if(c){c.classList.toggle('raw',!!instant);c.style.transform='';c.style.setProperty('--fade','1');
+        if(instant)requestAnimationFrame(()=>c.classList.remove('raw'))}
+  row.classList.remove('open');
+  if(SW.open===row)SW.open=null;
 }
-function toggleMenu(){menuOpen=!menuOpen;if(menuOpen)renderMenu();$('menu').classList.toggle('on',menuOpen);$('menu-bd').classList.toggle('on',menuOpen)}
-function closeMenu(){menuOpen=false;$('menu').classList.remove('on');$('menu-bd').classList.remove('on')}
+function openRow(row){
+  const c=row.querySelector('.hcard');if(!c)return;
+  c.classList.remove('raw');
+  c.style.transform=`translateX(${-actsW(row)}px)`;
+  c.style.setProperty('--fade','0');
+  row.classList.add('open');
+  SW.open=row;
+}
+
+function listStart(e){
+  swipeGuard=false;
+  if(e.touches.length>1){SW.row=null;return}
+  const t=e.touches[0],row=e.target.closest?e.target.closest('.hrow'):null;
+  if(SW.open&&row!==SW.open){closeRow(SW.open);swipeGuard=true}
+  if(!row||e.target.closest('.hrow-acts')){SW.row=null;return}
+  SW.row=row;SW.x0=t.clientX;SW.y0=t.clientY;SW.dx=0;SW.mode=null;SW.moved=false;
+  SW.base=row===SW.open?-actsW(row):0;
+  clearTimeout(SW.lp);
+  SW.lp=setTimeout(()=>{if(SW.row===row&&!SW.mode)dragStart(row)},LP_MS);
+}
+function listMove(e){
+  if(!SW.row)return;
+  const t=e.touches[0],dx=t.clientX-SW.x0,dy=t.clientY-SW.y0;
+  if(!SW.mode){
+    if(Math.abs(dx)>8&&Math.abs(dx)>Math.abs(dy)){SW.mode='x';clearTimeout(SW.lp)}
+    else if(Math.abs(dy)>8){clearTimeout(SW.lp);SW.row=null;return}   // это прокрутка
+    else return;
+  }
+  if(SW.mode==='x'){
+    e.preventDefault();
+    const w=actsW(SW.row);
+    let x=SW.base+dx;
+    if(x>0)x*=.25;                       // вправо тянуть некуда — резинка
+    else if(x<-w)x=-w+(x+w)*.3;          // и за упором тоже
+    SW.dx=x;SW.moved=true;
+    const c=SW.row.querySelector('.hcard');
+    c.classList.add('raw');c.style.transform=`translateX(${x}px)`;
+    c.style.setProperty('--fade',clamp(1+x/w*1.7,0,1).toFixed(2));
+  }else if(SW.mode==='drag'){
+    e.preventDefault();
+    dragMove(dy);
+  }
+}
+function listEnd(){
+  clearTimeout(SW.lp);
+  const row=SW.row;
+  if(row&&SW.mode==='x'){
+    if(SW.dx<-actsW(row)*.45)openRow(row);else closeRow(row);
+    swipeGuard=SW.moved;
+  }else if(row&&SW.mode==='drag'){
+    dragEnd();swipeGuard=true;
+  }
+  SW.row=null;SW.mode=null;
+}
+
+/* --- перетаскивание: карточки одинаковой высоты, поэтому позиция
+       считается шагом, а соседи просто разъезжаются --- */
+function dragStart(row){
+  if(S.habits.length<2)return;
+  SW.mode='drag';
+  closeRow(SW.open,true);
+  SW.rows=[...$('list').querySelectorAll('.hrow')];
+  SW.from=SW.rows.indexOf(row);SW.to=SW.from;
+  SW.step=row.offsetHeight+10;
+  if(SW.from<0){SW.mode=null;return}
+  SW.rows.forEach(r=>{r.style.transition='transform .2s var(--ease)'});
+  row.style.transition='none';
+  row.classList.add('lift');
+  if(navigator.vibrate)navigator.vibrate(8);
+}
+function dragMove(dy){
+  const n=SW.rows.length;
+  SW.rows[SW.from].style.transform=`translateY(${dy}px)`;
+  const to=clamp(SW.from+Math.round(dy/SW.step),0,n-1);
+  if(to===SW.to)return;
+  SW.to=to;
+  SW.rows.forEach((r,i)=>{
+    if(i===SW.from)return;
+    const off=(i>SW.from&&i<=to)?-SW.step:(i<SW.from&&i>=to)?SW.step:0;
+    r.style.transform=off?`translateY(${off}px)`:'';
+  });
+}
+function dragEnd(){
+  const row=SW.rows[SW.from],from=SW.from,to=SW.to;
+  row.style.transition='transform .22s var(--ease)';
+  row.style.transform=`translateY(${(to-from)*SW.step}px)`;
+  row.classList.remove('lift');
+  setTimeout(()=>{
+    if(from!==to){const[m]=S.habits.splice(from,1);S.habits.splice(to,0,m);save()}
+    if(view==='list')renderList();
+  },230);
+}
+
+function bindList(){
+  const el=$('list');
+  el.addEventListener('touchstart',listStart,{passive:true});
+  el.addEventListener('touchmove',listMove,{passive:false});
+  el.addEventListener('touchend',listEnd);
+  el.addEventListener('touchcancel',listEnd);
+}
+
+/** Уйти к списку: живые узлы привычки больше не нужны. */
+function goList(){
+  view='list';R={};
+  $('home').innerHTML='';$('home').className='';
+  $('app').dataset.view='list';
+  renderList(true);renderTop();
+  window.scrollTo(0,0);
+}
 
 /* ------------------------------------------------------------
    Нижний шит
@@ -1741,7 +1969,7 @@ function applyImport(text){
   const payload=d&&d.data&&Array.isArray(d.data.habits)?d.data:(d&&Array.isArray(d.habits)?d:null);
   if(!payload)return toast('В копии нет привычек');
   S=normalize(payload);saveNow();
-  closePage('p-data');renderHome(true);renderMenu();
+  closePage('p-data');view='list';renderHome(true);
   toast('Восстановлено: '+S.habits.length+' '+plural(S.habits.length,'привычка','привычки','привычек'));
 }
 
@@ -1975,9 +2203,17 @@ function closeSOS(logIt){
    Действия
    ------------------------------------------------------------ */
 const ACT={
-  toggleMenu,closeMenu,closeSheet,
+  closeSheet,
   noop(){},
-  pick(id){S.activeId=id;save();closeMenu();renderHome(true)},
+  openHabit(id){
+    if(SW.open){closeRow(SW.open);return}          // открытые действия сначала закрываем
+    if(!S.habits.some(x=>x.id===id))return;
+    S.activeId=id;save();
+    view='habit';renderHome(true);window.scrollTo(0,0);
+  },
+  backToList(){goList()},
+  cardEdit(id){S.activeId=id;save();closeRow(SW.open,true);ACT.edit()},
+  cardDelete(id){S.activeId=id;save();closeRow(SW.open,true);ACT.deleteAsk()},
   quote(){
     let n;do{n=Math.floor(Math.random()*QUOTES.length)}while(n===S.quoteIdx%QUOTES.length&&QUOTES.length>1);
     S.quoteIdx=n;save();
@@ -1998,7 +2234,7 @@ const ACT={
   },
 
   /* добавление */
-  add(){closeMenu();closeSheet();openAdd()},
+  add(){closeSheet();openAdd()},
   closeAdd(){closePage('p-add')},
   pickKind(_id,el){
     const k=el.dataset.arg;
@@ -2022,7 +2258,7 @@ const ACT={
     if(form.kind==='sleep'){
       const nh=mkHabit({name,kind:'sleep',color:form.color,startedAt:new Date().toISOString(),wakeBy:form.wake||'07:00'});
       S.habits.push(nh);S.activeId=nh.id;save();
-      closePage('p-add');renderHome(true);
+      view='habit';closePage('p-add');renderHome(true);
       return toast('Режим включён. Отметь подъём кнопкой');
     }
     const t=formStart();
@@ -2032,7 +2268,7 @@ const ACT={
     // всё, что уже пройдено к моменту добавления, фиксируем без праздников
     seedMilestones(h);
     S.habits.push(h);S.activeId=h.id;save();
-    closePage('p-add');renderHome(true);
+    view='habit';closePage('p-add');renderHome(true);
     toast('Отсчёт пошёл');
   },
 
@@ -2179,14 +2415,14 @@ const ACT={
     const h=active();if(!h)return;closeSheet();
     S.habits=S.habits.filter(x=>x.id!==h.id);
     S.activeId=S.habits.length?S.habits[0].id:null;
-    save();renderHome(true);renderMenu();toast('Удалено');
+    save();view='list';renderHome(true);toast('Удалено');
   },
 
   /* страницы */
   chart(){openChart()},closeChart,
   phases(){openPhases()},closePhases(){closePage('p-phases')},
   history(){closeSheet();closePage('p-phases');openHistory()},closeHistory(){closePage('p-history')},
-  data(){closeMenu();openData()},closeData(){closePage('p-data')},
+  data(){closeSheet();openData()},closeData(){closePage('p-data')},
   chRange(_id,el){
     chartRange=parseInt(el.dataset.arg,10);chartTouchDay=null;
     document.querySelectorAll('#p-chart .rb').forEach(b=>b.classList.toggle('on',+b.dataset.arg===chartRange));
@@ -2266,7 +2502,7 @@ const ACT={
   importV1(){
     const n=importFromV1();
     closePage('p-data');
-    renderHome(true);renderMenu();
+    view='list';renderHome(true);
     toast(n?('Перенесено: '+n+' '+plural(n,'привычка','привычки','привычек')):'Нечего переносить');
   },
   wipeAsk(){
@@ -2276,12 +2512,13 @@ const ACT={
   },
   wipe(){
     closeSheet();S=blank();saveNow();
-    closePage('p-data');renderHome(true);renderMenu();toast('Всё удалено');
+    closePage('p-data');view='list';renderHome(true);toast('Всё удалено');
   },
 };
 
 /* Делегирование: никаких inline-обработчиков и подстановки id в HTML. */
 document.addEventListener('click',e=>{
+  if(swipeGuard){swipeGuard=false;e.stopPropagation();return}   // хвост жеста, а не тап
   const t=e.target.closest('[data-act]');
   if(!t)return;
   const fn=ACT[t.dataset.act];
@@ -2295,7 +2532,8 @@ window.addEventListener('popstate',()=>{
   if($('sos').classList.contains('on')){closeSOS(false);pushDepth();return}
   if($('sheet-bd').classList.contains('on')){closeSheet();pushDepth();return}
   if(openPages.length){closePage(openPages[openPages.length-1]);pushDepth();return}
-  if(menuOpen){closeMenu();pushDepth();return}
+  if(SW.open){closeRow(SW.open);pushDepth();return}
+  if(view==='habit'){goList();pushDepth();return}
 });
 function pushDepth(){history.pushState({d:1},'')}
 pushDepth();
@@ -2325,8 +2563,8 @@ if(!localStorage.getItem(KEY)&&!S.habits.length&&v1Available()){
 }
 S.habits.forEach(h=>{if(!h.history.length)h.history.push({t:'start',at:h.startedAt})});
 checkProgress();
+bindList();
 renderHome(true);
-renderMenu();
 requestAnimationFrame(loop);
 setTimeout(queueCelebrations,900);
 
@@ -2342,7 +2580,10 @@ window.__askeza={
   esc,fmtLeft,fmtRough,nDays,KINDS,PHASE_SOURCE,
   isDaily,today,shiftDay,streakInfo,openDays,streakDays,bestStreak,calendarCells,dailyStats,
   markDay,wakeBy,checksOf,DAILY_MS,hasCurve,
-  set(next){S=normalize(next);saveNow();renderHome(true);renderMenu()},
+  segFills,cardDays,SEG_STOPS,goList,
+  get view(){return view},
+  openHabit(id){ACT.openHabit(id)},
+  set(next){S=normalize(next);saveNow();view='list';renderHome(true)},
 };
 </script>
 </body>
