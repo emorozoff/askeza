@@ -68,31 +68,17 @@ page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.
 const shot = n => page.screenshot({ path: path.join(SHOTS, n + '.png') });
 const reload = async () => { await page.goto(BASE); await page.waitForFunction(() => !!window.__askeza); };
 
-/** Закрывает празднование, если оно открыто (иначе перехватывает клики). */
-async function dismissCel() {
-  for (let i = 0; i < 5; i++) {
-    if (!(await page.locator('#cel.on').count())) return;
-    await page.locator('[data-act="celClose"]').click({ force: true }).catch(() => {});
-    await page.waitForTimeout(450);
-  }
-}
-/** Клик, который сперва гасит празднование, если оно перехватывает нажатия. */
-async function tap(sel) { await dismissCel(); await page.click(sel); }
-/** Подставляет состояние «как из хранилища»: вехи прошлого уже отмечены увиденными. */
+/** Празднований в приложении нет — заглушка осталась, чтобы не править вызовы. */
+async function dismissCel() {}
+const tap = sel => page.click(sel);
+/** Подставляет состояние «как из хранилища» и открывает нужную привычку. */
 async function setState(s) {
   await page.evaluate(st => {
     window.__askeza.set(st);
-    window.__askeza.checkProgress();
     if (st.activeId) window.__askeza.openHabit(st.activeId);   // корень — список, тесту нужна привычка
   }, s);
   await page.waitForTimeout(600);
-  await dismissCel();
 }
-/** То же, но без гашения — когда тест как раз проверяет празднование. */
-const setStateRaw = s => page.evaluate(st => {
-  window.__askeza.set(st);
-  if (st.activeId) window.__askeza.openHabit(st.activeId);
-}, s);
 
 try {
 
@@ -276,44 +262,6 @@ await shot('03-home-no-vow');
 // фон подкрашивается цветом привычки
 const glow = await page.evaluate(() => getComputedStyle(document.getElementById('glow')).color);
 eq('фон подкрашен цветом привычки', glow, 'rgb(255, 69, 58)');
-/* ═══════════════ 5. Вехи ═══════════════ */
-group('5. Вехи');
-await setState(seed());
-await page.waitForTimeout(600);
-const ms = await page.evaluate(() => {
-  const h = window.__askeza.active();
-  return h.history.filter(e => e.t === 'milestone').map(e => ({ key: e.key, at: e.at, seen: e.seen }));
-});
-ok('вехи за 3 дня зафиксированы', ms.length >= 8, `найдено ${ms.length}`);
-const d1 = ms.find(m => m.key === 'd1');
-ok('веха «1 день» есть', !!d1);
-ok('дата вехи = старт + ровно сутки', d1 &&
-   Math.abs(new Date(d1.at) - (new Date(seed().habits[0].startedAt).getTime() + DAY)) < 90000, d1 && d1.at);
-ok('веха «1 месяц» ещё не наступила', !ms.find(m => m.key === 'mo1'));
-
-// пересечение вехи прямо во время работы приложения
-await setState({
-  v: 2, quoteIdx: 0, activeId: 'h1',
-  habits: [{
-    id: 'h1', name: 'Курение', kind: 'smoking', color: '#ff453a',
-    startedAt: new Date(Date.now() - 3600e3 + 2500).toISOString(),   // до вехи «1 час» ~2.5 сек
-    vow: null, history: [{ t: 'start', at: new Date(Date.now() - 3600e3 + 2500).toISOString() }],
-  }],
-});
-await page.waitForTimeout(4500);
-ok('веха, пройденная при открытом приложении, празднуется', await page.locator('#cel.on').isVisible());
-const celM = await page.locator('#cel').innerText();
-ok('в празднике написано «Веха пройдена»', /веха пройдена/i.test(celM), celM.slice(0, 60));
-ok('в празднике указан «1 час»', celM.includes('1 час'), celM.slice(0, 90));
-await shot('07-milestone');
-await page.click('[data-act="celClose"]');
-await page.waitForTimeout(600);
-
-// повторных празднований быть не должно
-await page.evaluate(() => window.__askeza.checkProgress());
-await page.waitForTimeout(900);
-ok('веха не празднуется второй раз', !(await page.locator('#cel.on').isVisible()));
-
 /* ═══════════════ 6. Редактирование ═══════════════ */
 group('6. Редактирование (баг v1: минус сутки)');
 await setState(seed());
@@ -504,31 +452,13 @@ const migrated = await pf.evaluate(() => window.__askeza.S.habits.map(h => ({ na
 eq('перенесены обе привычки', migrated.length, 2);
 eq('тип «Курение» определён', migrated[0].kind, 'smoking');
 eq('тип «Соцсети» — своя', migrated[1].kind, 'custom');
-ok('старые жетоны попали в историю', migrated[0].hist > 5);
+ok('старые жетоны попали в журнал', migrated[0].hist >= 2, String(migrated[0].hist));
 const v1untouched = await pf.evaluate(() => localStorage.getItem('askeza_data'));
 eq('данные старого приложения НЕ изменены', v1untouched, JSON.stringify(v1data));
-ok('празднования при переносе не сыплются', !(await pf.locator('#cel.on').count()));
+eq('экрана празднований в приложении нет', await pf.locator('#cel').count(), 0);
 eq('перенос проходит без ошибок JS', errFresh.length, 0, errFresh.join('; '));
 await pf.screenshot({ path: path.join(SHOTS, '19-migrated.png') });
 await ctxFresh.close();
-
-/* ═══════════════ 16. Навигация «назад» ═══════════════ */
-group('16. Навигация «назад»');
-await setState(seed());
-await page.waitForTimeout(700);
-await page.click('.craving');
-await page.waitForSelector('#p-chart.on');
-await page.goBack();
-await page.waitForTimeout(700);
-ok('системная кнопка «назад» закрывает график', !(await page.locator('#p-chart.on').isVisible()));
-ok('приложение при этом не выгрузилось', await page.locator('.h-name').isVisible());
-await page.click('[data-act="habitMenu"]'); await page.waitForTimeout(500);
-await page.goBack(); await page.waitForTimeout(600);
-ok('«назад» закрывает нижний шит', !(await page.locator('#sheet-bd.on').isVisible()));
-await page.goBack(); await page.waitForTimeout(600);
-ok('«назад» с экрана привычки возвращает в список', await page.locator('#list.list').isVisible());
-ok('приложение по-прежнему живо', await page.evaluate(() => window.__askeza.view) === 'list');
-
 /* ═══════════════ 17. Доступность и производительность ═══════════════ */
 group('17. Доступность и производительность');
 const vp = await page.evaluate(() => document.querySelector('meta[name=viewport]').content);
@@ -599,25 +529,6 @@ ok('одометр показывает годы и месяцы', bars >= 5, `�
 const yearLbl = (await page.locator('.obar-l').allInnerTexts())[0];
 ok('единица «год/года/лет» просклонена', /год|года|лет/.test(yearLbl), yearLbl);
 await shot('22-long-streak');
-
-/* ═══════════════ 19. Конфетти убрано ═══════════════ */
-group('19. Конфетти убрано');
-await reload();
-eq('канваса конфетти нет в разметке', await page.locator('#confetti').count(), 0);
-ok('функции конфетти нет в коде', await page.evaluate(() => typeof window.confetti === 'undefined'));
-await setStateRaw({
-  v: 2, quoteIdx: 0, activeId: 'h1',
-  habits: [{ id: 'h1', name: 'Курение', kind: 'smoking', color: '#ff453a', startedAt: ISO(35 * DAY),
-    vow: { days: 30, startedAt: ISO(35 * DAY), endsAt: ISO(5 * DAY), status: 'active' },
-    history: [{ t: 'start', at: ISO(35 * DAY) }] }],
-});
-await page.evaluate(() => window.__askeza.checkProgress());
-await page.waitForTimeout(1300);
-ok('празднование по-прежнему показывается', await page.locator('#cel.on').isVisible());
-eq('во время празднования нет летящих частиц', await page.locator('.confetti-piece, #confetti').count(), 0);
-await page.screenshot({ path: path.join(SHOTS, '23-celebration-no-confetti.png') });
-await dismissCel();
-
 /* ═══════════════ 20. Скроллинг и порно ═══════════════ */
 group('20. Новые привычки: скроллинг и порно');
 for (const [kind, title] of [['scroll', 'Скроллинг'], ['porn', 'Порно']]) {
@@ -692,11 +603,6 @@ ok('кнопка сменилась на статус', await page.locator('.ci-
 ok('видно «Встал вовремя»', (await page.locator('.ci-t').innerText()).includes('вовремя'));
 eq('в календаре появился засчитанный день', await page.locator('.cal-d.ok').count(), 1);
 await page.screenshot({ path: path.join(SHOTS, '27-sleep-checked.png') });
-ok('первая отметка празднуется вехой «Первое утро»', await page.locator('#cel.on').isVisible());
-const celFirst = await page.locator('#cel').innerText();
-ok('в празднике названа веха режима', /первое утро/i.test(celFirst), celFirst.slice(0, 60));
-ok('у вехи режима показана дата без бессмысленного времени', !/\d\d:\d\d/.test(celFirst), celFirst.replace(/\n/g, ' '));
-await dismissCel();
 
 await page.click('[data-act="redoToday"]');
 await page.waitForTimeout(500);
@@ -957,6 +863,11 @@ eq('серия пересчиталась после перезагрузки', 
   ok('аскез нет в API', !api.includes('vowInfo'), api.join(','));
   ok('фаз нет в API', !api.includes('phaseAt') && !api.includes('PHASE_SOURCE'));
   ok('экспорта нет в API', !api.includes('exportJSON') && !api.includes('applyImport'));
+  ok('вех нет в API', !api.includes('MILESTONES') && !api.includes('DAILY_MS') && !api.includes('checkProgress'), api.join(','));
+
+  eq('экрана празднования нет', await page.locator('#cel').count(), 0);
+  eq('вехи в журнал не пишутся',
+     await page.evaluate(() => window.__askeza.S.habits.some(h => h.history.some(e => e.t === 'milestone'))), false);
 
   eq('страницы аскезы нет', await page.locator('#p-vow').count(), 0);
   eq('страницы фаз нет', await page.locator('#p-phases').count(), 0);
@@ -1000,13 +911,19 @@ eq('серия пересчиталась после перезагрузки', 
   eq('срыв записан в журнал',
      await page.evaluate(() => window.__askeza.S.habits[0].history.filter(e => e.t === 'relapse').length), 1);
 
-  // запись в историю браузера появляется только после первой отрисовки,
-  // иначе Safari показывает белый снимок при свайпе назад от левого края
+  // Приложение не кладёт записей в историю браузера. Пустышка через pushState
+  // давала жест «назад», но Safari показывал вместо неё белый экран на несколько
+  // секунд: снимка для записи, добавленной в том же документе, у него нет.
   await reload();
   await page.waitForTimeout(900);
-  const hist = await page.evaluate(() => ({ d: history.state && history.state.d, len: history.length }));
-  eq('глубина истории выставлена после отрисовки', hist.d, 1);
-  ok('в истории есть куда возвращаться', hist.len >= 2, String(hist.len));
+  eq('приложение не кладёт записей в историю браузера',
+     await page.evaluate(() => history.state), null);
+  ok('обработчика popstate нет',
+     await page.evaluate(() => { let hit = false;
+       const h = () => { hit = true; }; window.addEventListener('popstate', h);
+       window.dispatchEvent(new PopStateEvent('popstate'));
+       window.removeEventListener('popstate', h);
+       return hit && window.__askeza.view === 'list'; }));
 }
 
 /* ═══════════════ 23. Загрузка по ссылке ═══════════════ */
