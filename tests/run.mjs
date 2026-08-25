@@ -1003,6 +1003,101 @@ eq('серия пересчиталась после перезагрузки', 
   eq('отказ ничего не меняет', await page.evaluate(() => window.__askeza.S.habits.length), 1);
 }
 
+/* ═══════════════ 24. Значки привычек ═══════════════ */
+{
+  group('24. Значки');
+  await setState(seed());
+  await page.waitForTimeout(600);
+
+  const set = await page.evaluate(() => {
+    const A = window.__askeza;
+    return { n: A.ICON_KEYS.length, uniq: new Set(A.ICON_KEYS).size,
+             empty: A.ICON_KEYS.filter(k => !A.ICONS[k] || A.ICONS[k].length < 10) };
+  });
+  ok('значков не меньше сорока', set.n >= 40, String(set.n));
+  eq('ключи не повторяются', set.uniq, set.n);
+  eq('пустых значков нет', set.empty.length, 0, set.empty.join(','));
+
+  // каждый значок — валидный SVG, который браузер разобрал
+  const broken = await page.evaluate(() => {
+    const A = window.__askeza, bad = [];
+    const box = document.createElement('div');
+    document.body.appendChild(box);
+    for (const k of A.ICON_KEYS) {
+      box.innerHTML = '<svg viewBox="0 0 24 24">' + A.ICONS[k] + '</svg>';
+      const svg = box.firstChild;
+      if (!svg.childElementCount) { bad.push(k + ':пусто'); continue; }
+      for (const n of svg.children) {
+        if (n.tagName === 'path' && !n.getAttribute('d')) bad.push(k + ':без d');
+        if (n.tagName === 'path' && !n.getTotalLength()) bad.push(k + ':нулевая длина');
+      }
+    }
+    box.remove();
+    return bad;
+  });
+  eq('все значки рисуются', broken.length, 0, broken.join(', '));
+
+  eq('у курения значок сигареты по умолчанию',
+     await page.evaluate(() => window.__askeza.iconOf(window.__askeza.active())), 'cigarette');
+  eq('битый ключ откатывается к запасному',
+     await page.evaluate(() => window.__askeza.iconOf({ kind: 'weed', icon: 'нетакого' })), 'leaf');
+
+  ok('значок виден на экране привычки', await page.locator('.h-ico svg').isVisible());
+  await page.click('[data-act="backToList"]');
+  await page.waitForTimeout(500);
+  eq('значок виден на карточке', await page.locator('.hcard .hico').count(), 1);
+  ok('значок покрашен цветом привычки',
+     (await page.locator('.hcard .hico').getAttribute('style')).includes('#ff453a'));
+  await shot('33-list-icons');
+
+  // выбор значка при создании
+  await page.click('[data-act="add"]');
+  await page.waitForSelector('#p-add.on');
+  await page.waitForTimeout(400);
+  eq('типы привычек нарисованы тем же набором', await page.locator('.kind-e svg').count(), 7);
+  eq('до выбора типа сетки значков нет', await page.locator('#p-add .ico').count(), 0);
+  await page.click('[data-act="pickKind"][data-arg="custom"]');
+  await page.waitForTimeout(450);
+  const gridN = await page.locator('#p-add .ico').count();
+  ok('сетка значков появилась', gridN >= 40, String(gridN));
+  eq('у своей привычки выбрана звезда', await page.locator('#p-add .ico.on').getAttribute('data-arg'), 'star');
+  await page.fill('#a-name', 'Зал');
+  await page.click('[data-act="pickIcon"][data-arg="dumbbell"]');
+  await page.waitForTimeout(250);
+  eq('выбор переехал на гантель', await page.locator('#p-add .ico.on').getAttribute('data-arg'), 'dumbbell');
+  eq('в сетке подсвечен ровно один', await page.locator('#p-add .ico.on').count(), 1);
+  await page.screenshot({ path: path.join(SHOTS, '34-icon-picker.png') });
+  await page.click('[data-act="quickWhen"][data-arg="morning"]');
+  await page.waitForTimeout(300);
+  await page.click('[data-act="saveNew"]');
+  await page.waitForTimeout(900);
+  eq('значок сохранился в привычке',
+     await page.evaluate(() => window.__askeza.active().icon), 'dumbbell');
+
+  // смена значка в «Изменить»
+  await page.click('[data-act="habitMenu"]'); await page.waitForTimeout(420);
+  await page.click('[data-act="edit"]'); await page.waitForSelector('#p-add.on');
+  await page.waitForTimeout(400);
+  eq('в правке подсвечен текущий значок', await page.locator('#p-add .ico.on').getAttribute('data-arg'), 'dumbbell');
+  await page.click('[data-act="editIcon"][data-arg="flame"]');
+  await page.waitForTimeout(250);
+  await page.click('[data-act="saveEdit"]');
+  await page.waitForTimeout(900);
+  eq('новый значок сохранился', await page.evaluate(() => window.__askeza.active().icon), 'flame');
+  ok('и виден на экране привычки', await page.locator('.h-ico svg').isVisible());
+
+  // значок переживает перезагрузку и едет в ссылке
+  await page.reload(); await page.waitForFunction(() => !!window.__askeza);
+  await page.waitForTimeout(700);
+  eq('значок пережил перезагрузку',
+     await page.evaluate(() => window.__askeza.S.habits.find(h => h.name === 'Зал').icon), 'flame');
+  const seedIcon = Buffer.from(JSON.stringify({ habits: [
+    { name: 'Бег', kind: 'custom', icon: 'bike', startedAt: '2026-01-01T08:00:00' } ] }), 'utf8')
+    .toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  eq('ссылка может нести значок',
+     await page.evaluate(h => window.__askeza.parseSeed('#seed=' + h)[0].icon, seedIcon), 'bike');
+}
+
 group('19. Ошибки исполнения');
 ok('за весь прогон не было ошибок JS', errors.length === 0, errors.slice(0, 5).join('  ;;  '));
 
