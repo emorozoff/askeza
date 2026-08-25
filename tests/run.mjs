@@ -1057,6 +1057,17 @@ eq('серия пересчиталась после перезагрузки', 
   await page.click('[data-act="backToList"]');
   await page.waitForTimeout(500);
   ok('эмодзи виден на карточке', (await page.locator('.hcard .hico').first().innerText()).includes('🚭'));
+  // строка имени не режет эмодзи сверху: глиф выше строки текста
+  const clip = await page.evaluate(() => {
+    const row = document.querySelector('.hcard .hname');
+    const ico = row.querySelector('.hico');
+    return { rowClips: getComputedStyle(row).overflow, top: ico.getBoundingClientRect().top - row.getBoundingClientRect().top,
+             h: ico.getBoundingClientRect().height, fs: parseFloat(getComputedStyle(ico).fontSize) };
+  });
+  ok('строка имени не обрезает переполнение', clip.rowClips === 'visible', clip.rowClips);
+  ok('эмодзи не вылезает за строку сверху', clip.top >= -0.5, String(clip.top));
+  ok('высота эмодзи больше кегля — глифу есть где рисоваться',
+     clip.h > clip.fs, `${clip.h} > ${clip.fs}`);
   await shot('33-list-emoji');
 
   // выбор при создании: сетка и поле

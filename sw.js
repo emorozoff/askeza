@@ -3,7 +3,7 @@
    HTML берём из сети и обновляем кэш; если сети нет — отдаём кэш.
    Статику отдаём из кэша сразу и тихо обновляем в фоне. */
 
-const CACHE = 'askeza-v3.2';
+const CACHE = 'askeza-v3.3';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

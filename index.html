@@ -91,7 +91,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 
 /* ---------------- шапка привычки ---------------- */
 .h-head{text-align:center;padding:2px 24px 0}
-.h-ico{font-size:38px;line-height:1;margin-bottom:10px}
+.h-ico{font-size:38px;line-height:1.2;margin-bottom:8px}
 .h-name{font-size:27px;font-weight:800;letter-spacing:-.6px;line-height:1.15;color:#fff;word-break:break-word}
 .h-since{font-size:12.5px;color:var(--text3);margin-top:5px;font-weight:450}
 
@@ -214,10 +214,12 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 /* Левый край карточки в цвете привычки. Лежит внутри неё, поэтому уезжает
    вместе с ней при свайпе, а скругление берёт от overflow:hidden карточки. */
 .hstripe{position:absolute;left:0;top:0;bottom:0;width:4px;z-index:2;pointer-events:none}
+/* Обрезку сверху давал overflow:hidden на всей строке: глиф эмодзи выше строки
+   текста. Прячем переполнение только у названия, эмодзи даём дышать. */
 .hname{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:600;color:var(--text);
-  white-space:nowrap;overflow:hidden}
-.hname-t{overflow:hidden;text-overflow:ellipsis}
-.hico{flex:0 0 auto;font-size:16px;line-height:1}
+  white-space:nowrap}
+.hname-t{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.hico{flex:0 0 auto;font-size:16px;line-height:1.35}
 .hdays{font-size:23px;font-weight:800;letter-spacing:-.4px;line-height:1.2;color:#fff;margin-top:1px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* Восемь ступеней до года. Деления одинаковой ширины, хотя стоят за разный
@@ -316,7 +318,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
   transition:transform .16s var(--ease),border-color .2s,background .2s}
 .kind:active{transform:scale(.96)}
 .kind.on{background:rgba(255,255,255,.07)}
-.kind-e{font-size:27px;line-height:1}
+.kind-e{font-size:27px;line-height:1.2}
 .kind-n{font-size:13.5px;font-weight:650;color:var(--text2)}
 .kind.on .kind-n{color:var(--text);font-weight:750}
 /* Значок: поле ввода (клавиатура даёт любое эмодзи) плюс сетка частых.
@@ -330,7 +332,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 .emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:7px;padding:2px;
   max-height:168px;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .em{aspect-ratio:1;border-radius:12px;background:var(--surface);border:1.5px solid transparent;
-  display:flex;align-items:center;justify-content:center;font-size:21px;line-height:1;
+  display:flex;align-items:center;justify-content:center;font-size:21px;line-height:1.2;
   cursor:pointer;user-select:none;transition:transform .15s,border-color .2s}
 .em:active{transform:scale(.88)}
 .em.on{border-color:currentColor;background:rgba(255,255,255,.07)}
@@ -374,7 +376,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
    Приложение для отказа от привычек. Один файл, без зависимостей.
    ============================================================ */
 
-const VERSION='3.2';
+const VERSION='3.3';
 const KEY='askeza2_data';
 const KEY_BACKUP='askeza2_backup';
 const KEY_V1='askeza_data';       // старое приложение — только чтение, никогда не пишем
