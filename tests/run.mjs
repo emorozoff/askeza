@@ -237,6 +237,12 @@ ok('карточка тяги видна', await page.locator('.craving').isVisi
 ok('одометр отрисован', (await page.locator('.obar').count()) >= 3);
 ok('полосок на концах баров нет',
    await page.evaluate(() => getComputedStyle(document.querySelector('.obar-fill'), '::after').content) === 'none');
+// поле слева задаётся один раз: дубль padding-left уже съезжал к краю
+eq('у текста полосы одно левое поле',
+   await page.evaluate(() => {
+     const st = getComputedStyle(document.querySelector('.obar-txt'));
+     return st.paddingLeft;
+   }), '17px');
 ok('затемнения слева на барах нет',
    await page.evaluate(() => getComputedStyle(document.querySelector('.obar'), '::after').content) === 'none');
 // палитра и лесенка прозрачности перенесены из askeza 1 — цвета должны совпадать
