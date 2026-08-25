@@ -878,6 +878,55 @@ eq('серия пересчиталась после перезагрузки', 
   await page.waitForTimeout(500);
   ok('стрелка вернула в список', await page.locator('#list.list').isVisible());
   
+  group('22в. Подпись текущей ступени');
+  
+  const stepFor = d => page.evaluate(days => {
+    const A = window.__askeza;
+    const k = A.stepIndex(A.segFills({ id: 'x', kind: 'smoking', startedAt: new Date(Date.now() - days * 86400e3).toISOString() }));
+    return k < 0 ? '' : A.SEG_LABELS[k];
+  }, d);
+  eq('первый час — «1 день»', await stepFor(1 / 24), '1 день');
+  eq('2 дня — «3 дня»', await stepFor(2), '3 дня');
+  eq('5 дней — «неделя»', await stepFor(5), 'неделя');
+  eq('9 дней — «2 недели»', await stepFor(9), '2 недели');
+  eq('20 дней — «месяц»', await stepFor(20), 'месяц');
+  eq('87 дней — «3 месяца»', await stepFor(87), '3 месяца');
+  eq('120 дней — «полгода»', await stepFor(120), 'полгода');
+  eq('242 дня — «год»', await stepFor(242), 'год');
+  eq('после года подписи нет', await stepFor(400), '');
+  eq('ровно на границе подпись у следующей ступени', await stepFor(7), '2 недели');
+  
+  await setState({
+    v: 2, quoteIdx: 0, activeId: 'b1',
+    habits: [
+      { id: 'b1', name: 'Алкоголь', kind: 'alcohol', color: '#ff9f0a', startedAt: ISO(3 * DAY), history: [{ t: 'start', at: ISO(3 * DAY) }] },
+      { id: 'b2', name: 'Курение', kind: 'smoking', color: '#ff453a', startedAt: ISO(400 * DAY), history: [{ t: 'start', at: ISO(400 * DAY) }] },
+    ],
+  });
+  await page.evaluate(() => window.__askeza.goList());
+  await page.waitForTimeout(450);
+  eq('подпись стоит под полосой', (await page.locator('.hrow[data-id="b1"] .hstep').innerText()).trim(), 'неделя');
+  eq('у пройденного года подписи нет', await page.locator('.hrow[data-id="b2"] .hstep i').count(), 0);
+  ok('карточки одной высоты с подписью и без',
+     await page.evaluate(() => {
+       const r = [...document.querySelectorAll('.hrow')].map(x => x.offsetHeight);
+       return r[0] === r[1];
+     }));
+  const stepX = await page.evaluate(() => {
+    const row = document.querySelector('.hrow[data-id="b1"]');
+    const ri = row.querySelector('.hstep i').getBoundingClientRect();
+    const rb = row.querySelector('.hbar').getBoundingClientRect();
+    return { c: ri.left + ri.width / 2 - rb.left, w: rb.width };
+  });
+  ok('подпись по центру своей ступени', Math.abs(stepX.c - stepX.w * (2.5 / 8)) < 12, JSON.stringify(stepX));
+  eq('ступень закрылась — подпись переехала',
+     await page.evaluate(() => {
+       const A = window.__askeza;
+       A.S.habits[0].startedAt = new Date(Date.now() - 8 * 86400e3).toISOString();
+       A.goList();
+       return document.querySelector('.hrow[data-id="b1"] .hstep').innerText.trim();
+     }), '2 недели');
+  
 }
 
 /* ═══════════════ 22. Убранное не возвращается ═══════════════ */

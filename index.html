@@ -203,7 +203,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 .hact svg{width:29px;height:29px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 
 .hcard{position:relative;z-index:1;background:var(--surface);border-radius:18px;
-  padding:13px 16px 13px 18px;overflow:hidden;cursor:pointer;
+  padding:13px 16px 9px 18px;overflow:hidden;cursor:pointer;
   touch-action:pan-y;transition:transform .34s var(--ease),box-shadow .22s,background .15s}
 .hcard.raw{transition:box-shadow .22s,background .15s}
 /* Уезжая под кнопки, карточка гасит содержимое: обрезок полосы у края
@@ -225,6 +225,11 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 /* Восемь ступеней до года. Деления одинаковой ширины, хотя стоят за разный
    срок: первые дни самые трудные и должны давать самое заметное движение. */
 .hbar{display:flex;gap:3.5px;margin-top:11px}
+/* Подпись текущей ступени. Своя строка фиксированной высоты, чтобы карточки
+   с пройденным годом не оказались ниже остальных. */
+.hstep{position:relative;height:13px;margin-top:5px}
+.hstep i{position:absolute;top:0;font-style:normal;font-size:9.5px;color:var(--text3);
+  letter-spacing:.2px;white-space:nowrap;transform:translateX(-50%)}
 .hseg{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.05);overflow:hidden}
 .hseg i{display:block;height:100%;border-radius:3px;transition:width .5s var(--ease)}
 
@@ -384,7 +389,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
    Приложение для отказа от привычек. Один файл, без зависимостей.
    ============================================================ */
 
-const VERSION='3.6';
+const VERSION='3.7';
 const KEY='askeza2_data';
 const KEY_BACKUP='askeza2_backup';
 const KEY_V1='askeza_data';       // старое приложение — только чтение, никогда не пишем
@@ -835,10 +840,18 @@ function cardDays(h){
 }
 /* Едва начатое деление всё равно показываем полоской: отсчёт пошёл,
    и это должно быть видно с первой минуты. */
+/* Подпись у деления, которое сейчас заполняется: не вся шкала, а ровно то,
+   до чего идёшь. Считается по первому незаполненному делению. */
+const SEG_LABELS=['1 день','3 дня','неделя','2 недели','месяц','3 месяца','полгода','год'];
+const stepIndex=f=>f.findIndex(v=>v<1);          // -1 — год пройден, подписывать нечего
+/* Центр k-го деления: восемь равных колонок и семь промежутков по 3.5px. */
+const stepLeft=k=>`calc((100% - 24.5px) / 8 * ${k+.5} + 3.5px * ${k})`;
+const stepHtml=k=>k<0?'':`<i style="left:${stepLeft(k)}">${SEG_LABELS[k]}</i>`;
+
 const segStyle=(f,c)=>`width:${(f>0?Math.max(f,.045)*100:0).toFixed(1)}%;background:${c};opacity:${f>=1?1:.5}`;
 
 function habitCard(h){
-  const c=habitColor(h),name=esc(h.name);
+  const c=habitColor(h),name=esc(h.name),fills=segFills(h);
   return`<div class="hrow" data-id="${h.id}">
     <div class="hrow-acts">
       <button class="hact" data-act="cardEdit" data-id="${h.id}" aria-label="Изменить «${name}»">${ICO.pencil}<span>Изменить</span></button>
@@ -850,8 +863,9 @@ function habitCard(h){
       <div class="hcard-in">
         <div class="hname"><span class="hico">${esc(emojiOf(h))}</span><span class="hname-t">${name}</span></div>
         <div class="hdays num">${cardDays(h)}</div>
-        <div class="hbar" aria-hidden="true">${segFills(h).map(f=>
+        <div class="hbar" aria-hidden="true">${fills.map(f=>
           `<div class="hseg"><i style="${segStyle(f,c)}"></i></div>`).join('')}</div>
+        <div class="hstep">${stepHtml(stepIndex(fills))}</div>
       </div>
     </div>
   </div>`;
@@ -878,8 +892,9 @@ function renderList(back){
     id:row.dataset.id,
     days:row.querySelector('.hdays'),
     segs:[...row.querySelectorAll('.hseg i')],
+    step:row.querySelector('.hstep'),
     lastDays:row.querySelector('.hdays').textContent,
-    lastSegs:[],
+    lastSegs:[],lastStep:null,
   }));
   setGlow(habitColor(S.habits[0]));
 }
@@ -891,11 +906,13 @@ function updateList(){
     const h=S.habits.find(x=>x.id===c.id);if(!h)return;
     const t=cardDays(h);
     if(t!==c.lastDays){c.lastDays=t;c.days.textContent=t}
-    const col=habitColor(h);
-    segFills(h).forEach((f,i)=>{
+    const col=habitColor(h),fills=segFills(h);
+    fills.forEach((f,i)=>{
       const st=segStyle(f,col),node=c.segs[i];
       if(node&&st!==c.lastSegs[i]){c.lastSegs[i]=st;node.style.cssText=st}
     });
+    const k=stepIndex(fills);
+    if(c.step&&k!==c.lastStep){c.lastStep=k;c.step.innerHTML=stepHtml(k)}
   });
 }
 
@@ -2039,7 +2056,7 @@ window.__askeza={
   esc,fmtLeft,fmtRough,nDays,KINDS,
   isDaily,today,shiftDay,streakInfo,openDays,streakDays,calendarCells,dailyStats,
   markDay,wakeBy,checksOf,hasCurve,
-  segFills,cardDays,SEG_STOPS,goList,parseSeed,seedFromLink,EMOJI_QUICK,emojiOf,lastGrapheme,
+  segFills,cardDays,SEG_STOPS,SEG_LABELS,stepIndex,goList,parseSeed,seedFromLink,EMOJI_QUICK,emojiOf,lastGrapheme,
   get view(){return view},
   openHabit(id){ACT.openHabit(id)},
   set(next){S=normalize(next);saveNow();view='list';renderHome(true)},
