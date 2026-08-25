@@ -1135,6 +1135,106 @@ eq('серия пересчиталась после перезагрузки', 
   eq('и тега в списке нет', await page.locator('#list img').count(), 0);
 }
 
+/* ═══════════════ 25. Жест «назад» ═══════════════ */
+{
+  group('25. Свайп от левого края');
+
+  /** Тянет от левого края вправо на dx пикселей. */
+  async function edgeSwipe(dx, steps = 10) {
+    await page.evaluate(async ({ dx, steps }) => {
+      const el = document.body, y = 420, x0 = 8;
+      const fire = (type, x) => {
+        const t = new Touch({ identifier: 1, target: el, clientX: x, clientY: y });
+        const list = type === 'touchend' ? [] : [t];
+        el.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true,
+          touches: list, targetTouches: list, changedTouches: [t] }));
+      };
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      fire('touchstart', x0);
+      for (let i = 1; i <= steps; i++) { fire('touchmove', x0 + (dx * i) / steps); await wait(22); }
+      fire('touchend', x0 + dx);
+    }, { dx, steps });
+  }
+
+  await setState(seed());
+  await page.waitForTimeout(600);
+  eq('стартуем с экрана привычки', await page.evaluate(() => window.__askeza.view), 'habit');
+
+  // короткий свайп — экран возвращается на место
+  await edgeSwipe(50);
+  await page.waitForTimeout(600);
+  eq('короткий свайп не уводит с экрана', await page.evaluate(() => window.__askeza.view), 'habit');
+  eq('экран вернулся на место',
+     await page.evaluate(() => document.getElementById('home').style.transform || 'none'), 'none');
+  ok('список снова спрятан', !(await page.locator('#list').isVisible()));
+
+  // длинный свайп — возврат к списку
+  await edgeSwipe(300);
+  await page.waitForTimeout(700);
+  eq('длинный свайп вернул к списку', await page.evaluate(() => window.__askeza.view), 'list');
+  ok('список виден', await page.locator('#list.list').isVisible());
+  eq('инлайн-стили жеста убраны',
+     await page.evaluate(() => {
+       const h = document.getElementById('home'), l = document.getElementById('list');
+       return [h.style.transform, h.style.transition, l.style.transform, l.style.top].join('|');
+     }), '|||');
+  ok('класс перетаскивания снят',
+     !(await page.evaluate(() => document.getElementById('app').classList.contains('navigating'))));
+
+  // на списке возвращаться некуда — жест ничего не делает
+  await edgeSwipe(300);
+  await page.waitForTimeout(600);
+  eq('на списке свайп ничего не меняет', await page.evaluate(() => window.__askeza.view), 'list');
+  eq('и карточки на месте', await page.locator('.hcard').count(), 1);
+
+  // страница поверх привычки закрывается тем же жестом
+  await page.click('.hcard');
+  await page.waitForTimeout(800);
+  await page.click('.craving');
+  await page.waitForSelector('#p-chart.on');
+  await page.waitForTimeout(600);
+  await edgeSwipe(300);
+  await page.waitForTimeout(700);
+  ok('свайп закрыл график', !(await page.locator('#p-chart.on').isVisible()));
+  eq('и оставил на экране привычки', await page.evaluate(() => window.__askeza.view), 'habit');
+  eq('стили страницы вычищены',
+     await page.evaluate(() => {
+       const p = document.getElementById('p-chart');
+       return [p.style.transform, p.style.transition].join('|');
+     }), '|');
+
+  // свайп из середины экрана — не жест навигации, а обычная прокрутка
+  await page.evaluate(async () => {
+    const el = document.body, y = 420;
+    const fire = (type, x) => {
+      const t = new Touch({ identifier: 1, target: el, clientX: x, clientY: y });
+      const list = type === 'touchend' ? [] : [t];
+      el.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true,
+        touches: list, targetTouches: list, changedTouches: [t] }));
+    };
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+    fire('touchstart', 200);
+    for (let i = 1; i <= 8; i++) { fire('touchmove', 200 + i * 30); await wait(20); }
+    fire('touchend', 440);
+  });
+  await page.waitForTimeout(600);
+  eq('свайп из середины не уводит назад', await page.evaluate(() => window.__askeza.view), 'habit');
+
+  // экран привычки приезжает справа
+  await page.click('[data-act="backToList"]');
+  await page.waitForTimeout(600);
+  await page.click('.hcard');
+  await page.waitForTimeout(120);
+  ok('экран привычки въезжает сбоку',
+     await page.evaluate(() => document.getElementById('home').classList.contains('slide-in')));
+  await page.waitForTimeout(700);
+  eq('страницы стоят горизонтальной стопкой',
+     await page.evaluate(() => {
+       const p = document.getElementById('p-add');
+       return getComputedStyle(p).transform.includes('matrix') ? 'сдвинута' : 'нет';
+     }), 'сдвинута');
+}
+
 group('19. Ошибки исполнения');
 ok('за весь прогон не было ошибок JS', errors.length === 0, errors.slice(0, 5).join('  ;;  '));
 
