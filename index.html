@@ -384,7 +384,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
    Приложение для отказа от привычек. Один файл, без зависимостей.
    ============================================================ */
 
-const VERSION='3.5';
+const VERSION='3.6';
 const KEY='askeza2_data';
 const KEY_BACKUP='askeza2_backup';
 const KEY_V1='askeza_data';       // старое приложение — только чтение, никогда не пишем
@@ -786,6 +786,8 @@ function renderHabit(animate){
   const el=$('home');
   el.className=enterAnim==='slide'?'slide-in':(animate?'stagger':'');
   enterAnim=null;
+  if(el.classList.contains('slide-in'))
+    el.addEventListener('animationend',()=>el.classList.remove('slide-in'),{once:true});
   el.innerHTML = isDaily(h) ? dailyHome(h) : abstainHome(h);
 
   R={
@@ -1897,12 +1899,15 @@ function navTarget(){
 }
 function navBegin(){
   const n=NAV.node;
+  n.classList.remove('slide-in');     // иначе анимация въезда держит transform
   n.style.transition='none';
   if(NAV.kind==='habit'){
     $('app').classList.add('navigating');
     renderList();                // список рисуем заранее — жест открывает его, а не пустоту
     const list=$('list');
-    list.style.top=$('topbar').offsetHeight+'px';
+    // абсолютные координаты считаются от padding-бокса #app, поэтому берём
+    // не высоту шапки, а место, где начинается сам экран привычки
+    list.style.top=$('home').offsetTop+'px';
     navUnder=list;
   }else{
     navUnder=(view==='habit')?$('home'):$('list');

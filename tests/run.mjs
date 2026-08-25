@@ -1166,6 +1166,39 @@ eq('серия пересчиталась после перезагрузки', 
   await page.waitForTimeout(600);
   eq('стартуем с экрана привычки', await page.evaluate(() => window.__askeza.view), 'habit');
 
+  // экран действительно едет под пальцем, а не стоит на месте:
+  // анимация въезда с fill-mode:both раньше держала transform и била инлайн-стиль
+  const mid = await page.evaluate(async () => {
+    const el = document.body, y = 420, x0 = 8;
+    const fire = (type, x) => {
+      const t = new Touch({ identifier: 1, target: el, clientX: x, clientY: y });
+      const list = type === 'touchend' ? [] : [t];
+      el.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true,
+        touches: list, targetTouches: list, changedTouches: [t] }));
+    };
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+    fire('touchstart', x0);
+    for (let i = 1; i <= 5; i++) { fire('touchmove', x0 + i * 24); await wait(20); }
+    const home = document.getElementById('home'), lst = document.getElementById('list');
+    const out = {
+      shift: new DOMMatrix(getComputedStyle(home).transform).m41,
+      under: new DOMMatrix(getComputedStyle(lst).transform).m41,
+      listTop: lst.getBoundingClientRect().top,
+      homeTop: home.getBoundingClientRect().top,
+      slide: home.classList.contains('slide-in'),
+    };
+    fire('touchend', x0 + 120);
+    return out;
+  });
+  ok('экран уехал вправо под пальцем', mid.shift > 60, String(mid.shift));
+  ok('класс анимации въезда снят и не держит transform', !mid.slide);
+  ok('список едет следом с параллаксом', mid.under < 0 && mid.under > -200, String(mid.under));
+  ok('список стоит там же, где экран привычки, а не выше',
+     Math.abs(mid.listTop - mid.homeTop) < 2, `${mid.listTop} против ${mid.homeTop}`);
+  await page.waitForTimeout(700);
+
+  await setState(seed());
+  await page.waitForTimeout(600);
   // короткий свайп — экран возвращается на место
   await edgeSwipe(50);
   await page.waitForTimeout(600);
