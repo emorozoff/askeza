@@ -213,7 +213,9 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 .hcard-in{opacity:var(--fade,1);transition:opacity .3s var(--ease)}
 .hcard.raw .hcard-in{transition:none}
 .hrow.lift .hcard{background:#1e1e22;box-shadow:0 14px 34px rgba(0,0,0,.55)}
-.hstripe{position:absolute;left:0;top:0;bottom:0;width:4px;z-index:2;border-radius:2px 0 0 2px;pointer-events:none}
+/* Левый край карточки в цвете привычки. Лежит внутри неё, поэтому уезжает
+   вместе с ней при свайпе, а скругление берёт от overflow:hidden карточки. */
+.hstripe{position:absolute;left:0;top:0;bottom:0;width:4px;z-index:2;pointer-events:none}
 .hname{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:600;color:var(--text);
   white-space:nowrap;overflow:hidden}
 .hname span{overflow:hidden;text-overflow:ellipsis}
@@ -369,7 +371,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
    Приложение для отказа от привычек. Один файл, без зависимостей.
    ============================================================ */
 
-const VERSION='3.0';
+const VERSION='3.1';
 const KEY='askeza2_data';
 const KEY_BACKUP='askeza2_backup';
 const KEY_V1='askeza_data';       // старое приложение — только чтение, никогда не пишем
@@ -852,9 +854,9 @@ function habitCard(h){
       <button class="hact" data-act="cardEdit" data-id="${h.id}" aria-label="Изменить «${name}»">${ICO.pencil}<span>Изменить</span></button>
       <button class="hact del" data-act="cardDelete" data-id="${h.id}" aria-label="Удалить «${name}»">${ICO.trash}<span>Удалить</span></button>
     </div>
-    <div class="hstripe" style="background:${c}"></div>
     <div class="hcard" data-act="openHabit" data-id="${h.id}" role="button" tabindex="0"
          aria-label="${name}, ${cardDays(h)}">
+      <div class="hstripe" style="background:${c}"></div>
       <div class="hcard-in">
         <div class="hname">${iconSvg(iconOf(h),'hico','color:'+c)}<span>${name}</span></div>
         <div class="hdays num">${cardDays(h)}</div>

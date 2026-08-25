@@ -810,6 +810,14 @@ eq('серия пересчиталась после перезагрузки', 
   });
   ok('карточка уехала влево', shift < -100, String(shift));
   ok('соседняя карточка на месте', await page.locator('.hrow[data-id="a1"].open').count() === 0);
+  // цветной край — часть карточки и уезжает вместе с ней
+  eq('край живёт внутри карточки', await page.locator('.hcard > .hstripe').count(), 3);
+  eq('вне карточки края нет', await page.locator('.hrow > .hstripe').count(), 0);
+  const stripeX = await page.evaluate(() => {
+    const r = document.querySelector('.hrow[data-id="a2"]');
+    return r.querySelector('.hstripe').getBoundingClientRect().left - r.getBoundingClientRect().left;
+  });
+  ok('край уехал влево вместе с карточкой', stripeX < -100, String(stripeX));
   ok('кнопка «Удалить» видна', await page.locator('.hrow[data-id="a2"] .hact.del').isVisible());
   await shot('31-list-swipe');
   
