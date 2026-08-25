@@ -91,9 +91,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 
 /* ---------------- шапка привычки ---------------- */
 .h-head{text-align:center;padding:2px 24px 0}
-.h-ico{display:flex;justify-content:center;margin-bottom:9px}
-.h-ico svg{width:36px;height:36px;fill:none;stroke:currentColor;stroke-width:1.7;
-  stroke-linecap:round;stroke-linejoin:round}
+.h-ico{font-size:38px;line-height:1;margin-bottom:10px}
 .h-name{font-size:27px;font-weight:800;letter-spacing:-.6px;line-height:1.15;color:#fff;word-break:break-word}
 .h-since{font-size:12.5px;color:var(--text3);margin-top:5px;font-weight:450}
 
@@ -218,9 +216,8 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 .hstripe{position:absolute;left:0;top:0;bottom:0;width:4px;z-index:2;pointer-events:none}
 .hname{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:600;color:var(--text);
   white-space:nowrap;overflow:hidden}
-.hname span{overflow:hidden;text-overflow:ellipsis}
-.hico{width:17px;height:17px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.8;
-  stroke-linecap:round;stroke-linejoin:round}
+.hname-t{overflow:hidden;text-overflow:ellipsis}
+.hico{flex:0 0 auto;font-size:16px;line-height:1}
 .hdays{font-size:23px;font-weight:800;letter-spacing:-.4px;line-height:1.2;color:#fff;margin-top:1px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* Восемь ступеней до года. Деления одинаковой ширины, хотя стоят за разный
@@ -319,18 +316,24 @@ button,input,textarea,select{font-family:inherit;color:inherit}
   transition:transform .16s var(--ease),border-color .2s,background .2s}
 .kind:active{transform:scale(.96)}
 .kind.on{background:rgba(255,255,255,.07)}
-.kind-e{display:flex}
-.kind-e svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.kind-e{font-size:27px;line-height:1}
 .kind-n{font-size:13.5px;font-weight:650;color:var(--text2)}
 .kind.on .kind-n{color:var(--text);font-weight:750}
-/* Сетка значков: своя прокрутка, иначе форма уезжает на два экрана вниз. */
-.icons{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;padding:2px;
-  max-height:196px;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.ico{aspect-ratio:1;border-radius:13px;background:var(--surface);border:1.5px solid transparent;
-  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s,border-color .2s}
-.ico:active{transform:scale(.9)}
-.ico.on{border-color:currentColor;background:rgba(255,255,255,.07)}
-.ico svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* Значок: поле ввода (клавиатура даёт любое эмодзи) плюс сетка частых.
+   У сетки своя прокрутка, иначе форма уезжает на два экрана вниз. */
+.emoji-row{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.emoji-in{width:64px;height:64px;flex:0 0 auto;text-align:center;font-size:32px;line-height:1;
+  background:var(--surface);border:1.5px solid var(--line2);border-radius:19px;
+  outline:none;padding:0;-webkit-appearance:none}
+.emoji-in:focus{border-color:currentColor}
+.emoji-hint{font-size:12.5px;color:var(--text3);line-height:1.45}
+.emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:7px;padding:2px;
+  max-height:168px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.em{aspect-ratio:1;border-radius:12px;background:var(--surface);border:1.5px solid transparent;
+  display:flex;align-items:center;justify-content:center;font-size:21px;line-height:1;
+  cursor:pointer;user-select:none;transition:transform .15s,border-color .2s}
+.em:active{transform:scale(.88)}
+.em.on{border-color:currentColor;background:rgba(255,255,255,.07)}
 .colors{display:flex;gap:10px;flex-wrap:wrap;padding-left:2px}
 .col{width:34px;height:34px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;
   transition:transform .16s var(--spring);position:relative}
@@ -371,7 +374,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
    Приложение для отказа от привычек. Один файл, без зависимостей.
    ============================================================ */
 
-const VERSION='3.1';
+const VERSION='3.2';
 const KEY='askeza2_data';
 const KEY_BACKUP='askeza2_backup';
 const KEY_V1='askeza_data';       // старое приложение — только чтение, никогда не пишем
@@ -577,7 +580,7 @@ function normalize(d){
     name:String(h.name||'Привычка'),
     kind:KINDS[h.kind]?h.kind:'custom',
     color:h.color||'#2aabee',
-    icon:ICONS[h.icon]?h.icon:undefined,
+    emoji:h.emoji||LEGACY_ICON[h.icon]||undefined,   // icon — ключ значка из v3.0–v3.1
     startedAt:h.startedAt||new Date().toISOString(),
     history:Array.isArray(h.history)?h.history:[],
     sid:h.sid||1,
@@ -634,7 +637,7 @@ function mkHabit(o){
   return{
     id:'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,7),
     name:o.name,kind:o.kind,color:o.color,
-    icon:ICONS[o.icon]?o.icon:undefined,
+    emoji:o.emoji||undefined,
     startedAt:o.startedAt,
     sid:1,
     daily:(KINDS[o.kind]&&KINDS[o.kind].mode==='daily')?{wakeBy:o.wakeBy||'07:00',checks:{}}:undefined,
@@ -691,66 +694,39 @@ function toast(msg){
 /* ------------------------------------------------------------
    Иконки
    ------------------------------------------------------------ */
-/* Значки привычек: 24×24, один штрих 1.8, круглые концы — набор нарисован
-   для приложения и лежит внутри файла, никаких внешних запросов. */
-const ICONS={
-cigarette:'<rect x="2" y="14" width="15" height="4.6" rx="1.1"/><path d="M13 14v4.6"/><path d="M16.4 11.6c1.3-1 1.3-2.6 0-3.6s-1.3-2.6 0-3.6"/><path d="M20.6 11.6c1-.8 1-2.1 0-2.9"/>',
-wine:'<path d="M8 21.5h8"/><path d="M12 15v6.5"/><path d="M7 3h10l-.7 6.2a4.4 4.4 0 0 1-8.6 0z"/>',
-beer:'<rect x="4.5" y="6" width="10" height="14.5" rx="2"/><path d="M14.5 9h2.8a2.6 2.6 0 0 1 0 5.2h-2.8"/><path d="M7.8 10v6.5M11.2 10v6.5"/>',
-leaf:'<path d="M4 20c0-8.5 5.5-14.5 16-15.5 0 9.5-5.5 15.5-13.5 15.5H4z"/><path d="M4.5 20c3-5.5 6.5-8.8 11.5-10.8"/>',
-pill:'<path d="M10.6 3.6a5 5 0 0 1 7.1 7.1l-7 7a5 5 0 0 1-7.1-7.1z"/><path d="M7.1 7.1l7.1 7.1"/>',
-coffee:'<path d="M4 8.5h13v5.8a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 9.6h1.4a2.6 2.6 0 0 1 0 5.2H17"/><path d="M8 2.5v3M12 2.5v3"/>',
-soda:'<path d="M4.8 6.4h14.4l-.8 2.8H5.6z"/><path d="M5.9 9.2h12.2l-1.3 11.4H7.2z"/><path d="M13.8 6.4l1.7-4.2"/>',
-candy:'<circle cx="12" cy="12" r="4.4"/><path d="M7.6 12L3.2 8.6v6.8z"/><path d="M16.4 12l4.4-3.4v6.8z"/>',
-burger:'<path d="M3.5 9.5a8.5 5.5 0 0 1 17 0z"/><path d="M3.5 12.6h17"/><path d="M3.5 15.5h17a4 4 0 0 1-4 4h-9a4 4 0 0 1-4-4z"/>',
-dice:'<rect x="3" y="3" width="18" height="18" rx="4.5"/><circle cx="8.4" cy="8.4" r="1.25" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none"/><circle cx="15.6" cy="15.6" r="1.25" fill="currentColor" stroke="none"/>',
-money:'<rect x="2" y="6" width="20" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M5.6 12h.02M18.4 12h.02"/>',
-phone:'<rect x="6" y="2" width="12" height="20" rx="2.8"/><path d="M10.4 18.6h3.2"/>',
-tv:'<rect x="2" y="6.5" width="20" height="13" rx="2.5"/><path d="M8 2.8l4 3.2 4-3.2"/>',
-gamepad:'<rect x="2" y="7" width="20" height="11" rx="4.5"/><path d="M7 10.5v3.4M5.3 12.2h3.4"/><circle cx="16.2" cy="11.3" r="1.1" fill="currentColor" stroke="none"/><circle cx="18.6" cy="13.8" r="1.1" fill="currentColor" stroke="none"/>',
-laptop:'<rect x="4" y="4.5" width="16" height="11" rx="1.8"/><path d="M2 19.2h20"/>',
-bell:'<path d="M18 9.5a6 6 0 0 0-12 0c0 5-2.2 6.4-2.2 6.4h16.4S18 14.5 18 9.5z"/><path d="M10.2 19.2a2.2 2.2 0 0 0 3.6 0"/>',
-eye:'<path d="M2 12s3.7-6.2 10-6.2S22 12 22 12s-3.7 6.2-10 6.2S2 12 2 12z"/><circle cx="12" cy="12" r="2.7"/>',
-heart:'<path d="M12 20.6S3.8 15.4 3.8 10a4.6 4.6 0 0 1 8.2-2.8A4.6 4.6 0 0 1 20.2 10c0 5.4-8.2 10.6-8.2 10.6z"/>',
-message:'<path d="M21 14.5a2.5 2.5 0 0 1-2.5 2.5H7.5L3 21.5V5.5A2.5 2.5 0 0 1 5.5 3h13A2.5 2.5 0 0 1 21 5.5z"/>',
-dumbbell:'<path d="M6.5 6.5v11M17.5 6.5v11"/><path d="M3.2 9.2v5.6M20.8 9.2v5.6"/><path d="M6.5 12h11"/>',
-pulse:'<path d="M22 12h-4.2l-3 8.2-6-16.4-3 8.2H2"/>',
-bike:'<circle cx="5.8" cy="16.9" r="3.4"/><circle cx="18.2" cy="16.9" r="3.4"/><path d="M5.8 16.9L10.2 8.6h4.4l3.6 8.3"/><path d="M9.2 8.6h4.6"/>',
-droplet:'<path d="M12 3s6.2 6.5 6.2 10.4A6.2 6.2 0 0 1 5.8 13.4C5.8 9.5 12 3 12 3z"/>',
-sprout:'<path d="M12 21.5V12"/><path d="M12 13c0-4.2 3.2-7.2 8.2-7.2 0 4.2-3.2 7.2-8.2 7.2z"/><path d="M12 16c0-3.2-2.7-5.7-6.8-5.7 0 3.2 2.7 5.7 6.8 5.7z"/>',
-moon:'<path d="M20.2 14.6A8.6 8.6 0 0 1 9.4 3.8a8.6 8.6 0 1 0 10.8 10.8z"/>',
-sun:'<circle cx="12" cy="12" r="4.2"/><path d="M12 2.2v2.2M12 19.6v2.2M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2.2 12h2.2M19.6 12h2.2M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/>',
-bed:'<path d="M3 20.5v-6.2a2.2 2.2 0 0 1 2.2-2.2h13.6a2.2 2.2 0 0 1 2.2 2.2v6.2"/><path d="M3 17.4h18"/><path d="M6.5 12.1V9a2.2 2.2 0 0 1 2.2-2.2h6.6A2.2 2.2 0 0 1 17.5 9v3.1"/>',
-book:'<path d="M4 19.4v-15A2.4 2.4 0 0 1 6.4 2H20v20H6.4a2.4 2.4 0 0 1 0-4.8H20"/>',
-pen:'<path d="M17.2 3.2l3.6 3.6L8 19.6l-4.6 1 1-4.6z"/><path d="M14.6 5.8l3.6 3.6"/>',
-clock:'<circle cx="12" cy="12" r="9"/><path d="M12 6.8v5.6l3.6 2.1"/>',
-calendar:'<rect x="3" y="5" width="18" height="16" rx="2.6"/><path d="M3 10h18M8 2.8v4.2M16 2.8v4.2"/>',
-target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.8"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>',
-flag:'<path d="M5 21.5V3"/><path d="M5 3.6h12l-2.6 4.4L17 12.4H5z"/>',
-mountain:'<path d="M2 20.2l7.2-12.4 4 6.6 2.6-3.6L22 20.2z"/>',
-compass:'<circle cx="12" cy="12" r="9"/><path d="M15.8 8.2l-2 5.6-5.6 2 2-5.6z"/>',
-shield:'<path d="M12 2.6l8 3v5.8c0 5-3.6 8.8-8 10.2-4.4-1.4-8-5.2-8-10.2V5.6z"/>',
-flame:'<path d="M12 2.4s5.2 4.8 5.2 9.4a5.2 5.2 0 0 1-10.4 0c0-1.9.9-3.6 2-4.9.4 1.4 1.4 2.2 2.2 2.2 0-2.7 1-5.2 1-6.7z"/>',
-lock:'<rect x="4" y="10" width="16" height="11" rx="2.6"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
-music:'<path d="M9 18V4.8l11-2v13"/><ellipse cx="6.4" cy="18" rx="2.6" ry="2.4"/><ellipse cx="17.4" cy="15.8" rx="2.6" ry="2.4"/>',
-camera:'<rect x="2" y="7" width="20" height="14" rx="3"/><circle cx="12" cy="14" r="3.9"/><path d="M8.6 7l1.4-3h4l1.4 3"/>',
-bag:'<path d="M5 8h14l-1.2 12.4H6.2z"/><path d="M9 8V6.2a3 3 0 0 1 6 0V8"/>',
-smile:'<circle cx="12" cy="12" r="9"/><path d="M8.4 14.2a4.6 4.6 0 0 0 7.2 0"/><path d="M9.2 9.4h.02M14.8 9.4h.02"/>',
-zap:'<path d="M13.2 2.4L4 14h6.8l-1 7.6L20 10h-7z"/>',
-anchor:'<circle cx="12" cy="5" r="2.6"/><path d="M12 7.6V21.5"/><path d="M4.8 13H2c0 5 4.6 8.5 10 8.5s10-3.5 10-8.5h-2.8"/><path d="M8 11h8"/>',
-gem:'<path d="M6 3.2h12l4 6.2-10 11.4L2 9.4z"/><path d="M2 9.4h20M12 20.8L8.2 9.4 6 3.2M12 20.8l3.8-11.4L18 3.2"/>',
-globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a13.5 13.5 0 0 1 0 18 13.5 13.5 0 0 1 0-18z"/>',
-hourglass:'<path d="M6.4 2.5h11.2M6.4 21.5h11.2"/><path d="M8.2 2.5v4.2c0 2.1 3.8 3.5 3.8 5.3s-3.8 3.2-3.8 5.3v4.2"/><path d="M15.8 2.5v4.2c0 2.1-3.8 3.5-3.8 5.3s3.8 3.2 3.8 5.3v4.2"/>',
-star:'<path d="M12 3.2l2.7 5.5 6 .9-4.35 4.25L17.4 20 12 17.1 6.6 20l1.05-6.15L3.3 9.6l6-.9z"/>',
-noentry:'<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>',
-};
+/* Значок привычки — эмодзи. Своего набора у приложения нет: системный шрифт
+   рисует их так же, как везде в iOS, и поставить можно вообще любое — поле
+   ввода открывает обычную клавиатуру с эмодзи. */
+const KIND_EMOJI={smoking:'🚭',alcohol:'🍷',weed:'🌿',scroll:'📱',porn:'🔞',sleep:'🌙',custom:'✨'};
+/* Частые — чтобы не лезть в клавиатуру ради очевидного. Список не ограничивает: рядом поле ввода. */
+const EMOJI_QUICK=['🚭','🚬','🍷','🍺','🥃','🌿','💊','☕️','🥤','🍬','🍔','🍟',
+  '🎰','🃏','💸','📱','📺','🎮','💻','🔔','👀','❤️','💬','🔞',
+  '🏋️','🏃','🚴','🧘','💧','🍎','🌙','☀️','🛏️','📚','✍️','⏰',
+  '📅','🎯','🚩','⛰️','🧭','🛡️','🔥','🔒','🎵','📷','🛍️','🙂',
+  '⚡️','⚓️','💎','🌍','⏳','⭐️','🚫','🏆'];
+/* Старые ключи нарисованных значков (v3.0–v3.1) переводим в эмодзи,
+   чтобы привычки, созданные до перехода, не остались без значка. */
+const LEGACY_ICON={cigarette:'🚬',wine:'🍷',beer:'🍺',leaf:'🌿',pill:'💊',coffee:'☕️',soda:'🥤',
+  candy:'🍬',burger:'🍔',dice:'🎰',money:'💸',phone:'📱',tv:'📺',gamepad:'🎮',laptop:'💻',
+  bell:'🔔',eye:'👀',heart:'❤️',message:'💬',dumbbell:'🏋️',pulse:'💓',bike:'🚴',droplet:'💧',
+  sprout:'🌱',moon:'🌙',sun:'☀️',bed:'🛏️',book:'📚',pen:'✍️',clock:'⏰',calendar:'📅',
+  target:'🎯',flag:'🚩',mountain:'⛰️',compass:'🧭',shield:'🛡️',flame:'🔥',lock:'🔒',
+  music:'🎵',camera:'📷',bag:'🛍️',smile:'🙂',zap:'⚡️',anchor:'⚓️',gem:'💎',globe:'🌍',
+  hourglass:'⏳',star:'⭐️',noentry:'🚫'};
 
-const ICON_KEYS=Object.keys(ICONS);
-/* Значок по умолчанию для каждого типа. Пользователь может сменить его на любой. */
-const KIND_ICON={smoking:'cigarette',alcohol:'wine',weed:'leaf',scroll:'phone',
-                 porn:'heart',sleep:'moon',custom:'star'};
-const iconOf=h=>(h&&ICONS[h.icon])?h.icon:KIND_ICON[(h&&h.kind)||'custom']||'star';
-const iconSvg=(key,cls,style)=>`<svg class="${cls}" viewBox="0 0 24 24" ${style?`style="${style}"`:''} aria-hidden="true">${ICONS[key]||ICONS.star}</svg>`;
+/** Последний введённый символ целиком: эмодзи бывают из нескольких кодовых точек
+    (флаги, семьи, модификаторы кожи), поэтому режем по графемам, а не по code units. */
+function lastGrapheme(v){
+  const t=String(v==null?'':v).replace(/\s+/g,'');
+  if(!t)return'';
+  try{
+    const seg=[...new Intl.Segmenter('ru',{granularity:'grapheme'}).segment(t)];
+    return seg.length?seg[seg.length-1].segment:'';
+  }catch(e){
+    const a=Array.from(t);return a.length?a[a.length-1]:'';
+  }
+}
+const emojiOf=h=>(h&&h.emoji)||KIND_EMOJI[(h&&h.kind)||'custom']||'✨';
 
 const ICO={
   plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
@@ -858,7 +834,7 @@ function habitCard(h){
          aria-label="${name}, ${cardDays(h)}">
       <div class="hstripe" style="background:${c}"></div>
       <div class="hcard-in">
-        <div class="hname">${iconSvg(iconOf(h),'hico','color:'+c)}<span>${name}</span></div>
+        <div class="hname"><span class="hico">${esc(emojiOf(h))}</span><span class="hname-t">${name}</span></div>
         <div class="hdays num">${cardDays(h)}</div>
         <div class="hbar" aria-hidden="true">${segFills(h).map(f=>
           `<div class="hseg"><i style="${segStyle(f,c)}"></i></div>`).join('')}</div>
@@ -937,7 +913,7 @@ function abstainHome(h){
   ].filter((u,i)=>u.v>0||i>=3);
 
   return `<div class="h-head">
-      <div class="h-ico">${iconSvg(iconOf(h),'',`color:${habitColor(h)}`)}</div>
+      <div class="h-ico">${esc(emojiOf(h))}</div>
       <div class="h-name">${esc(h.name)}</div>
       <div class="h-since">свободен с ${fmtDateTime(h.startedAt)}</div>
     </div>
@@ -993,7 +969,7 @@ function dailyHome(h){
   const dows=['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];
 
   return `<div class="h-head">
-      <div class="h-ico">${iconSvg(iconOf(h),'',`color:${col}`)}</div>
+      <div class="h-ico">${esc(emojiOf(h))}</div>
       <div class="h-name">${esc(h.name)}</div>
       <div class="h-since">подъём до ${target} · с ${fmtDate(h.startedAt)}</div>
     </div>
@@ -1176,7 +1152,7 @@ function parseSeed(hash){
     const t=new Date(h.startedAt);
     if(isNaN(t))return null;
     return mkHabit({name:String(h.name||KINDS[kind].title),kind,
-                    color:h.color||KINDS[kind].color,icon:h.icon,startedAt:t.toISOString(),
+                    color:h.color||KINDS[kind].color,emoji:h.emoji,startedAt:t.toISOString(),
                     wakeBy:h.wakeBy||'07:00'});
   });
   return habits.every(Boolean)?habits:null;
@@ -1364,7 +1340,7 @@ function pageBar(title,backAct,extra){
 let form={kind:null,name:'',color:'#2aabee',date:'',time:''};
 function openAdd(){
   const n=new Date();
-  form={kind:null,name:'',color:'#2aabee',icon:null,date:localDate(n),time:localTime(n),wake:'07:00'};
+  form={kind:null,name:'',color:'#2aabee',emoji:'',date:localDate(n),time:localTime(n),wake:'07:00'};
   drawAddPage();
 }
 function drawAddPage(){
@@ -1377,7 +1353,7 @@ function drawAddPage(){
       <div class="kinds">
         ${Object.keys(KINDS).map(k=>`<div class="kind ${form.kind===k?'on':''}" data-act="pickKind" data-arg="${k}"
           style="${form.kind===k?'border-color:'+KINDS[k].color:''}">
-          <div class="kind-e" style="color:${KINDS[k].color}">${iconSvg(KIND_ICON[k],'')}</div>
+          <div class="kind-e">${KIND_EMOJI[k]}</div>
           <div class="kind-n">${KINDS[k].title}</div></div>`).join('')}
       </div>
       ${form.kind==='custom'?`<div class="f-group">
@@ -1391,7 +1367,7 @@ function drawAddPage(){
       ${form.kind?`
       <div class="sec-h">Значок</div>
       <div class="f-group">
-        <div class="icons" style="color:${col}">${iconGrid(form.icon,'pickIcon')}</div>
+        ${emojiPicker(form.emoji,'pickEmoji','a-emoji',col)}
       </div>`:''}
       ${form.kind==='sleep'?`
       <div class="sec-h">Во сколько вставать</div>
@@ -1419,15 +1395,37 @@ function drawAddPage(){
     </div>`);
   const ni=$('a-name');
   if(ni){ni.oninput=e=>{form.name=e.target.value;syncAddCta()};}
+  bindEmojiInput('a-emoji');
   const di=$('a-date'),ti=$('a-time'),wi=$('a-wake');
   if(di)di.onchange=e=>{form.date=e.target.value;refreshNote()};
   if(ti)ti.onchange=e=>{form.time=e.target.value;refreshNote()};
   if(wi)wi.onchange=e=>{form.wake=e.target.value||'07:00';syncAddCta()};
 }
-/** Сетка значков для форм добавления и правки. */
-function iconGrid(cur,act){
-  return ICON_KEYS.map(k=>`<div class="ico ${k===cur?'on':''}" data-act="${act}" data-arg="${k}"
-    role="button" aria-label="Значок">${iconSvg(k,'')}</div>`).join('');
+/** Поле ввода эмодзи и сетка частых — общее для форм добавления и правки. */
+function emojiPicker(cur,act,id,color){
+  return `<div class="emoji-row" style="color:${color}">
+      <input class="emoji-in" id="${id}" value="${esc(cur)}" aria-label="Значок привычки"
+             autocomplete="off" autocorrect="off" spellcheck="false">
+      <div class="emoji-hint">Нажми на квадрат и выбери любое эмодзи на клавиатуре — или ткни в готовое ниже</div>
+    </div>
+    <div class="emoji-grid" style="color:${color}">${EMOJI_QUICK.map(e=>
+      `<div class="em ${e===cur?'on':''}" data-act="${act}" data-arg="${e}" role="button" aria-label="Значок ${e}">${e}</div>`).join('')}</div>`;
+}
+/** Перерисовывать форму целиком незачем: подсветку и поле двигаем на месте,
+    чтобы сетка не прыгала к началу и не терялась прокрутка. */
+function syncEmoji(id){
+  const f=$(id);if(f&&f.value!==form.emoji)f.value=form.emoji;
+  document.querySelectorAll('#p-add .em').forEach(n=>n.classList.toggle('on',n.dataset.arg===form.emoji));
+}
+/** Вешает обработчик на поле: оставляем последнюю введённую графему. */
+function bindEmojiInput(id){
+  const f=$(id);if(!f)return;
+  f.oninput=()=>{
+    const g=lastGrapheme(f.value);
+    form.emoji=g||form.emoji;
+    syncEmoji(id);
+  };
+  f.onblur=()=>syncEmoji(id);
 }
 function addNote(){
   const t=formStart();
@@ -1673,21 +1671,13 @@ const ACT={
     form.kind=k;
     if(k!=='custom'){form.name=KINDS[k].title;form.color=KINDS[k].color}
     else{form.name='';form.color=PALETTE[0]}
-    form.icon=KIND_ICON[k]||'star';       // значок по типу, дальше можно сменить
+    form.emoji=KIND_EMOJI[k]||'✨';        // значок по типу, дальше можно сменить
     drawAddPage();
     if(k==='custom')setTimeout(()=>$('a-name')&&$('a-name').focus(),260);
   },
   pickColor(_id,el){form.color=el.dataset.arg;drawAddPage()},
-  pickIcon(_id,el){
-    form.icon=el.dataset.arg;
-    // перерисовывать всю форму незачем: подсветку двигаем на месте, чтобы
-    // сетка не прыгала к началу и не терялась прокрутка
-    document.querySelectorAll('#p-add .ico').forEach(n=>n.classList.toggle('on',n.dataset.arg===form.icon));
-  },
-  editIcon(_id,el){
-    form.icon=el.dataset.arg;
-    document.querySelectorAll('#p-add .ico').forEach(n=>n.classList.toggle('on',n.dataset.arg===form.icon));
-  },
+  pickEmoji(_id,el){form.emoji=el.dataset.arg;syncEmoji('a-emoji')},
+  editEmoji(_id,el){form.emoji=el.dataset.arg;syncEmoji('e-emoji')},
   quickWhen(_id,el){
     const w=el.dataset.arg,n=new Date();
     if(w==='morning'){n.setHours(8,0,0,0)}
@@ -1699,7 +1689,7 @@ const ACT={
     const name=form.name.trim();
     if(!form.kind||!name)return;
     if(form.kind==='sleep'){
-      const nh=mkHabit({name,kind:'sleep',color:form.color,icon:form.icon,startedAt:new Date().toISOString(),wakeBy:form.wake||'07:00'});
+      const nh=mkHabit({name,kind:'sleep',color:form.color,emoji:form.emoji,startedAt:new Date().toISOString(),wakeBy:form.wake||'07:00'});
       S.habits.push(nh);S.activeId=nh.id;save();
       view='habit';closePage('p-add');renderHome(true);
       return toast('Режим включён. Отметь подъём кнопкой');
@@ -1707,7 +1697,7 @@ const ACT={
     const t=formStart();
     if(!t)return;
     if(t.getTime()>Date.now()+60000)return toast('Это время ещё не наступило');
-    const h=mkHabit({name,kind:form.kind,color:form.color,icon:form.icon,startedAt:t.toISOString()});
+    const h=mkHabit({name,kind:form.kind,color:form.color,emoji:form.emoji,startedAt:t.toISOString()});
     S.habits.push(h);S.activeId=h.id;save();
     view='habit';closePage('p-add');renderHome(true);
     toast('Отсчёт пошёл');
@@ -1717,7 +1707,7 @@ const ACT={
   edit(){
     const h=active();if(!h)return;closeSheet();
     const d=new Date(h.startedAt);
-    form={kind:h.kind,name:h.name,color:habitColor(h),icon:iconOf(h),date:localDate(d),time:localTime(d)};
+    form={kind:h.kind,name:h.name,color:habitColor(h),emoji:emojiOf(h),date:localDate(d),time:localTime(d)};
     openPage('p-add',pageBar('Изменить','closeAdd')+
       `<div class="page-body">
         <div class="f-group" style="padding-top:12px">
@@ -1730,7 +1720,7 @@ const ACT={
         </div>
         <div class="f-group">
           <div class="f-label">Значок</div>
-          <div class="icons" id="e-icons" style="color:${form.color}">${iconGrid(form.icon,'editIcon')}</div>
+          ${emojiPicker(form.emoji,'editEmoji','e-emoji',form.color)}
         </div>
         ${isDaily(h)?`<div class="f-group">
           <div class="f-label">Во сколько вставать</div>
@@ -1747,13 +1737,14 @@ const ACT={
       </div>
       <div class="page-foot"><button class="btn" data-act="saveEdit" style="background:${form.color}">Сохранить</button></div>`);
     $('e-name').oninput=e=>form.name=e.target.value;
+    bindEmojiInput('e-emoji');
     $('e-date').onchange=e=>form.date=e.target.value;
     $('e-time').onchange=e=>form.time=e.target.value;
   },
   editColor(_id,el){
     form.color=el.dataset.arg;
     document.querySelectorAll('#p-add .col').forEach(c=>c.classList.toggle('on',c.dataset.arg===form.color));
-    const ig=$('e-icons');if(ig)ig.style.color=form.color;
+    document.querySelectorAll('#p-add .emoji-row,#p-add .emoji-grid').forEach(n=>n.style.color=form.color);
     const b=document.querySelector('#p-add .btn');if(b)b.style.background=form.color;
   },
   saveEdit(){
@@ -1762,7 +1753,7 @@ const ACT={
     if(!name)return toast('Название не может быть пустым');
     if(!t)return toast('Проверь дату');
     if(t.getTime()>Date.now()+60000)return toast('Это время ещё не наступило');
-    h.name=name;h.color=form.color;h.icon=form.icon;
+    h.name=name;h.color=form.color;h.emoji=form.emoji;
     const wk=$('e-wake');
     if(isDaily(h)&&wk&&wk.value){
       if(!h.daily)h.daily={wakeBy:'07:00',checks:{}};
@@ -1925,7 +1916,7 @@ window.__askeza={
   esc,fmtLeft,fmtRough,nDays,KINDS,
   isDaily,today,shiftDay,streakInfo,openDays,streakDays,calendarCells,dailyStats,
   markDay,wakeBy,checksOf,hasCurve,
-  segFills,cardDays,SEG_STOPS,goList,parseSeed,seedFromLink,ICONS,ICON_KEYS,iconOf,
+  segFills,cardDays,SEG_STOPS,goList,parseSeed,seedFromLink,EMOJI_QUICK,emojiOf,lastGrapheme,
   get view(){return view},
   openHabit(id){ACT.openHabit(id)},
   set(next){S=normalize(next);saveNow();view='list';renderHome(true)},
