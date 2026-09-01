@@ -131,6 +131,24 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 .obar-n{font-size:22px;font-weight:750;color:#fff;letter-spacing:-.4px}
 .obar-l{font-size:13.5px;font-weight:550;color:rgba(255,255,255,.82)}
 
+/* срывы: когда оборвалась каждая серия и сколько она держалась */
+.rel{margin:0 12px 10px;padding:12px 15px 13px;background:var(--surface);
+  border:1px solid var(--line);border-radius:20px}
+.rel-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:2px}
+.rel-label{font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:1.1px;text-transform:uppercase}
+.rel-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  padding:8px 0;border-bottom:1px solid var(--line)}
+.rel-row:last-of-type{border-bottom:none;padding-bottom:2px}
+.rel-when{font-size:13.5px;font-weight:550;color:var(--text2);min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rel-when em{font-style:normal;font-size:10px;font-weight:700;color:var(--text3);
+  letter-spacing:.5px;text-transform:uppercase;margin-left:7px}
+.rel-len{font-size:14.5px;font-weight:750;color:#fff;white-space:nowrap;letter-spacing:-.2px}
+.rel-more{display:block;width:100%;margin-top:10px;padding:9px;border:none;border-radius:12px;
+  background:var(--surface2);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;
+  font-family:inherit;transition:opacity .2s}
+.rel-more:active{opacity:.6}
+
 /* режим: отметка дня, календарь, статистика */
 .checkin{margin:0 16px 10px;padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-radius:20px}
 .ci-btn{width:100%;padding:15px;border:none;border-radius:15px;font-size:16.5px;font-weight:700;cursor:pointer;
@@ -389,7 +407,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
    Приложение для отказа от привычек. Один файл, без зависимостей.
    ============================================================ */
 
-const VERSION='3.7';
+const VERSION='3.8';
 const KEY='askeza2_data';
 const KEY_BACKUP='askeza2_backup';
 const KEY_V1='askeza_data';       // старое приложение — только чтение, никогда не пишем
@@ -694,6 +712,24 @@ function openDays(h,back){
 }
 const streakDays=h=>isDaily(h)?streakInfo(h).days:Math.floor(elapsed(h)/D);
 
+/** Все срывы привычки, новые сверху. Длину серии берём из записи, а если её
+    там нет (данные ранних версий) — считаем от предыдущего старта.
+    Это единственное место, где журнал `history` кто-то читает. */
+function relapses(h){
+  const hist=(h&&Array.isArray(h.history))?h.history:[];
+  const out=[];let from=null;
+  for(const e of hist){
+    if(!e||!e.at)continue;
+    if(e.t==='start'){from=e.at;continue}
+    if(e.t!=='relapse')continue;
+    const d=Number.isFinite(e.streakDays)?e.streakDays
+      :from?Math.max(0,Math.floor((new Date(e.at)-new Date(from))/(D*1000))):0;
+    out.push({at:e.at,days:d});
+    from=e.at;
+  }
+  return out.reverse();
+}
+
 function kindOf(h){return(h&&KINDS[h.kind])?KINDS[h.kind]:KINDS.custom}
 function habitColor(h){return(h&&h.color)?h.color:kindOf(h).color}
 
@@ -925,6 +961,29 @@ function heroNum(h,unitWord){
   </div>`;
 }
 
+/* ---------- срывы ---------- */
+/** Карточка срывов: когда был последний и сколько держалась каждая серия.
+    Длинный список схлопнут — на экране остаются четыре последних срыва. */
+const REL_SHOWN=4;
+let relAll=false;
+function relapseCard(h){
+  const all=relapses(h);
+  if(!all.length)return'';
+  const shown=relAll?all:all.slice(0,REL_SHOWN);
+  const rest=all.length-shown.length;
+  return `<div class="rel">
+    <div class="rel-top">
+      <span class="rel-label">Срывы · ${all.length}</span>
+      <span class="rel-label">Держался</span>
+    </div>
+    ${shown.map((r,i)=>`<div class="rel-row">
+      <div class="rel-when">${fmtDateTime(r.at)}${i===0?'<em>последний</em>':''}</div>
+      <div class="rel-len num">${nDays(r.days)}</div>
+    </div>`).join('')}
+    ${rest>0?`<button class="rel-more" data-act="relMore">Показать все · ещё ${rest}</button>`:''}
+  </div>`;
+}
+
 const quoteBlock=()=>`<div class="quote" data-act="quote"><span>${esc(QUOTES[S.quoteIdx%QUOTES.length])}</span></div>`;
 
 /* ---------- архетип «отказ» ---------- */
@@ -962,6 +1021,7 @@ function abstainHome(h){
         <div class="obar-txt"><span class="obar-n num">${u.v}</span><span class="obar-l">${plural(u.v,u.l[0],u.l[1],u.l[2])}</span></div>
       </div>`).join('')}
     </div>
+    ${relapseCard(h)}
     ${quoteBlock()}`;
 }
 
@@ -1672,10 +1732,11 @@ const ACT={
   openHabit(id){
     if(SW.open){closeRow(SW.open);return}          // открытые действия сначала закрываем
     if(!S.habits.some(x=>x.id===id))return;
-    S.activeId=id;save();
+    S.activeId=id;save();relAll=false;
     view='habit';enterAnim='slide';renderHome(true);window.scrollTo(0,0);
   },
   backToList(){goList()},
+  relMore(){relAll=true;renderHome()},
   cardEdit(id){S.activeId=id;save();closeRow(SW.open,true);ACT.edit()},
   cardDelete(id){S.activeId=id;save();closeRow(SW.open,true);ACT.deleteAsk()},
   quote(){
@@ -1813,6 +1874,7 @@ const ACT={
     h.startedAt=now;
     h.sid=(h.sid||1)+1;                       // новая серия
     h.history.push({t:'start',at:now});
+    relAll=false;
     save();renderHome(true);toast('Записано. Начинаем заново');
   },
   deleteAsk(){
@@ -2056,7 +2118,7 @@ window.__askeza={
   esc,fmtLeft,fmtRough,nDays,KINDS,
   isDaily,today,shiftDay,streakInfo,openDays,streakDays,calendarCells,dailyStats,
   markDay,wakeBy,checksOf,hasCurve,
-  segFills,cardDays,SEG_STOPS,SEG_LABELS,stepIndex,goList,parseSeed,seedFromLink,EMOJI_QUICK,emojiOf,lastGrapheme,
+  segFills,cardDays,SEG_STOPS,SEG_LABELS,stepIndex,relapses,goList,parseSeed,seedFromLink,EMOJI_QUICK,emojiOf,lastGrapheme,
   get view(){return view},
   openHabit(id){ACT.openHabit(id)},
   set(next){S=normalize(next);saveNow();view='list';renderHome(true)},

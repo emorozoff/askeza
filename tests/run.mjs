@@ -1323,6 +1323,100 @@ eq('серия пересчиталась после перезагрузки', 
      }), 'сдвинута');
 }
 
+/* ═══════════════ 26. Срывы на экране привычки ═══════════════ */
+{
+  group('26. Срывы: последний, список и длина серии');
+
+  const relHist = [
+    { t: 'start', at: ISO(400 * DAY) },
+    { t: 'relapse', at: ISO(360 * DAY), streakDays: 40 }, { t: 'start', at: ISO(360 * DAY) },
+    { t: 'relapse', at: ISO(352 * DAY), streakDays: 8 },  { t: 'start', at: ISO(352 * DAY) },
+    { t: 'relapse', at: ISO(340 * DAY), streakDays: 12 }, { t: 'start', at: ISO(340 * DAY) },
+    { t: 'relapse', at: ISO(200 * DAY), streakDays: 140 },{ t: 'start', at: ISO(200 * DAY) },
+    { t: 'relapse', at: ISO(87 * DAY), streakDays: 113 }, { t: 'start', at: ISO(87 * DAY) },
+  ];
+  const relState = () => ({
+    v: 2, quoteIdx: 0, activeId: 'r1',
+    habits: [
+      { id: 'r1', name: 'Марихуана', kind: 'weed', color: '#4cd964', startedAt: ISO(87 * DAY), sid: 6, history: relHist.map(e => ({ ...e })) },
+      { id: 'r2', name: 'Курение', kind: 'smoking', color: '#ff453a', startedAt: ISO(10 * DAY), history: [{ t: 'start', at: ISO(10 * DAY) }] },
+    ],
+  });
+
+  // чистая выборка
+  const pure = await page.evaluate(h => window.__askeza.relapses(h), relState().habits[0]);
+  eq('все срывы найдены', pure.length, 5);
+  eq('новый срыв первым', pure[0].days, 113);
+  eq('старый срыв последним', pure[4].days, 40);
+  eq('длина серии берётся из записи', pure.map(r => r.days).join(','), '113,140,12,8,40');
+  eq('у привычки без срывов список пуст',
+     (await page.evaluate(h => window.__askeza.relapses(h), relState().habits[1])).length, 0);
+  eq('битый журнал не роняет выборку',
+     (await page.evaluate(() => window.__askeza.relapses({ id: 'x', history: null }).length)), 0);
+  // старые записи без streakDays: длина считается от предыдущего старта
+  const computed = await page.evaluate(() => window.__askeza.relapses({
+    id: 'x', history: [
+      { t: 'start', at: new Date(Date.now() - 30 * 86400e3).toISOString() },
+      { t: 'relapse', at: new Date(Date.now() - 8 * 86400e3).toISOString() },
+      { t: 'start', at: new Date(Date.now() - 8 * 86400e3).toISOString() },
+    ],
+  }));
+  eq('без streakDays длина считается от старта', computed[0].days, 22);
+
+  // экран привычки
+  await setState(relState());
+  await page.waitForTimeout(500);
+  eq('карточка срывов на экране', await page.locator('.rel').count(), 1);
+  eq('счётчик срывов', (await page.locator('.rel-top').innerText()).includes('5'), true);
+  eq('показаны четыре последних', await page.locator('.rel-row').count(), 4);
+  const first = (await page.locator('.rel-row').first().innerText()).replace(/\n/g, ' ');
+  ok('первый срыв помечен как последний', /ПОСЛЕДНИЙ|последний/i.test(first), first);
+  ok('в строке стоит длина серии', first.includes('113 дней'), first);
+  ok('в строке стоит дата и время', /\d{1,2} \S+ \d{4}, \d{2}:\d{2}/.test(first), first);
+
+  // раскрытие полного списка
+  ok('длинный список схлопнут', await page.locator('.rel-more').isVisible());
+  await page.click('.rel-more');
+  await page.waitForTimeout(400);
+  eq('раскрылись все срывы', await page.locator('.rel-row').count(), 5);
+  eq('кнопка раскрытия ушла', await page.locator('.rel-more').count(), 0);
+  ok('самый старый срыв — 40 дней',
+     (await page.locator('.rel-row').last().innerText()).includes('40 дней'));
+  await shot('33-relapses');
+
+  // без срывов карточки нет
+  await page.click('[data-act="backToList"]');
+  await page.waitForTimeout(500);
+  await page.click('.hcard[data-id="r2"]');
+  await page.waitForTimeout(800);
+  eq('без срывов карточки нет', await page.locator('.rel').count(), 0);
+
+  // записанный срыв сразу попадает в список
+  await page.click('[data-act="habitMenu"]'); await page.waitForTimeout(420);
+  await page.click('[data-act="relapseAsk"]'); await page.waitForTimeout(450);
+  await page.click('[data-act="relapse"]'); await page.waitForTimeout(800);
+  eq('после срыва счётчик обнулился', (await page.locator('#big').innerText()).trim(), '0');
+  eq('карточка срывов появилась', await page.locator('.rel-row').count(), 1);
+  const fresh = (await page.locator('.rel-row').first().innerText()).replace(/\n/g, ' ');
+  ok('записана длина оборвавшейся серии', fresh.includes('10 дней'), fresh);
+
+  // возврат к привычке снова схлопывает список
+  await page.click('[data-act="backToList"]');
+  await page.waitForTimeout(500);
+  await page.click('.hcard[data-id="r1"]');
+  await page.waitForTimeout(800);
+  eq('список снова схлопнут', await page.locator('.rel-row').count(), 4);
+
+  // у режима сна карточки срывов нет
+  await setState({
+    v: 2, quoteIdx: 0, activeId: 's9',
+    habits: [{ id: 's9', name: 'Режим сна', kind: 'sleep', color: '#5e9eff', startedAt: ISO(5 * DAY),
+               daily: { wakeBy: '07:00', checks: {} }, history: [{ t: 'start', at: ISO(5 * DAY) }] }],
+  });
+  await page.waitForTimeout(500);
+  eq('у режима карточки срывов нет', await page.locator('.rel').count(), 0);
+}
+
 group('19. Ошибки исполнения');
 ok('за весь прогон не было ошибок JS', errors.length === 0, errors.slice(0, 5).join('  ;;  '));
 
