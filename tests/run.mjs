@@ -1538,6 +1538,123 @@ eq('серия пересчиталась после перезагрузки', 
   await page.click('.hrow:not(.open) .hcard');
   await page.waitForTimeout(450);
 
+
+  group('26в. Срывы: изменение даты');
+
+  /** Дата/время в формате полей ввода — теми же функциями, что рисует форма. */
+  const asFields = at => page.evaluate(iso => {
+    const A = window.__askeza, d = new Date(iso);
+    return { date: A.localDate(d), time: A.localTime(d) };
+  }, at);
+  const fillRel = async at => {
+    const f = await asFields(at);
+    await page.fill('#r-date', f.date);
+    await page.fill('#r-time', f.time);
+    await page.evaluate(() => {
+      document.getElementById('r-date').dispatchEvent(new Event('change'));
+      document.getElementById('r-time').dispatchEvent(new Event('change'));
+    });
+    await page.waitForTimeout(150);
+  };
+
+  // чистая механика: границы
+  const bnd = await page.evaluate(hist => {
+    const A = window.__askeza, h = { id: 'x', kind: 'weed', history: hist };
+    return [0, 1, 4].map(i => A.relBounds(h, i));
+  }, relHist);
+  eq('срыв 0 (последний): нижняя граница — прошлый старт', bnd[0].from, new Date(relHist[8].at).getTime());
+  eq('срыв 0: верхняя граница — сейчас, capNow', bnd[0].capNow, true);
+  eq('срыв 1: нижняя граница — свой прошлый старт', bnd[1].from, new Date(relHist[6].at).getTime());
+  eq('срыв 1: верхняя граница — следующий срыв', bnd[1].to, new Date(relHist[9].at).getTime());
+  eq('срыв 1: не capNow, есть следующий срыв', bnd[1].capNow, false);
+  eq('срыв 4 (самый старый): нижняя граница — самый первый старт', bnd[2].from, new Date(relHist[0].at).getTime());
+
+  // чистая механика: пересчёт при редактировании. Сдвигаем срыв на 3 дня
+  // позже — своя серия на 3 дня длиннее, следующая на те же 3 дня короче
+  // (сумма двух соседних серий не меняется, меняется только граница между ними).
+  const editRes = await page.evaluate(hist => {
+    const A = window.__askeza;
+    const h = { id: 'x', kind: 'weed', startedAt: hist[hist.length - 1].at, history: hist.map(e => ({ ...e })) };
+    const newAt = new Date(new Date(h.history[7].at).getTime() + 3 * 86400e3);
+    A.editRelapse(h, 1, newAt);
+    return {
+      list: A.relapses(h).map(r => r.days),
+      pairedStart: h.history[8].at,          // start сразу после отредактированного relapse
+      newAt: newAt.toISOString(),
+      startedAt: h.startedAt,
+    };
+  }, relHist);
+  eq('изменённый срыв двигает следующий start', editRes.pairedStart, editRes.newAt);
+  eq('своя длина серии выросла на 3 дня', editRes.list[1], 143);
+  eq('следующая серия короче на те же 3 дня', editRes.list[0], 110);
+  eq('более старая серия не тронута', editRes.list[4], 40);
+  eq('startedAt живой серии не менялся — это не последний срыв', editRes.startedAt, relHist[relHist.length - 1].at);
+
+  const editLast = await page.evaluate(hist => {
+    const A = window.__askeza;
+    const h = { id: 'x', kind: 'weed', startedAt: hist[hist.length - 1].at, history: hist.map(e => ({ ...e })) };
+    const newAt = new Date(new Date(h.history[9].at).getTime() + 5 * 86400e3);
+    A.editRelapse(h, 0, newAt);
+    return { days: A.relapses(h)[0].days, startedAt: h.startedAt, newAt: newAt.toISOString() };
+  }, relHist);
+  eq('редактирование последнего срыва двигает startedAt', editLast.startedAt, editLast.newAt);
+  eq('его длина выросла на 5 дней', editLast.days, 118);
+  eq('несуществующий срыв не редактируется',
+     await page.evaluate(() => window.__askeza.editRelapse({ id: 'x', history: [] }, 0, new Date())), false);
+
+  // экран: свайп → «Изменить» открывает форму
+  await setState(relState());
+  await page.waitForTimeout(500);
+  await swipeRow(1);
+  await page.locator('.rel-row.open .rel-act:not(.del)').tap();
+  await page.waitForSelector('#p-rel.on');
+  await page.waitForTimeout(350);
+  const f1 = await asFields(relHist[8].at);
+  eq('форма открылась на нужном срыве', await page.locator('#r-date').inputValue(), f1.date);
+  ok('подсказка объясняет длину серии', (await page.locator('#r-note').innerText()).includes('держалась'));
+
+  // дата раньше начала серии — блокирует сохранение
+  await fillRel(new Date(new Date(relHist[6].at).getTime() - 2 * 86400e3).toISOString());
+  ok('дата раньше начала серии блокирует сохранение', await page.locator('#p-rel .btn').isDisabled());
+  ok('подсказка предупреждает о начале серии', (await page.locator('#r-note').innerText()).includes('начала'));
+
+  // дата позже следующего срыва — тоже блокирует
+  await fillRel(new Date(new Date(relHist[9].at).getTime() + 2 * 86400e3).toISOString());
+  ok('дата позже следующего срыва блокирует сохранение', await page.locator('#p-rel .btn').isDisabled());
+  ok('подсказка предупреждает про следующий срыв', (await page.locator('#r-note').innerText()).includes('следующего'));
+
+  // корректная дата внутри границ — сохраняется
+  const midAt = new Date((new Date(relHist[6].at).getTime() + new Date(relHist[9].at).getTime()) / 2).toISOString();
+  await fillRel(midAt);
+  ok('дата внутри границ разблокирует сохранение', !(await page.locator('#p-rel .btn').isDisabled()));
+  await page.click('[data-act="saveRelEdit"]');
+  await page.waitForTimeout(700);
+  ok('форма закрылась', await page.locator('#p-rel.on').count() === 0);
+  const expected = await page.evaluate(iso => window.__askeza.fmtDateTime(iso), midAt);
+  eq('дата срыва обновилась в списке',
+     (await page.locator('.rel-row').nth(1).locator('.rel-when').innerText()).includes(expected.split(',')[0]), true);
+
+  // изменение последнего срыва двигает счётчик на экране
+  await setState(relState());
+  await page.waitForTimeout(500);
+  eq('до правки счётчик 87', (await page.locator('#big').innerText()).trim(), '87');
+  await swipeRow(0);
+  await page.locator('.rel-row.open .rel-act:not(.del)').tap();
+  await page.waitForSelector('#p-rel.on');
+  await page.waitForTimeout(350);
+  await fillRel(new Date(Date.now() - 90 * 86400e3).toISOString());
+  await page.click('[data-act="saveRelEdit"]');
+  await page.waitForTimeout(700);
+  eq('счётчик вырос — последний срыв сдвинут раньше', (await page.locator('#big').innerText()).trim(), '90');
+
+  // изменение переживает перезагрузку
+  await reload();
+  await page.waitForTimeout(900);
+  eq('после перезагрузки счётчик тот же', await page.evaluate(() => {
+    const A = window.__askeza, h = A.S.habits.find(x => x.id === 'r1');
+    return A.streakDays(h);
+  }), 90);
+
   // у режима сна карточки срывов нет
   await setState({
     v: 2, quoteIdx: 0, activeId: 's9',

@@ -412,6 +412,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 <div class="page" id="p-chart"></div>
 <div class="page" id="p-add"></div>
 <div class="page" id="p-day"></div>
+<div class="page" id="p-rel"></div>
 
 <div id="toast"></div>
 
@@ -422,7 +423,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
    Приложение для отказа от привычек. Один файл, без зависимостей.
    ============================================================ */
 
-const VERSION='3.9';
+const VERSION='3.10';
 const KEY='askeza2_data';
 const KEY_BACKUP='askeza2_backup';
 const KEY_V1='askeza_data';       // старое приложение — только чтение, никогда не пишем
@@ -788,6 +789,43 @@ function dropRelapse(h,idx){
   h.sid=Math.max(1,(h.sid||1)-1);
   return true;
 }
+/** Границы, в которых можно поставить время срыва: не раньше начала серии,
+    которая им оборвалась, и не позже следующего срыва (а если следующего
+    нет — не позже текущего момента). `capNow` отличает эти два случая —
+    от него зависит, сравнивать строго или с той же секундной поблажкой,
+    что и остальные формы даты в приложении. */
+function relBounds(h,idx){
+  const hist=(h&&h.history)||[];
+  const i=relPos(h,idx);
+  let from=null,to=null;
+  if(i>=0){
+    for(let k=i-1;k>=0;k--)if(hist[k]&&hist[k].t==='start'){from=new Date(hist[k].at).getTime();break}
+    for(let k=i+1;k<hist.length;k++)if(hist[k]&&hist[k].t==='relapse'){to=new Date(hist[k].at).getTime();break}
+  }
+  return{from,to:to!==null?to:Date.now(),capNow:to===null};
+}
+/** Переставить время уже записанного срыва. Он делит две серии: длина
+    оборвавшейся тогда серии и старт следующей — один и тот же момент,
+    поэтому вместе со срывом двигается и запись `start` сразу за ним
+    (а если следующего срыва не было — то и текущий `startedAt`). Длина
+    следующего срыва, если он уже есть, пересчитывается от нового момента. */
+function editRelapse(h,idx,newAt){
+  const hist=(h&&Array.isArray(h.history))?h.history:null;
+  const i=hist?relPos(h,idx):-1;
+  if(i<0)return false;
+  const iso=newAt.toISOString();
+  let from=null;
+  for(let k=i-1;k>=0;k--)if(hist[k]&&hist[k].t==='start'){from=hist[k].at;break}
+  hist[i].at=iso;
+  if(from)hist[i].streakDays=Math.max(0,Math.floor((newAt.getTime()-new Date(from).getTime())/(D*1000)));
+  if(hist[i+1]&&hist[i+1].t==='start')hist[i+1].at=iso;
+  let next=-1;
+  for(let k=i+1;k<hist.length;k++)if(hist[k]&&hist[k].t==='relapse'){next=k;break}
+  if(next>=0)hist[next].streakDays=Math.max(0,
+    Math.floor((new Date(hist[next].at)-newAt.getTime())/(D*1000)));
+  else h.startedAt=iso;
+  return true;
+}
 
 function kindOf(h){return(h&&KINDS[h.kind])?KINDS[h.kind]:KINDS.custom}
 function habitColor(h){return(h&&h.color)?h.color:kindOf(h).color}
@@ -1039,6 +1077,8 @@ function relapseCard(h){
     </div>
     ${shown.map((r,i)=>`<div class="rel-row">
       <div class="rel-acts">
+        <button class="rel-act" data-act="relEdit" data-id="${i}"
+                aria-label="Изменить дату срыва ${fmtDateTime(r.at)}">${ICO.pencil}<span>Изменить</span></button>
         <button class="rel-act del" data-act="relDeleteAsk" data-id="${i}"
                 aria-label="Удалить срыв ${fmtDateTime(r.at)}">${ICO.trash}<span>Удалить</span></button>
       </div>
@@ -1632,6 +1672,60 @@ function openDayPage(key){
     </div>`);
 }
 
+/* ---------------- страница: правка срыва ---------------- */
+let relForm={idx:-1,date:'',time:''};
+function relFormStart(){
+  if(!relForm.date)return null;
+  const d=new Date(relForm.date+'T'+(relForm.time||'00:00'));
+  return isNaN(d.getTime())?null:d;
+}
+/** Подсказка под полями: что получится и в каких пределах можно двигать дату.
+    Пределы — соседние события в журнале, поэтому текст у каждого срыва свой. */
+function relEditNote(bounds){
+  const t=relFormStart();
+  if(!t)return'Укажи дату и время.';
+  if(bounds.from!==null&&t.getTime()<bounds.from)
+    return'⚠️ Раньше начала этой серии быть не может — она ещё не началась.';
+  if(bounds.capNow&&t.getTime()>Date.now()+60000)
+    return'⚠️ Это время ещё не наступило.';
+  if(!bounds.capNow&&t.getTime()>=bounds.to)
+    return'⚠️ Позже следующего срыва быть не может.';
+  return'Серия, которая тогда оборвалась, станет короче или длиннее — держалась ровно '+
+    nDays(relDaysBetween(bounds.from,t.getTime()))+'.';
+}
+const relDaysBetween=(from,to)=>Math.max(0,Math.floor(((to)-(from||to))/(D*1000)));
+function refreshRelNote(bounds){
+  const n=$('r-note');if(n)n.textContent=relEditNote(bounds);
+  const btn=document.querySelector('#p-rel .btn');if(!btn)return;
+  const t=relFormStart();
+  btn.disabled=!(t&&(bounds.from===null||t.getTime()>=bounds.from)&&
+    (bounds.capNow?t.getTime()<=Date.now()+60000:t.getTime()<bounds.to));
+}
+function openRelEdit(idx){
+  const h=active();if(!h)return;
+  const r=relapses(h)[idx];if(!r)return;
+  closeRow(SW.open,true);
+  const bounds=relBounds(h,idx);
+  const d=new Date(r.at);
+  relForm={idx,date:localDate(d),time:localTime(d)};
+  openPage('p-rel',pageBar('Изменить срыв','closeRelEdit')+
+    `<div class="page-body">
+      <div class="f-group" style="padding-top:12px">
+        <div class="f-label">Когда случился срыв</div>
+        <div class="f-row">
+          <input class="f-input" id="r-date" type="date" value="${relForm.date}">
+          <input class="f-input" id="r-time" type="time" value="${relForm.time}">
+        </div>
+      </div>
+      <div class="note" id="r-note">${relEditNote(bounds)}</div>
+    </div>
+    <div class="page-foot">
+      <button class="btn" data-act="saveRelEdit" style="background:${habitColor(h)}">Сохранить</button>
+    </div>`);
+  $('r-date').onchange=e=>{relForm.date=e.target.value;refreshRelNote(bounds)};
+  $('r-time').onchange=e=>{relForm.time=e.target.value;refreshRelNote(bounds)};
+}
+
 /* ---------------- страница: график ---------------- */
 let chartRange=365,chartTouchDay=null,chartStaticKey='',pulseRAF=null,liveTimer=null;
 function openChart(){
@@ -1834,6 +1928,20 @@ const ACT={
     const ok=dropRelapse(h,relPending);relPending=-1;
     if(!ok)return;
     relAll=false;save();renderHome();toast('Срыв удалён');
+  },
+  relEdit(i){openRelEdit(+i)},
+  closeRelEdit(){closePage('p-rel')},
+  saveRelEdit(){
+    const h=active();if(!h)return;
+    const t=relFormStart();
+    if(!t)return toast('Проверь дату');
+    const bounds=relBounds(h,relForm.idx);
+    if(bounds.from!==null&&t.getTime()<bounds.from)return toast('Раньше начала серии быть не может');
+    if(bounds.capNow?t.getTime()>Date.now()+60000:t.getTime()>=bounds.to)
+      return toast(bounds.capNow?'Это время ещё не наступило':'Позже следующего срыва быть не может');
+    const ok=editRelapse(h,relForm.idx,t);
+    if(!ok)return;
+    closePage('p-rel');save();renderHome();toast('Срыв изменён');
   },
   cardEdit(id){S.activeId=id;save();closeRow(SW.open,true);ACT.edit()},
   cardDelete(id){S.activeId=id;save();closeRow(SW.open,true);ACT.deleteAsk()},
@@ -2211,12 +2319,12 @@ if('serviceWorker'in navigator&&location.protocol!=='blob:'){
 /* Точка входа для автотестов */
 window.__askeza={
   get S(){return S},
-  plural,breakdown,localDate,craving,cravingDigits,zoneOf,buildCurve,CRAVING,CURVES,
+  plural,breakdown,localDate,localTime,fmtDateTime,craving,cravingDigits,zoneOf,buildCurve,CRAVING,CURVES,
   elapsed,active,renderHome,guessKind,
   esc,fmtLeft,fmtRough,nDays,KINDS,
   isDaily,today,shiftDay,streakInfo,openDays,streakDays,calendarCells,dailyStats,
   markDay,wakeBy,checksOf,hasCurve,
-  segFills,cardDays,SEG_STOPS,SEG_LABELS,stepIndex,relapses,dropRelapse,relMerged,goList,parseSeed,seedFromLink,EMOJI_QUICK,emojiOf,lastGrapheme,
+  segFills,cardDays,SEG_STOPS,SEG_LABELS,stepIndex,relapses,dropRelapse,relMerged,relBounds,editRelapse,openRelEdit,goList,parseSeed,seedFromLink,EMOJI_QUICK,emojiOf,lastGrapheme,
   get view(){return view},
   openHabit(id){ACT.openHabit(id)},
   set(next){S=normalize(next);saveNow();view='list';renderHome(true)},
