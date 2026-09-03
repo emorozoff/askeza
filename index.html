@@ -131,22 +131,37 @@ button,input,textarea,select{font-family:inherit;color:inherit}
 .obar-n{font-size:22px;font-weight:750;color:#fff;letter-spacing:-.4px}
 .obar-l{font-size:13.5px;font-weight:550;color:rgba(255,255,255,.82)}
 
-/* срывы: когда оборвалась каждая серия и сколько она держалась */
-.rel{margin:0 12px 10px;padding:12px 15px 13px;background:var(--surface);
-  border:1px solid var(--line);border-radius:20px}
-.rel-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:2px}
+/* срывы: когда оборвалась каждая серия и сколько она держалась.
+   Ряд устроен как карточка в списке привычек — плашка поверх кнопки,
+   свайп влево уводит плашку и открывает удаление. */
+.rel{margin:0 12px 10px;background:var(--surface);border:1px solid var(--line);
+  border-radius:20px;overflow:hidden}
+.rel-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:12px 15px 8px}
 .rel-label{font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:1.1px;text-transform:uppercase}
-.rel-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
-  padding:8px 0;border-bottom:1px solid var(--line)}
-.rel-row:last-of-type{border-bottom:none;padding-bottom:2px}
+.rel-row{position:relative}
+.rel-acts{position:absolute;top:0;right:0;bottom:0;z-index:0;display:flex}
+.rel-act{width:92px;border:none;background:var(--surface2);color:#fff;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  font-size:10.5px;font-weight:600;font-family:inherit;transition:filter .15s}
+.rel-act:active{filter:brightness(1.3)}
+.rel-act.del{background:var(--red)}
+.rel-act svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.rel-card{position:relative;z-index:1;background:var(--surface);padding:15px;
+  touch-action:pan-y;transition:transform .34s var(--ease)}
+.rel-card.raw{transition:none}
+.rel-row+.rel-row .rel-card{box-shadow:0 -1px 0 var(--line)}
+/* Содержимое строки не гаснет при свайпе, в отличие от карточки привычки:
+   там под кнопки уезжала полоса прогресса, а тут — дата, и её нужно видеть,
+   чтобы понимать, какой именно срыв удаляешь. */
+.rel-in{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
 .rel-when{font-size:13.5px;font-weight:550;color:var(--text2);min-width:0;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rel-when em{font-style:normal;font-size:10px;font-weight:700;color:var(--text3);
   letter-spacing:.5px;text-transform:uppercase;margin-left:7px}
 .rel-len{font-size:14.5px;font-weight:750;color:#fff;white-space:nowrap;letter-spacing:-.2px}
-.rel-more{display:block;width:100%;margin-top:10px;padding:9px;border:none;border-radius:12px;
-  background:var(--surface2);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;
-  font-family:inherit;transition:opacity .2s}
+.rel-more{display:block;width:calc(100% - 24px);margin:10px 12px 12px;padding:9px;border:none;
+  border-radius:12px;background:var(--surface2);color:var(--text2);font-size:13px;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:opacity .2s}
 .rel-more:active{opacity:.6}
 
 /* режим: отметка дня, календарь, статистика */
@@ -407,7 +422,7 @@ button,input,textarea,select{font-family:inherit;color:inherit}
    Приложение для отказа от привычек. Один файл, без зависимостей.
    ============================================================ */
 
-const VERSION='3.8';
+const VERSION='3.9';
 const KEY='askeza2_data';
 const KEY_BACKUP='askeza2_backup';
 const KEY_V1='askeza_data';       // старое приложение — только чтение, никогда не пишем
@@ -730,6 +745,50 @@ function relapses(h){
   return out.reverse();
 }
 
+/** Позиция срыва в журнале по его номеру в списке (новые сверху). */
+function relPos(h,idx){
+  const hist=(h&&Array.isArray(h.history))?h.history:[];
+  const pos=[];hist.forEach((e,i)=>{if(e&&e.t==='relapse')pos.push(i)});
+  const i=pos[pos.length-1-idx];
+  return i===undefined?-1:i;
+}
+/** Начало серии, которая шла до этого срыва. */
+function relFrom(h,idx){
+  const hist=(h&&h.history)||[],i=relPos(h,idx);
+  if(i<0)return null;
+  for(let k=i-1;k>=0;k--)if(hist[k]&&hist[k].t==='start')return hist[k].at;
+  return null;
+}
+/** Сколько дней будет в серии, если убрать этот срыв: соседние сливаются. */
+function relMerged(h,idx){
+  const from=relFrom(h,idx);if(!from)return 0;
+  const hist=h.history,i=relPos(h,idx);
+  let to=Date.now();
+  for(let k=i+1;k<hist.length;k++)if(hist[k].t==='relapse'){to=new Date(hist[k].at).getTime();break}
+  return Math.max(0,Math.floor((to-new Date(from).getTime())/(D*1000)));
+}
+/** Убрать срыв: он не был, значит серии до и после него — одна серия.
+    Вместе с записью уходит следующий за ней старт, а длина следующей серии
+    (или текущей, если убрали последний срыв) считается заново. */
+function dropRelapse(h,idx){
+  const hist=(h&&Array.isArray(h.history))?h.history:null;
+  const i=hist?relPos(h,idx):-1;
+  if(i<0)return false;
+  hist.splice(i,1);
+  if(hist[i]&&hist[i].t==='start')hist.splice(i,1);
+  let start=null;                          // старт серии, которая теперь тянется дальше
+  for(let k=i-1;k>=0;k--)if(hist[k]&&hist[k].t==='start'){start=hist[k].at;break}
+  let next=-1;
+  for(let k=i;k<hist.length;k++)if(hist[k].t==='relapse'){next=k;break}
+  if(start){
+    if(next>=0)hist[next].streakDays=Math.max(0,
+      Math.floor((new Date(hist[next].at)-new Date(start))/(D*1000)));
+    else h.startedAt=start;                 // убрали последний срыв — серия тянется дальше
+  }
+  h.sid=Math.max(1,(h.sid||1)-1);
+  return true;
+}
+
 function kindOf(h){return(h&&KINDS[h.kind])?KINDS[h.kind]:KINDS.custom}
 function habitColor(h){return(h&&h.color)?h.color:kindOf(h).color}
 
@@ -825,6 +884,7 @@ let enterAnim=null;              // 'slide' — экран приехал спр
 function renderHabit(animate){
   const h=active();
   const el=$('home');
+  closeRow(SW.open,true);        // открытая строка срыва уедет вместе с разметкой
   el.className=enterAnim==='slide'?'slide-in':(animate?'stagger':'');
   enterAnim=null;
   if(el.classList.contains('slide-in'))
@@ -965,7 +1025,8 @@ function heroNum(h,unitWord){
 /** Карточка срывов: когда был последний и сколько держалась каждая серия.
     Длинный список схлопнут — на экране остаются четыре последних срыва. */
 const REL_SHOWN=4;
-let relAll=false;
+let relAll=false;                // раскрыт ли полный список
+let relPending=-1;               // какой срыв ждёт подтверждения удаления
 function relapseCard(h){
   const all=relapses(h);
   if(!all.length)return'';
@@ -977,8 +1038,16 @@ function relapseCard(h){
       <span class="rel-label">Держался</span>
     </div>
     ${shown.map((r,i)=>`<div class="rel-row">
-      <div class="rel-when">${fmtDateTime(r.at)}${i===0?'<em>последний</em>':''}</div>
-      <div class="rel-len num">${nDays(r.days)}</div>
+      <div class="rel-acts">
+        <button class="rel-act del" data-act="relDeleteAsk" data-id="${i}"
+                aria-label="Удалить срыв ${fmtDateTime(r.at)}">${ICO.trash}<span>Удалить</span></button>
+      </div>
+      <div class="rel-card">
+        <div class="rel-in">
+          <div class="rel-when">${fmtDateTime(r.at)}${i===0?'<em>последний</em>':''}</div>
+          <div class="rel-len num">${nDays(r.days)}</div>
+        </div>
+      </div>
     </div>`).join('')}
     ${rest>0?`<button class="rel-more" data-act="relMore">Показать все · ещё ${rest}</button>`:''}
   </div>`;
@@ -1273,18 +1342,23 @@ const SW={row:null,open:null,x0:0,y0:0,dx:0,base:0,mode:null,lp:0,moved:false,
           rows:null,step:0,from:0,to:0};
 let swipeGuard=false;           // клик после жеста глотаем: это не тап
 
-const actsW=row=>{const a=row.querySelector('.hrow-acts');return a?a.offsetWidth:140};
+/* Рядов со свайпом два вида: карточка привычки в списке и строка срыва на
+   экране привычки. Устроены одинаково — плашка поверх кнопок, — поэтому
+   жест один на оба, а различает их только пара селекторов. */
+const ROWS='.hrow,.rel-row';
+const cardOf=row=>row&&row.querySelector('.hcard,.rel-card');
+const actsW=row=>{const a=row&&row.querySelector('.hrow-acts,.rel-acts');return a?a.offsetWidth:140};
 
 function closeRow(row,instant){
   if(!row)return;
-  const c=row.querySelector('.hcard');
+  const c=cardOf(row);
   if(c){c.classList.toggle('raw',!!instant);c.style.transform='';c.style.setProperty('--fade','1');
         if(instant)requestAnimationFrame(()=>c.classList.remove('raw'))}
   row.classList.remove('open');
   if(SW.open===row)SW.open=null;
 }
 function openRow(row){
-  const c=row.querySelector('.hcard');if(!c)return;
+  const c=cardOf(row);if(!c)return;
   c.classList.remove('raw');
   c.style.transform=`translateX(${-actsW(row)}px)`;
   c.style.setProperty('--fade','0');
@@ -1295,13 +1369,15 @@ function openRow(row){
 function listStart(e){
   swipeGuard=false;
   if(e.touches.length>1){SW.row=null;return}
-  const t=e.touches[0],row=e.target.closest?e.target.closest('.hrow'):null;
+  const t=e.touches[0],row=e.target.closest?e.target.closest(ROWS):null;
   if(SW.open&&row!==SW.open){closeRow(SW.open);swipeGuard=true}
-  if(!row||e.target.closest('.hrow-acts')){SW.row=null;return}
+  if(!row||e.target.closest('.hrow-acts,.rel-acts')){SW.row=null;return}
   SW.row=row;SW.x0=t.clientX;SW.y0=t.clientY;SW.dx=0;SW.mode=null;SW.moved=false;
   SW.base=row===SW.open?-actsW(row):0;
   clearTimeout(SW.lp);
-  SW.lp=setTimeout(()=>{if(SW.row===row&&!SW.mode)dragStart(row)},LP_MS);
+  // перетаскиванием меняют порядок только привычки; срывы стоят по времени
+  if(row.classList.contains('hrow'))
+    SW.lp=setTimeout(()=>{if(SW.row===row&&!SW.mode)dragStart(row)},LP_MS);
 }
 function listMove(e){
   if(!SW.row)return;
@@ -1318,7 +1394,7 @@ function listMove(e){
     if(x>0)x*=.25;                       // вправо тянуть некуда — резинка
     else if(x<-w)x=-w+(x+w)*.3;          // и за упором тоже
     SW.dx=x;SW.moved=true;
-    const c=SW.row.querySelector('.hcard');
+    const c=cardOf(SW.row);
     c.classList.add('raw');c.style.transform=`translateX(${x}px)`;
     c.style.setProperty('--fade',clamp(1+x/w*1.7,0,1).toFixed(2));
   }else if(SW.mode==='drag'){
@@ -1377,11 +1453,12 @@ function dragEnd(){
 }
 
 function bindList(){
-  const el=$('list');
-  el.addEventListener('touchstart',listStart,{passive:true});
-  el.addEventListener('touchmove',listMove,{passive:false});
-  el.addEventListener('touchend',listEnd);
-  el.addEventListener('touchcancel',listEnd);
+  for(const el of [$('list'),$('home')]){
+    el.addEventListener('touchstart',listStart,{passive:true});
+    el.addEventListener('touchmove',listMove,{passive:false});
+    el.addEventListener('touchend',listEnd);
+    el.addEventListener('touchcancel',listEnd);
+  }
 }
 
 /** Уйти к списку: живые узлы привычки больше не нужны. */
@@ -1737,6 +1814,27 @@ const ACT={
   },
   backToList(){goList()},
   relMore(){relAll=true;renderHome()},
+  /* Удаление срыва: спрашиваем, потому что вернуть его будет нечем, а серии
+     вокруг него сольются — крупное число на экране изменится. */
+  relDeleteAsk(i){
+    const h=active();if(!h)return;
+    const idx=+i,r=relapses(h)[idx];
+    if(!r)return;
+    relPending=idx;
+    closeRow(SW.open);
+    const tail=idx===0
+      ?`Серия продолжится с прошлого срыва — счётчик станет ${nDays(relMerged(h,idx))}.`
+      :`Серии до и после него сольются в одну — ${nDays(relMerged(h,idx))}.`;
+    sheet(`Удалить срыв ${fmtDateTime(r.at)}? ${tail}`,[
+      {ico:'🗑',label:'Удалить срыв',act:'relDelete',cls:'danger'},
+    ]);
+  },
+  relDelete(){
+    const h=active();if(!h)return;closeSheet();
+    const ok=dropRelapse(h,relPending);relPending=-1;
+    if(!ok)return;
+    relAll=false;save();renderHome();toast('Срыв удалён');
+  },
   cardEdit(id){S.activeId=id;save();closeRow(SW.open,true);ACT.edit()},
   cardDelete(id){S.activeId=id;save();closeRow(SW.open,true);ACT.deleteAsk()},
   quote(){
@@ -2118,7 +2216,7 @@ window.__askeza={
   esc,fmtLeft,fmtRough,nDays,KINDS,
   isDaily,today,shiftDay,streakInfo,openDays,streakDays,calendarCells,dailyStats,
   markDay,wakeBy,checksOf,hasCurve,
-  segFills,cardDays,SEG_STOPS,SEG_LABELS,stepIndex,relapses,goList,parseSeed,seedFromLink,EMOJI_QUICK,emojiOf,lastGrapheme,
+  segFills,cardDays,SEG_STOPS,SEG_LABELS,stepIndex,relapses,dropRelapse,relMerged,goList,parseSeed,seedFromLink,EMOJI_QUICK,emojiOf,lastGrapheme,
   get view(){return view},
   openHabit(id){ACT.openHabit(id)},
   set(next){S=normalize(next);saveNow();view='list';renderHome(true)},

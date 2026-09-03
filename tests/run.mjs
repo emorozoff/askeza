@@ -1407,6 +1407,137 @@ eq('серия пересчиталась после перезагрузки', 
   await page.waitForTimeout(800);
   eq('список снова схлопнут', await page.locator('.rel-row').count(), 4);
 
+
+  group('26б. Срывы: свайп и удаление');
+
+  /** Свайп влево по строке срыва. */
+  async function swipeRow(i) {
+    await page.evaluate(async idx => {
+      const el = document.querySelectorAll('.rel-row')[idx].querySelector('.rel-card');
+      const r = el.getBoundingClientRect();
+      const x0 = Math.round(r.left + r.width / 2), y0 = Math.round(r.top + r.height / 2);
+      const fire = (type, x) => {
+        const t = new Touch({ identifier: 1, target: el, clientX: x, clientY: y0 });
+        const list = type === 'touchend' ? [] : [t];
+        el.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches: list, targetTouches: list, changedTouches: [t] }));
+      };
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      fire('touchstart', x0);
+      for (const d of [-12, -45, -90, -130, -150]) { fire('touchmove', x0 + d); await wait(20); }
+      fire('touchend', x0 - 150);
+    }, i);
+    await page.waitForTimeout(450);
+  }
+
+  // чистая механика удаления
+  const dropped = await page.evaluate(hist => {
+    const A = window.__askeza, mk = () => ({ id: 'x', kind: 'weed', sid: 6, startedAt: hist[hist.length - 1].at, history: hist.map(e => ({ ...e })) });
+    const newest = mk(); A.dropRelapse(newest, 0);
+    const mid = mk(); A.dropRelapse(mid, 1);
+    const oldest = mk(); A.dropRelapse(oldest, 4);
+    return {
+      newest: { list: A.relapses(newest).map(r => r.days), started: newest.startedAt, sid: newest.sid },
+      mid: { list: A.relapses(mid).map(r => r.days), started: mid.startedAt },
+      oldest: { list: A.relapses(oldest).map(r => r.days) },
+      starts: hist.filter(e => e.t === 'start').map(e => e.at),
+    };
+  }, relHist);
+  eq('удалили последний срыв — записей меньше', dropped.newest.list.join(','), '140,12,8,40');
+  eq('серия продолжилась с прошлого срыва', dropped.newest.started, dropped.starts[4]);
+  eq('номер серии откатился', dropped.newest.sid, 5);
+  eq('удалили срыв в середине — соседние серии слились', dropped.mid.list.join(','), '253,12,8,40');
+  eq('текущая серия при этом не тронута', dropped.mid.started, dropped.starts[5]);
+  eq('удалили самый старый срыв', dropped.oldest.list.join(','), '113,140,12,48');
+  eq('несуществующий срыв не удаляется',
+     await page.evaluate(() => window.__askeza.dropRelapse({ id: 'x', history: [{ t: 'start', at: new Date().toISOString() }] }, 0)), false);
+
+  // предпросмотр слияния
+  const merged = await page.evaluate(hist => {
+    const A = window.__askeza, h = { id: 'x', kind: 'weed', startedAt: hist[hist.length - 1].at, history: hist };
+    return [A.relMerged(h, 0), A.relMerged(h, 1)];
+  }, relHist);
+  eq('счётчик после удаления последнего срыва', merged[0], 200);
+  eq('длина слитой серии в середине', merged[1], 253);
+
+  // жест на экране привычки
+  await setState(relState());
+  await page.waitForTimeout(500);
+  await swipeRow(1);
+  ok('свайп открыл действия строки', await page.locator('.rel-row.open').count() === 1);
+  const relShift = await page.evaluate(() =>
+    new DOMMatrix(getComputedStyle(document.querySelectorAll('.rel-row')[1].querySelector('.rel-card')).transform).m41);
+  ok('строка уехала влево', relShift < -60, String(relShift));
+  ok('кнопка удаления видна', await page.locator('.rel-row.open .rel-act.del').isVisible());
+  await shot('34-relapse-swipe');
+  // тап мимо закрывает
+  await page.locator('.rel-top').tap();
+  await page.waitForTimeout(450);
+  eq('тап мимо закрыл действия', await page.locator('.rel-row.open').count(), 0);
+
+  // удаление срыва в середине
+  await swipeRow(1);
+  await page.locator('.rel-row.open .rel-act.del').tap();
+  await page.waitForTimeout(450);
+  const relSheet = (await page.locator('#sheet').innerText()).replace(/\n/g, ' ');
+  ok('подтверждение называет дату срыва', /\d{1,2} \S+ \d{4}, \d{2}:\d{2}/.test(relSheet), relSheet);
+  ok('подтверждение объясняет слияние', /сольются|продолжится/.test(relSheet), relSheet);
+  await page.click('[data-act="relDelete"]');
+  await page.waitForTimeout(700);
+  eq('срыв удалён из журнала',
+     await page.evaluate(() => window.__askeza.relapses(window.__askeza.S.habits[0]).map(r => r.days).join(',')), '253,12,8,40');
+  ok('список перерисован', (await page.locator('.rel-row').first().innerText()).includes('253 дня'));
+  eq('карточка снова схлопнута', await page.locator('.rel-row').count(), 4);
+
+  // удаление последнего срыва продлевает текущую серию
+  const bigBefore = (await page.locator('#big').innerText()).trim();
+  eq('до удаления счётчик 87', bigBefore, '87');
+  await swipeRow(0);
+  await page.locator('.rel-row.open .rel-act.del').tap();
+  await page.waitForTimeout(450);
+  await page.click('[data-act="relDelete"]');
+  await page.waitForTimeout(700);
+  eq('счётчик продолжился с прошлого срыва', (await page.locator('#big').innerText()).trim(), '340');
+  eq('срывов осталось три',
+     await page.evaluate(() => window.__askeza.relapses(window.__askeza.S.habits[0]).length), 3);
+
+  // удаление переживает перезагрузку
+  await reload();
+  await page.waitForTimeout(900);
+  eq('после перезагрузки срывов по-прежнему три',
+     await page.evaluate(() => window.__askeza.relapses(window.__askeza.S.habits[0]).length), 3);
+
+  // последний срыв можно удалить до конца — карточка исчезает
+  await page.evaluate(() => {
+    const A = window.__askeza, h = A.S.habits[0];
+    while (A.relapses(h).length) A.dropRelapse(h, 0);
+    A.openHabit(h.id);
+  });
+  await page.waitForTimeout(700);
+  eq('без срывов карточка ушла', await page.locator('.rel').count(), 0);
+
+  // свайп по карточке привычки в списке продолжает работать
+  await setState(relState());
+  await page.evaluate(() => window.__askeza.goList());
+  await page.waitForTimeout(500);
+  await page.evaluate(async () => {
+    const el = document.querySelector('.hrow .hcard');
+    const r = el.getBoundingClientRect();
+    const x0 = Math.round(r.left + r.width / 2), y0 = Math.round(r.top + r.height / 2);
+    const fire = (type, x) => {
+      const t = new Touch({ identifier: 1, target: el, clientX: x, clientY: y0 });
+      const list = type === 'touchend' ? [] : [t];
+      el.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches: list, targetTouches: list, changedTouches: [t] }));
+    };
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+    fire('touchstart', x0);
+    for (const d of [-12, -45, -90, -130, -150]) { fire('touchmove', x0 + d); await wait(20); }
+    fire('touchend', x0 - 150);
+  });
+  await page.waitForTimeout(450);
+  eq('свайп в списке привычек не сломался', await page.locator('.hrow.open').count(), 1);
+  await page.click('.hrow:not(.open) .hcard');
+  await page.waitForTimeout(450);
+
   // у режима сна карточки срывов нет
   await setState({
     v: 2, quoteIdx: 0, activeId: 's9',
